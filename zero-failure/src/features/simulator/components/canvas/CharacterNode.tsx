@@ -63,7 +63,7 @@ export const CharacterNode = memo(function CharacterNode({
       <text className="sim-node-name" y={74} textAnchor="middle">
         {character.name}
       </text>
-      <text className="sim-node-role" y={92} textAnchor="middle">
+      <text className="sim-node-role" y={92} dx={16} textAnchor="middle">
         {character.role}
       </text>
     </g>

@@ -4,7 +4,8 @@
 // engine: clock via PlayerProvider, canvas, overlay, subtitles, transport,
 // audio (opt-in) and the panel deck.
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { SCENES } from "../script/scenes";
 import { buildTimeline } from "../engine/timeline";
 import type { Timeline } from "../engine/timeline";
@@ -48,6 +49,8 @@ function SimulatorScreen() {
 
 function SimulatorStage({ timeline }: { timeline: Timeline }) {
   const { clock, restart } = usePlayer();
+  const stageRef = useRef<HTMLElement | null>(null);
+  const box = useMeetBox(stageRef);
 
   // Full playback map. Ignored while typing in form fields and never with
   // modifier keys (no hijacking browser shortcuts).
@@ -115,9 +118,13 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
     <div className="simulator-root">
       <SimulationBadge />
       <div className="sim-main">
-        <main className="sim-stage">
-          <CommandCanvas timeline={timeline} />
-          <SceneOverlay timeline={timeline} />
+        <main className="sim-stage" ref={stageRef}>
+          {/* Exactly 16:9, so the SVG's viewBox fills it edge to edge and the
+              overlays share one coordinate space with the constellation. */}
+          <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
+            <CommandCanvas timeline={timeline} />
+            <SceneOverlay timeline={timeline} compact={box.h < 380} />
+          </div>
         </main>
         <PanelDeck timeline={timeline} />
       </div>
@@ -139,6 +146,31 @@ function nearestSpeedIndex(rate: number): number {
     }
   });
   return best;
+}
+
+/**
+ * The stage's "xMidYMid meet" box: the largest 16:9 rectangle that fits.
+ * Pure layout math via ResizeObserver — no container queries, which misresolve
+ * against flex columns mid-layout. Measured in a layout effect so the first
+ * paint is already correct.
+ */
+function useMeetBox(ref: RefObject<HTMLElement | null>): { w: number; h: number } {
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const stage = ref.current;
+    if (!stage) return;
+    const measure = () => {
+      const { width, height } = stage.getBoundingClientRect();
+      const w = Math.round(Math.min(width, (height * 16) / 9));
+      const h = Math.round((w * 9) / 16);
+      setBox((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [ref]);
+  return box;
 }
 
 /** Next/previous scene start; "previous" returns to this scene's start first. */

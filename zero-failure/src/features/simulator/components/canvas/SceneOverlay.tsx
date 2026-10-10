@@ -1,21 +1,28 @@
 // Scene heading (top-left) + the current animation-action note (top-right),
-// both anchored inside .sim-canvas-safe — a 16:9 box that exactly mirrors the
-// SVG's letterboxed rendering area, so overlay positions track the canvas at
-// every stage size instead of drifting with the stage's own aspect. The
-// top-right quadrant of the viewBox is node-free (OS is top-center, Logic
-// starts at y 310), so a width-capped chip there never covers a character.
-// Discrete: re-renders only when the visible scene/note changes.
+// both anchored to .sim-canvas-frame — the exactly-16:9 box the canvas SVG
+// fills, so overlay positions share one coordinate space with the
+// constellation at every window size. The top-right quadrant of the viewBox
+// is node-free (OS is top-center, Logic starts at y 310), so a width-capped
+// chip there never covers a character. `compact` drops the chip when the
+// canvas box is too small for any overlay text to fit without covering the
+// cast. Discrete: re-renders only when the visible scene/note changes.
 
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
 
-export function SceneOverlay({ timeline }: { timeline: Timeline }) {
+export function SceneOverlay({
+  timeline,
+  compact = false
+}: {
+  timeline: Timeline;
+  compact?: boolean;
+}) {
   const snapshot = useSimSnapshot(timeline.events);
   const scene = snapshot.scene;
   const sceneCount = timeline.scenes.length;
 
   return (
-    <div className="sim-canvas-safe">
+    <>
       <div className="sim-scene-overlay">
         {scene ? (
           <div className="sim-scene-heading">
@@ -32,12 +39,12 @@ export function SceneOverlay({ timeline }: { timeline: Timeline }) {
           </div>
         )}
       </div>
-      {snapshot.note && (
+      {snapshot.note && !compact && (
         <p className="sim-note" role="status">
           <span className="sim-note-kicker">Stage</span>
           {snapshot.note}
         </p>
       )}
-    </div>
+    </>
   );
 }
