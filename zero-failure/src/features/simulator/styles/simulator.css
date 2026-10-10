@@ -719,6 +719,401 @@
   font-size: 0.7rem;
 }
 
+/* ---- panel tabs ---- */
+
+.sim-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.sim-tab {
+  flex: 1;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.sim-tab:hover {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-panel));
+}
+
+.sim-tab-active {
+  color: hsl(var(--sim-accent));
+  background: hsl(var(--sim-panel));
+  border-color: hsl(var(--sim-border));
+}
+
+/* ---- results dashboard ---- */
+
+.sim-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sim-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid hsl(var(--sim-border));
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  background: hsl(var(--sim-panel));
+}
+
+.sim-verdict[data-verdict="pending"] {
+  border-left-color: hsl(var(--sim-text-dim));
+}
+
+.sim-verdict[data-verdict="passed"] {
+  border-left-color: hsl(var(--sim-good));
+}
+
+.sim-verdict[data-verdict="passed-with-warnings"] {
+  border-left-color: hsl(var(--sim-warn));
+}
+
+.sim-verdict[data-verdict="failed"] {
+  border-left-color: hsl(var(--sim-bad));
+}
+
+.sim-verdict[data-verdict="incomplete"] {
+  border-left-color: hsl(var(--sim-timeout));
+}
+
+.sim-verdict[data-verdict="not-configured-only"] {
+  border-left-color: hsl(var(--sim-warn));
+}
+
+.sim-verdict-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: hsl(var(--sim-text));
+}
+
+.sim-verdict-count {
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-verdict-rationale {
+  margin: 0.2rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-verdict-large .sim-verdict-label {
+  font-size: 1.2rem;
+}
+
+.sim-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.sim-filter-chip {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text-dim));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.sim-filter-chip:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--sim-accent) / 0.6);
+}
+
+.sim-filter-active {
+  color: hsl(222 34% 6%);
+  background: hsl(var(--sim-accent));
+  border-color: hsl(var(--sim-accent));
+}
+
+.sim-result-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sim-result-row {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid hsl(var(--sim-border));
+  border-left-width: 3px;
+  border-radius: 0.4rem;
+  background: hsl(var(--sim-panel));
+  font-size: 0.78rem;
+}
+
+.sim-result-row[data-status="not-tested"] {
+  border-left-color: hsl(var(--sim-text-dim));
+  opacity: 0.75;
+}
+
+.sim-result-row[data-status="passed"] {
+  border-left-color: hsl(var(--sim-good));
+}
+
+.sim-result-row[data-status="warning"] {
+  border-left-color: hsl(var(--sim-warn));
+}
+
+.sim-result-row[data-status="failed"] {
+  border-left-color: hsl(var(--sim-bad));
+}
+
+.sim-result-row[data-status="not-configured"] {
+  border-left-color: hsl(var(--sim-warn));
+}
+
+.sim-result-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.sim-result-title {
+  flex: 1;
+  color: hsl(var(--sim-text));
+}
+
+.sim-result-row .sim-status-chip {
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-result-row[data-status="passed"] .sim-status-chip {
+  color: hsl(var(--sim-good));
+}
+
+.sim-result-row[data-status="warning"] .sim-status-chip,
+.sim-result-row[data-status="not-configured"] .sim-status-chip {
+  color: hsl(var(--sim-warn));
+}
+
+.sim-result-row[data-status="failed"] .sim-status-chip {
+  color: hsl(var(--sim-bad));
+}
+
+.sim-result-actual {
+  margin-top: 0.2rem;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-result-attempts {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-timeout));
+}
+
+.sim-report-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: hsl(222 34% 6%);
+  background: hsl(var(--sim-accent));
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.sim-report-btn:hover {
+  background: hsl(var(--sim-accent) / 0.85);
+}
+
+/* ---- evidence panel ---- */
+
+.sim-evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sim-evidence-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sim-evidence-attempts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sim-evidence-attempt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid hsl(var(--sim-border));
+  border-left-width: 3px;
+  border-radius: 0.4rem;
+  background: hsl(var(--sim-panel));
+  font-size: 0.76rem;
+}
+
+.sim-evidence-attempt[data-status="succeeded"] {
+  border-left-color: hsl(var(--sim-good));
+}
+
+.sim-evidence-attempt[data-status="failed"],
+.sim-evidence-attempt[data-status="not-configured"] {
+  border-left-color: hsl(var(--sim-bad));
+}
+
+.sim-evidence-attempt[data-status="timed-out"] {
+  border-left-color: hsl(var(--sim-timeout));
+}
+
+.sim-evidence-attempt[data-status="in-flight"],
+.sim-evidence-attempt[data-status="processing"] {
+  border-left-color: hsl(var(--sim-accent));
+}
+
+.sim-evidence-meta {
+  color: hsl(var(--sim-text));
+}
+
+.sim-evidence-attempt .sim-status-chip {
+  align-self: flex-start;
+}
+
+.sim-evidence-detail {
+  color: hsl(var(--sim-text-dim));
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+/* ---- report overlay ---- */
+
+.sim-report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--sim-bg));
+}
+
+.sim-report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.25rem;
+  background: hsl(var(--sim-bg-raised));
+  border-bottom: 1px solid hsl(var(--sim-border));
+}
+
+.sim-report-title {
+  font-size: 0.95rem;
+}
+
+.sim-report-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sim-report-export {
+  width: auto;
+  height: auto;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+}
+
+.sim-report-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 60rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.sim-report-disclaimer {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: hsl(var(--sim-warn));
+  background: hsl(var(--sim-warn) / 0.08);
+  border: 1px solid hsl(var(--sim-warn) / 0.35);
+  border-radius: 0.5rem;
+}
+
+.sim-report-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sim-report-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sim-report-count {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text-dim));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+}
+
+.sim-report-count[data-status="passed"] {
+  color: hsl(var(--sim-good));
+}
+
+.sim-report-count[data-status="failed"] {
+  color: hsl(var(--sim-bad));
+}
+
+.sim-report-count[data-status="warning"],
+.sim-report-count[data-status="not-configured"] {
+  color: hsl(var(--sim-warn));
+}
+
+.sim-report-overlay details summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: hsl(var(--sim-accent));
+  margin-bottom: 0.5rem;
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 1024px) {

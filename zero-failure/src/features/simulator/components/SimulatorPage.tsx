@@ -15,7 +15,7 @@ import { SceneOverlay } from "./canvas/SceneOverlay";
 import { SimulationBadge } from "./SimulationBadge";
 import { SubtitleBar } from "./SubtitleBar";
 import { TransportBar } from "./transport/TransportBar";
-import { InspectorPanel } from "./panels/InspectorPanel";
+import { PanelDeck } from "./panels/PanelDeck";
 import "../styles/simulator.css";
 
 const SKIP_MS = 10000;
@@ -82,7 +82,7 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
           <CommandCanvas timeline={timeline} />
           <SceneOverlay timeline={timeline} />
         </main>
-        <InspectorPanel timeline={timeline} />
+        <PanelDeck timeline={timeline} />
       </div>
       <SubtitleBar timeline={timeline} />
       <TransportBar timeline={timeline} />

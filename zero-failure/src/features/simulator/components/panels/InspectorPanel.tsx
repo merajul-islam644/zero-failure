@@ -4,56 +4,18 @@
 // dashboard and report. Nothing here executes; the registries are static
 // description data.
 
-import { useMemo } from "react";
-import type { MessageStatus, StructuredMessage } from "../../engine/types";
 import type { Timeline } from "../../engine/timeline";
-import { useEventIndex } from "../../state/PlayerContext";
 import { useRun } from "../../run/RunContext";
 import { CAST_BY_ID } from "../../script/cast";
-
-interface RevealWindow {
-  message: StructuredMessage;
-  dispatchSeq: number;
-  arriveSeq: number;
-  resolveSeq: number;
-}
-
-/** Status shown before the exchange resolves — never leak the final answer. */
-function revealStatus(window: RevealWindow, eventIndex: number): MessageStatus {
-  if (eventIndex >= window.resolveSeq) return window.message.status;
-  if (eventIndex >= window.arriveSeq) return "processing";
-  return "in-flight";
-}
+import { revealStatus, useReveal } from "./reveal";
 
 export function InspectorPanel({ timeline }: { timeline: Timeline }) {
   const { simulatedRegistry, liveRegistry, scenario, run } = useRun();
-  const eventIndex = useEventIndex(timeline.events);
-
-  const windows = useMemo<RevealWindow[]>(() => {
-    const byRequest = new Map<string, RevealWindow>();
-    for (const event of timeline.events) {
-      if (event.kind === "message-dispatch") {
-        byRequest.set(event.message.requestId, {
-          message: event.message,
-          dispatchSeq: event.seq,
-          arriveSeq: Number.MAX_SAFE_INTEGER,
-          resolveSeq: Number.MAX_SAFE_INTEGER
-        });
-      } else if (event.kind === "message-arrive") {
-        const window = byRequest.get(event.messageId);
-        if (window) window.arriveSeq = event.seq;
-      } else if (event.kind === "message-resolve") {
-        const window = byRequest.get(event.messageId);
-        if (window) window.resolveSeq = event.seq;
-      }
-    }
-    return [...byRequest.values()].sort((a, b) => a.dispatchSeq - b.dispatchSeq);
-  }, [timeline]);
-
+  const { windows, eventIndex } = useReveal(timeline);
   const revealed = windows.filter((w) => eventIndex >= w.dispatchSeq);
 
   return (
-    <aside className="sim-aside" aria-label="Run inspector">
+    <>
       <section className="sim-inspector-section">
         <h3 className="sim-inspector-heading">Scenario</h3>
         <p className="sim-scenario-title">{scenario.title}</p>
@@ -129,6 +91,6 @@ export function InspectorPanel({ timeline }: { timeline: Timeline }) {
           </ul>
         )}
       </section>
-    </aside>
+    </>
   );
 }
