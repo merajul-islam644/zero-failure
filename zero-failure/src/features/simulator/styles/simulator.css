@@ -95,16 +95,20 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
+  overflow: hidden; /* the frame is sized to fit — never show scrollbars here */
   background: hsl(var(--sim-stage));
 }
 
 /* Exactly 16:9, sized by JS (useMeetBox): the SVG fills it edge to edge and
-   the overlays share one coordinate space with the constellation. */
+   the overlays share one coordinate space with the constellation. Absolute
+   centering — flex margin:auto kept a stale-line offset. */
 .sim-canvas-frame {
-  position: relative;
-  flex: none;
-  margin: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .sim-canvas {

@@ -161,8 +161,10 @@ function useMeetBox(ref: RefObject<HTMLElement | null>): { w: number; h: number 
     if (!stage) return;
     const measure = () => {
       const { width, height } = stage.getBoundingClientRect();
-      const w = Math.round(Math.min(width, (height * 16) / 9));
-      const h = Math.round((w * 9) / 16);
+      // Floor both: rounding up could exceed the stage by a pixel and spawn
+      // scrollbars (margin:auto centering amplifies any excess).
+      const w = Math.floor(Math.min(width, (height * 16) / 9));
+      const h = Math.floor((w * 9) / 16);
       setBox((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
     };
     measure();
