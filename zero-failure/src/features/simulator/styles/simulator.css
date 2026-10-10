@@ -96,6 +96,20 @@
   flex: 1;
   min-height: 0;
   background: hsl(var(--sim-stage));
+  container-type: size;
+}
+
+/* Mirror of the SVG's letterboxed area: a centered 16:9 box sized exactly
+  like the canvas's "xMidYMid meet" rendering. Overlays anchored here track
+  the canvas at every stage aspect ratio instead of the stage's edges. */
+.sim-canvas-safe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  pointer-events: none;
 }
 
 .sim-canvas {
@@ -138,8 +152,17 @@
   color: hsl(var(--sim-text-dim));
 }
 
+/* Stage-direction chip, top-right of the canvas box: OS ends at viewBox
+  x 845 and Logic's halo at x 1011, so a chip capped at 32% of the canvas
+  width anchored 2.5% from the right stays left of both at any scale
+  (left edge ≥ viewBox 1048). Height varies with wrapping, but horizontal
+  clearance alone guarantees no node is ever covered. */
 .sim-note {
-  margin: 0.25rem 0 0;
+  position: absolute;
+  top: 1rem;
+  right: 2.5%;
+  max-width: min(24rem, 32%);
+  margin: 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.82rem;
   line-height: 1.45;
@@ -149,6 +172,7 @@
   border-left: 3px solid hsl(var(--sim-accent));
   border-radius: 0.5rem;
   backdrop-filter: blur(6px);
+  pointer-events: none;
 }
 
 .sim-note-kicker {
@@ -1298,9 +1322,23 @@
   }
 }
 
+/* Below ~380px of canvas height the canvas box itself is tiny — a
+  fixed-type chip would dwarf the cast no matter where it sits. */
+@container (max-height: 380px) {
+  .sim-note {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .sim-scene-title {
     font-size: 1.05rem;
+  }
+
+  /* On a phone-width canvas no corner stays clear of the cast — drop the
+    chip; the subtitle bar carries the beat's text. */
+  .sim-note {
+    display: none;
   }
 
   .sim-subtitle-text {
