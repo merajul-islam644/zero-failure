@@ -9,7 +9,7 @@ import { SceneNav } from "./SceneNav";
 import { TimelineStrip } from "./TimelineStrip";
 import type { Timeline } from "../../engine/timeline";
 
-const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
+export const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
 const SKIP_MS = 10000;
 
 export function TransportBar({ timeline }: { timeline: Timeline }) {

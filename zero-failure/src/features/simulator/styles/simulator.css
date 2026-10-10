@@ -30,6 +30,35 @@
   }
 }
 
+/* Manual theme overrides (SettingsContext sets data-theme on <html>;
+  "system" removes the attribute so the media query above governs). */
+
+:root[data-theme="dark"] {
+  --sim-bg: 222 34% 6%;
+  --sim-bg-raised: 222 30% 9%;
+  --sim-panel: 222 28% 12%;
+  --sim-border: 222 20% 22%;
+  --sim-text: 218 30% 92%;
+  --sim-text-dim: 218 14% 62%;
+  --sim-accent: 199 95% 58%;
+  --sim-good: 152 70% 45%;
+  --sim-warn: 42 95% 55%;
+  --sim-bad: 0 78% 60%;
+  --sim-timeout: 27 95% 58%;
+  --sim-stage: 222 38% 4%;
+}
+
+:root[data-theme="light"] {
+  --sim-bg: 220 30% 96%;
+  --sim-bg-raised: 0 0% 100%;
+  --sim-panel: 0 0% 100%;
+  --sim-border: 220 18% 84%;
+  --sim-text: 222 30% 12%;
+  --sim-text-dim: 222 12% 40%;
+  --sim-accent: 201 90% 40%;
+  --sim-stage: 220 26% 92%;
+}
+
 .simulator-root {
   --node-hue: var(--sim-accent);
   display: flex;
@@ -1114,11 +1143,148 @@
   margin-bottom: 0.5rem;
 }
 
+/* ---- config panel ---- */
+
+.sim-config {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.sim-select {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.82rem;
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.5rem;
+}
+
+.sim-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-field .sim-select {
+  width: auto;
+  min-width: 8rem;
+}
+
+.sim-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: hsl(var(--sim-text));
+  cursor: pointer;
+}
+
+.sim-toggle input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: hsl(var(--sim-accent));
+}
+
+.sim-keymap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-keymap kbd {
+  display: inline-block;
+  min-width: 1.4rem;
+  padding: 0.1rem 0.35rem;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+}
+
+/* ---- drawer (panel deck below 1024 px) ---- */
+
+.sim-drawer-btn {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 55;
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(222 34% 6%);
+  background: hsl(var(--sim-accent));
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px hsl(var(--sim-bg) / 0.5);
+}
+
+.sim-drawer-close {
+  display: none;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.sim-aside-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.sim-aside-top .sim-tabs {
+  flex: 1;
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 1024px) {
+  .sim-drawer-btn {
+    display: flex;
+  }
+
+  .sim-drawer-close {
+    display: inline-flex;
+  }
+
   .sim-aside {
-    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 56;
+    width: min(21rem, 92vw);
+    transform: translateX(105%);
+    transition: transform 220ms ease;
+    box-shadow: -8px 0 24px hsl(var(--sim-bg) / 0.45);
+  }
+
+  .sim-aside-open {
+    transform: none;
   }
 }
 
@@ -1151,4 +1317,32 @@
   .sim-node[data-dimmed] {
     transition: none;
   }
+}
+
+/* Manual motion overrides (SettingsContext sets data-motion on <html>;
+  "system" removes the attribute so the media query above governs). */
+
+html[data-motion="reduce"] .sim-node[data-state="speaking"] .sim-node-halo,
+html[data-motion="reduce"] .sim-node-sweep {
+  animation: none;
+}
+
+html[data-motion="reduce"] .sim-node[data-dimmed] {
+  transition: none;
+}
+
+html[data-motion="reduce"] .sim-aside {
+  transition: none;
+}
+
+html[data-motion="full"] .sim-node[data-state="speaking"] .sim-node-halo {
+  animation: sim-pulse 1.6s ease-in-out infinite;
+}
+
+html[data-motion="full"] .sim-node-sweep {
+  animation: sim-sweep 1.4s linear infinite;
+}
+
+html[data-motion="full"] .sim-node[data-dimmed] {
+  transition: opacity 600ms ease;
 }
