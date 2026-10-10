@@ -5,15 +5,20 @@ import { useRef } from "react";
 import { Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { usePlaybackTime, usePlayer } from "../../state/PlayerContext";
 import { formatTime } from "../../engine/format";
+import { SceneNav } from "./SceneNav";
+import { TimelineStrip } from "./TimelineStrip";
+import type { Timeline } from "../../engine/timeline";
 
 const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
 const SKIP_MS = 10000;
 
-export function TransportBar({ duration }: { duration: number }) {
+export function TransportBar({ timeline }: { timeline: Timeline }) {
   const { clock, playing, restart } = usePlayer();
+  const duration = timeline.totalMs;
 
   return (
     <div className="sim-transport">
+      <TimelineStrip timeline={timeline} />
       <Scrubber duration={duration} />
       <div className="sim-transport-row">
         <div className="sim-transport-buttons">
@@ -53,6 +58,7 @@ export function TransportBar({ duration }: { duration: number }) {
           >
             <ChevronsRight size={18} aria-hidden />
           </button>
+          <SceneNav timeline={timeline} />
         </div>
         <label className="sim-speed">
           <span>Speed</span>

@@ -18,13 +18,11 @@ describe("buildTimeline (scene 1)", () => {
     }
   });
 
-  it("opens and closes exactly one scene with matching indices", () => {
+  it("opens and closes every scene with matching indices", () => {
     const starts = timeline.events.filter((e) => e.kind === "scene-start");
     const ends = timeline.events.filter((e) => e.kind === "scene-end");
-    expect(starts).toHaveLength(1);
-    expect(ends).toHaveLength(1);
-    expect(starts[0]?.sceneIndex).toBe(1);
-    expect(ends[0]?.sceneIndex).toBe(1);
+    expect(starts.map((e) => e.sceneIndex)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(ends.map((e) => e.sceneIndex)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it("opens with scene-start, holds the light-up note, then the first line", () => {
@@ -151,11 +149,14 @@ describe("deriveStateAt", () => {
 });
 
 describe("buildSceneTable", () => {
-  it("builds one monotonic, non-overlapping window", () => {
+  it("builds monotonic, non-overlapping windows in scene order", () => {
     const table = buildSceneTable(timeline.events);
-    expect(table).toHaveLength(1);
-    const window = table[0];
-    expect(window?.index).toBe(1);
-    expect(window?.endMs).toBeGreaterThan(window?.startMs ?? 0);
+    expect(table.map((w) => w.index)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (let i = 0; i < table.length; i++) {
+      const window = table[i];
+      expect(window?.endMs).toBeGreaterThan(window?.startMs ?? 0);
+      const prev = table[i - 1];
+      if (prev) expect(window?.startMs).toBe(prev.endMs);
+    }
   });
 });

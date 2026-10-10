@@ -1,7 +1,7 @@
 // The command-center canvas: fixed 1600x900 viewBox, scales with its
-// container. M1 renders cast + static edges; packets and edge highlighting
-// arrive with PacketLayer in M2. One useSimSnapshot subscription for the
-// whole canvas keeps re-renders discrete.
+// container. Edges + nodes are discrete (one useSimSnapshot); packets are
+// the per-frame layer. One useSimSnapshot subscription for the whole canvas
+// keeps re-renders off the 60fps path.
 
 import { useMemo } from "react";
 import { CAST } from "../../script/cast";
@@ -9,7 +9,9 @@ import { SCENES } from "../../script/scenes";
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { PlatformId } from "../../engine/types";
 import type { Timeline } from "../../engine/timeline";
+import { quadPath } from "./geometry";
 import { CharacterNode } from "./CharacterNode";
+import { PacketLayer } from "./PacketLayer";
 
 const sceneCastMap = new Map<number, PlatformId[]>(SCENES.map((s) => [s.index, s.cast]));
 
@@ -19,16 +21,12 @@ interface CommandCanvasProps {
 
 export function CommandCanvas({ timeline }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
-  const castIds = useMemo(() => new Set<PlatformId>(CAST.map((c) => c.id)), []);
 
   const visibleCast = useMemo(() => {
     const scene = snapshot.scene;
     if (!scene) return [];
-    const def = timeline.scenes.find((s) => s.index === scene.index);
-    // Scene cast arrives with the scene definition; before the first
-    // scene-start event the whole ensemble is dark.
-    return def ? sceneCast(def.index) : [];
-  }, [snapshot.scene, timeline.scenes]);
+    return sceneCastMap.get(scene.index) ?? [];
+  }, [snapshot.scene]);
 
   const edges = useMemo(() => {
     // Stage direction (scene 1): "connections between characters become
@@ -39,8 +37,7 @@ export function CommandCanvas({ timeline }: CommandCanvasProps) {
       .filter((id) => id !== "os")
       .map((id) => {
         const target = CAST.find((c) => c.id === id);
-        if (!target) return null;
-        return { from: os, to: target, key: `edge-os-${id}` };
+        return target ? { from: os, to: target, key: `edge-os-${id}` } : null;
       })
       .filter((e): e is NonNullable<typeof e> => e !== null);
   }, [visibleCast]);
@@ -63,11 +60,7 @@ export function CommandCanvas({ timeline }: CommandCanvasProps) {
 
       <g className="sim-edges">
         {edges.map((edge) => (
-          <path
-            key={edge.key}
-            className="sim-edge"
-            d={quadPath(edge.from.x, edge.from.y, edge.to.x, edge.to.y)}
-          />
+          <path key={edge.key} className="sim-edge" d={quadPath(edge.from, edge.to)} />
         ))}
       </g>
 
@@ -77,30 +70,12 @@ export function CommandCanvas({ timeline }: CommandCanvasProps) {
             key={character.id}
             character={character}
             state={snapshot.states[character.id]}
-            dimmed={!castIds.has(character.id) || !visibleCast.includes(character.id)}
+            dimmed={!visibleCast.includes(character.id)}
           />
         ))}
       </g>
+
+      <PacketLayer timeline={timeline} />
     </svg>
   );
-}
-
-/** Quadratic arc between two nodes, bowed slightly for readability. */
-function quadPath(x1: number, y1: number, x2: number, y2: number): string {
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy) || 1;
-  // Perpendicular offset ~8% of length, always bending away from center.
-  const bow = len * 0.08 * (mx < 800 ? 1 : -1);
-  const cx = mx + (-dy / len) * bow;
-  const cy = my + (dx / len) * bow;
-  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
-}
-
-function sceneCast(sceneIndex: number): PlatformId[] {
-  // Cast membership comes from the scene definitions via the timeline's
-  // scene-start; kept as a lookup so the canvas never imports scenes directly.
-  return sceneCastMap.get(sceneIndex) ?? [];
 }

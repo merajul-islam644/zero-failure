@@ -264,6 +264,130 @@
   stroke-dasharray: 5 7;
 }
 
+.sim-edge-active {
+  fill: none;
+  stroke-width: 2.4;
+  opacity: 0.75;
+}
+
+/* ---- packets ---- */
+
+.sim-packet-dot {
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.sim-packet-ring {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.sim-packet-chip {
+  fill: hsl(var(--sim-bg) / 0.85);
+  stroke: hsl(var(--sim-border));
+}
+
+.sim-packet-label {
+  font-size: 13px;
+  fill: hsl(var(--sim-text));
+}
+
+.sim-packet-retry {
+  font-size: 15px;
+  font-weight: 700;
+  fill: hsl(var(--sim-timeout));
+}
+
+/* ---- story strip ---- */
+
+.sim-strip {
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.sim-strip-track {
+  display: flex;
+  gap: 2px;
+  height: 1.4rem;
+}
+
+.sim-strip-block {
+  position: relative;
+  min-width: 1.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text-dim));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.sim-strip-block:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--sim-accent) / 0.6);
+}
+
+.sim-strip-playhead {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 1.7rem;
+  background: hsl(var(--sim-accent));
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* ---- scene nav ---- */
+
+.sim-scene-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sim-scene-chips {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.sim-chip {
+  min-width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text-dim));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.sim-chip:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--sim-accent) / 0.6);
+}
+
+.sim-chip-active {
+  color: hsl(222 34% 6%);
+  background: hsl(var(--sim-accent));
+  border-color: hsl(var(--sim-accent));
+}
+
+.sim-btn-small {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sim-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* ---- subtitles ---- */
 
 .sim-subtitle {

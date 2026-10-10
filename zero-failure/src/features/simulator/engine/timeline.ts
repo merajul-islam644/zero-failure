@@ -13,7 +13,6 @@ import { buildSceneTable, type SceneWindow } from "./select";
 import type {
   Beat,
   CharacterState,
-  PlatformId,
   RunResult,
   SceneDefinition,
   StructuredMessage,
@@ -138,16 +137,28 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
           });
           const t = sceneStart + item.startMs;
           const d = item.durationMs;
-          push({
-            kind: "character-state",
-            time: t,
-            id: `${id}-st`,
-            platform: beat.speaker as PlatformId,
-            state: "speaking",
-            durationMs: d
-          });
-          // Non-speaking cast listens; skipped for all-cast lines (everyone speaks).
-          if (beat.speaker !== "all-cast") {
+          if (beat.speaker === "all-cast") {
+            // Collective line: the whole present cast speaks together.
+            for (const member of scene.cast) {
+              push({
+                kind: "character-state",
+                time: t,
+                id: `${id}-spk-${member}`,
+                platform: member,
+                state: "speaking",
+                durationMs: d
+              });
+            }
+          } else {
+            push({
+              kind: "character-state",
+              time: t,
+              id: `${id}-st`,
+              platform: beat.speaker,
+              state: "speaking",
+              durationMs: d
+            });
+            // Non-speaking cast listens.
             for (const member of scene.cast) {
               if (member !== beat.speaker) {
                 push({
