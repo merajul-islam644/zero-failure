@@ -6,6 +6,8 @@ import { buildTimeline } from "./timeline";
 import { buildSceneTable, deriveStateAt, eventIndexAt, sceneAt } from "./select";
 import { SCENES } from "../script/scenes";
 import { PLATFORMS } from "../script/cast";
+import { SCENARIOS } from "../scenarios/registry";
+import { executeScenario } from "../run/runner";
 
 const timeline = buildTimeline(SCENES, null);
 
@@ -157,6 +159,41 @@ describe("buildSceneTable", () => {
       expect(window?.endMs).toBeGreaterThan(window?.startMs ?? 0);
       const prev = table[i - 1];
       if (prev) expect(window?.startMs).toBe(prev.endMs);
+    }
+  });
+});
+
+describe("buildTimeline (with a compiled run)", () => {
+  it("gives every result an assertion-result event, even blocked exchanges", async () => {
+    const scenario = SCENARIOS.find((s) => s.id === "dependency-unavailable");
+    if (!scenario) throw new Error("dependency-unavailable scenario missing");
+    const run = await executeScenario(scenario, "simulated");
+    const compiled = buildTimeline(SCENES, run);
+
+    // The blocker fails, so dependent exchanges are skipped and never
+    // resolve — their assertion events must still land (at the finale),
+    // or the dashboard could never converge to all results revealed.
+    const fired = new Set(
+      compiled.events
+        .filter((e) => e.kind === "assertion-result")
+        .map((e) => e.assertionId)
+    );
+    expect(fired.size).toBe(run.results.length);
+    for (const result of run.results) {
+      expect(fired.has(result.assertionId), result.assertionId).toBe(true);
+    }
+
+    // And they land at the finale, not in the middle of an earlier scene.
+    const lastSceneEnd = Math.max(
+      ...compiled.events.filter((e) => e.kind === "scene-end").map((e) => e.time)
+    );
+    const blocked = run.results.filter((r) => r.status === "not-tested");
+    expect(blocked.length).toBeGreaterThan(0);
+    for (const result of blocked) {
+      const event = compiled.events.find(
+        (e) => e.kind === "assertion-result" && e.assertionId === result.assertionId
+      );
+      expect(event?.time).toBeGreaterThanOrEqual(lastSceneEnd);
     }
   });
 });

@@ -5,3 +5,5 @@ dist/
 .env.*.local
 env.*
 .cert/
+test-results/
+playwright-report/

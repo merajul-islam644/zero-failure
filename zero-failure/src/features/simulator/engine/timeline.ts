@@ -277,10 +277,12 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
       const time = result.correlationId
         ? resolveByCorrelation.get(result.correlationId)
         : cursor;
-      if (time === undefined) continue;
+      // Blocked exchanges never resolve (their beats are skipped), so their
+      // outcomes land at the finale — the moment it becomes clear they
+      // never ran. Same placement as process rules.
       push({
         kind: "assertion-result",
-        time,
+        time: time ?? cursor,
         id: `assert-${result.assertionId}`,
         assertionId: result.assertionId
       });
