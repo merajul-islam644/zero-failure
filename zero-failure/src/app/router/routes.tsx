@@ -46,10 +46,15 @@ export function AppRouter() {
     );
   }
 
-  // Public simulator — the app's main screen. No RequireAuth, no AppShell:
-  // the story plays for anyone; account features stay behind login.
+  // The simulator is the app's main screen, behind the login gate: signed-out
+  // visitors land on /login?returnTo=/ first and return into the story after
+  // signing in. No AppShell — the stage owns the whole viewport.
   if (path === "/") {
-    return <SimulatorPage />;
+    return (
+      <RequireAuth currentPath={path} onNavigate={navigate}>
+        <SimulatorPage />
+      </RequireAuth>
+    );
   }
 
   const Page = protectedRoutes[path as keyof typeof protectedRoutes];
