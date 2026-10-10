@@ -525,7 +525,207 @@
   border-radius: 0.5rem;
 }
 
+/* ---- main row: stage + inspector ---- */
+
+.sim-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---- inspector ---- */
+
+.sim-aside {
+  flex: none;
+  width: 21rem;
+  overflow-y: auto;
+  padding: 0.9rem 1rem 1.5rem;
+  background: hsl(var(--sim-bg-raised));
+  border-left: 1px solid hsl(var(--sim-border));
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.sim-inspector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sim-inspector-heading {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-count {
+  color: hsl(var(--sim-accent));
+  letter-spacing: 0;
+}
+
+.sim-scenario-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: hsl(var(--sim-text));
+}
+
+.sim-scenario-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-conn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sim-conn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+  border-radius: 0.35rem;
+  background: hsl(var(--sim-panel));
+}
+
+.sim-conn-name {
+  color: hsl(var(--sim-text));
+}
+
+.sim-conn-status {
+  color: hsl(var(--sim-good));
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.sim-conn-row[data-configured="not-configured"] .sim-conn-status {
+  color: hsl(var(--sim-warn));
+}
+
+.sim-msg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sim-msg-row {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid hsl(var(--sim-border));
+  border-left-width: 3px;
+  border-radius: 0.4rem;
+  background: hsl(var(--sim-panel));
+  font-size: 0.78rem;
+}
+
+.sim-msg-row[data-status="in-flight"],
+.sim-msg-row[data-status="processing"] {
+  border-left-color: hsl(var(--sim-accent));
+}
+
+.sim-msg-row[data-status="succeeded"] {
+  border-left-color: hsl(var(--sim-good));
+}
+
+.sim-msg-row[data-status="failed"],
+.sim-msg-row[data-status="not-configured"] {
+  border-left-color: hsl(var(--sim-bad));
+}
+
+.sim-msg-row[data-status="timed-out"] {
+  border-left-color: hsl(var(--sim-timeout));
+}
+
+.sim-msg-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.sim-id {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.74rem;
+  color: hsl(var(--sim-accent));
+}
+
+.sim-attempt {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: hsl(var(--sim-timeout));
+}
+
+.sim-status-chip {
+  margin-left: auto;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-msg-row[data-status="succeeded"] .sim-status-chip {
+  color: hsl(var(--sim-good));
+}
+
+.sim-msg-row[data-status="failed"] .sim-status-chip,
+.sim-msg-row[data-status="not-configured"] .sim-status-chip {
+  color: hsl(var(--sim-bad));
+}
+
+.sim-msg-row[data-status="timed-out"] .sim-status-chip {
+  color: hsl(var(--sim-timeout));
+}
+
+.sim-msg-row[data-status="in-flight"] .sim-status-chip,
+.sim-msg-row[data-status="processing"] .sim-status-chip {
+  color: hsl(var(--sim-accent));
+}
+
+.sim-msg-op {
+  margin-top: 0.15rem;
+  color: hsl(var(--sim-text));
+}
+
+.sim-msg-detail {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-msg-error {
+  color: hsl(var(--sim-bad));
+}
+
+.sim-msg-duration {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+}
+
 /* ---- responsive ---- */
+
+@media (max-width: 1024px) {
+  .sim-aside {
+    display: none;
+  }
+}
 
 @media (max-width: 768px) {
   .sim-scene-title {

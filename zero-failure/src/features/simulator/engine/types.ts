@@ -167,6 +167,8 @@ export interface AttemptRecord {
 export interface TestResult {
   assertionId: string;
   runId: string;
+  /** Message-kind asserts an exchange chain; process-kind asserts a structural property. */
+  kind: "message" | "process";
   status: AssertionStatus;
   mode: ExecutionMode;
   expected: string;
@@ -219,7 +221,7 @@ export interface PlatformConnector {
 // ---- Scenarios ----
 
 export interface ScenarioInjection {
-  match: { platform?: PlatformId; operation?: string; attempt?: number };
+  match: { platform?: PlatformId; operation?: string; attempt?: number; correlationId?: string };
   outcome: "succeed" | "fail" | "timeout" | "not-configured" | "delay";
   errorCode?: string;
   errorMessage?: string;

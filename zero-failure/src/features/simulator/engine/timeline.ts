@@ -76,7 +76,9 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
       (m) => m.correlationId === correlationId && m.attempt === attempt
     );
     if (found) return found;
-    // Placeholder envelope — replaced by the runner in M3; scene01 has none.
+    // Placeholder envelope — only used while run is null (engine bring-up).
+    // With a run present, a missing message means the exchange was BLOCKED
+    // and the beat is skipped entirely — never shown as a fake success.
     return {
       runId: run?.runId ?? "pending-run",
       correlationId,
@@ -94,6 +96,10 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
       simulated: true
     };
   };
+
+  /** With a run: a correlation with zero executed messages was blocked. */
+  const isBlocked = (correlationId: string): boolean =>
+    run !== null && !run.messages.some((m) => m.correlationId === correlationId);
 
   const flashState = (status: StructuredMessage["status"]): CharacterState => {
     switch (status) {
@@ -175,6 +181,9 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
           break;
         }
         case "exchange": {
+          // A blocked dependent was never dispatched — no packets, no fake
+          // resolve; the dashboard reports it as not-tested instead.
+          if (isBlocked(beat.correlationId)) break;
           const t0 = sceneStart + item.startMs;
           const travelMs = Math.min(700, item.durationMs);
           const remaining = item.durationMs - travelMs;
@@ -218,17 +227,6 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
             state: flash,
             durationMs: FLASH_MS
           });
-          if (beat.outcomeRef && run) {
-            const result = run.results.find((r) => r.assertionId === beat.outcomeRef);
-            if (result) {
-              push({
-                kind: "assertion-result",
-                time: t0 + travelMs + processingMs,
-                id: `${id}-assert`,
-                assertionId: beat.outcomeRef
-              });
-            }
-          }
           break;
         }
         case "processing": {
@@ -258,6 +256,35 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
       endMs: cursor
     });
     push({ kind: "scene-end", time: cursor, sceneIndex: scene.index });
+  }
+
+  // Assertion-result events, driven by the run's results (never by free-form
+  // beat labels): a message-kind result lands at the final resolve of its
+  // correlation; process-kind results — structural properties of the whole
+  // run — land at the finale.
+  if (run) {
+    const resolveByCorrelation = new Map<string, number>();
+    const correlationOfRequest = new Map<string, string>();
+    for (const event of events) {
+      if (event.kind === "message-dispatch") {
+        correlationOfRequest.set(event.message.requestId, event.message.correlationId);
+      } else if (event.kind === "message-resolve") {
+        const correlationId = correlationOfRequest.get(event.messageId);
+        if (correlationId) resolveByCorrelation.set(correlationId, event.time);
+      }
+    }
+    for (const result of run.results) {
+      const time = result.correlationId
+        ? resolveByCorrelation.get(result.correlationId)
+        : cursor;
+      if (time === undefined) continue;
+      push({
+        kind: "assertion-result",
+        time,
+        id: `assert-${result.assertionId}`,
+        assertionId: result.assertionId
+      });
+    }
   }
 
   // Sorted by time with stable seq tie-break.
