@@ -14,6 +14,7 @@ import { RunProvider, useRun } from "../run/RunContext";
 import { SettingsProvider } from "../state/SettingsContext";
 import { CommandCanvas } from "./canvas/CommandCanvas";
 import { SceneOverlay } from "./canvas/SceneOverlay";
+import { AccountBar } from "./AccountBar";
 import { SimulationBadge } from "./SimulationBadge";
 import { SubtitleBar } from "./SubtitleBar";
 import { TransportBar, SPEEDS } from "./transport/TransportBar";
@@ -116,7 +117,10 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
 
   return (
     <div className="simulator-root">
-      <SimulationBadge />
+      <div className="sim-topbar">
+        <SimulationBadge />
+        <AccountBar />
+      </div>
       <div className="sim-main">
         <main className="sim-stage" ref={stageRef}>
           {/* Exactly 16:9, so the SVG's viewBox fills it edge to edge and the

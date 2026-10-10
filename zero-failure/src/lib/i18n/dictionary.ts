@@ -2,6 +2,7 @@ export const defaultDictionary = {
   "app.name": "Blocks App",
   "nav.profile": "Profile",
   "nav.logout": "Log out",
+  "nav.signIn": "Sign in",
   "auth.welcome": "Welcome back",
   "auth.subtitle": "Sign in with your Blocks account to continue.",
   "auth.continue": "Continue with Blocks",
