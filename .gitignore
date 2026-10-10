@@ -1,0 +1,6 @@
+# Local tooling caches and session artifacts (never part of the repo)
+npm-cache/
+.playwright-mcp/
+
+# Transient script transcript used only to transcribe scene data; removed after M2
+chatgpt-script-extract.txt
