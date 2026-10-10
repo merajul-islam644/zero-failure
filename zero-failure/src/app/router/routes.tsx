@@ -6,9 +6,10 @@ import { ErrorPage } from "../../features/auth/ErrorPage";
 import { LoginPage } from "../../features/auth/LoginPage";
 import { NotFoundPage } from "../../features/auth/NotFoundPage";
 import { ProfilePage } from "../../features/profile/ProfilePage";
+import { SimulatorPage } from "../../features/simulator/components/SimulatorPage";
 
 const protectedRoutes = {
-  "/": ProfilePage,
+  "/account": ProfilePage,
   "/error": ErrorPage
 };
 
@@ -43,6 +44,12 @@ export function AppRouter() {
         <LoginPage returnTo={returnTo} />
       </RedirectIfAuthenticated>
     );
+  }
+
+  // Public simulator — the app's main screen. No RequireAuth, no AppShell:
+  // the story plays for anyone; account features stay behind login.
+  if (path === "/") {
+    return <SimulatorPage />;
   }
 
   const Page = protectedRoutes[path as keyof typeof protectedRoutes];
