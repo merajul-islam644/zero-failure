@@ -4,3 +4,9 @@ npm-cache/
 
 # Transient script transcript used only to transcribe scene data; removed after M2
 chatgpt-script-extract.txt
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+.cert/
