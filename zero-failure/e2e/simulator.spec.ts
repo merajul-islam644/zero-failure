@@ -97,12 +97,18 @@ test.describe("verdict matrix", () => {
 
   test("config panel offers narration voice selection", async ({ page }) => {
     await openTab(page, "Config");
-    const voiceSelect = page.locator('[aria-label="Narration voice"]');
+    const voiceSelect = page.locator('[aria-label="Default narration voice"]');
     await expect(voiceSelect).toBeVisible();
     // Headless engines may load zero voices; Auto must always be there.
     await expect(voiceSelect.locator('option[value="auto"]')).toHaveText(
       "Auto (system default)",
     );
+    // Per-character cast pickers: one per character, all defaulting to cast.
+    for (const name of ["OS", "IAM", "Monitor", "AI Agent"]) {
+      const picker = page.locator(`[aria-label="Voice for ${name}"]`);
+      await expect(picker).toBeVisible();
+      await expect(picker).toHaveValue("cast");
+    }
   });
 });
 

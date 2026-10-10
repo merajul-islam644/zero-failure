@@ -5,6 +5,7 @@
 // browser has no speech engine (headless, jsdom, screen-reader-only setups).
 
 import { useEffect, useState } from "react";
+import { CAST } from "../script/cast";
 import type { PlatformId, SpeakerId } from "../engine/types";
 
 export interface NarrationVoice {
@@ -14,26 +15,47 @@ export interface NarrationVoice {
 }
 
 /**
- * Per-character pitch (speechSynthesis allows 0–2). Distinct, deterministic,
- * and grouped roughly by role so back-and-forth dialogue is audible as a
- * change of speaker, not a monotone relay.
+ * Per-character sound profile (speechSynthesis ranges 0–2 each). The engine
+ * voices available to browsers are few — Windows typically ships three — so
+ * identity comes from voice × pitch × speed together. Wide, deterministic
+ * spreads make even one engine voice read as a cast; with several voices
+ * cycled across the roster, every role is unmistakable.
  */
 const CAST_PITCH: Record<PlatformId, number> = {
-  os: 0.95, // command center lead — level
-  iam: 1.0, // gatekeeper — neutral
-  "data-gateway": 0.9, // pipeline — lower
-  logic: 1.05, // workflow brain — slight lift
-  release: 1.1, // deployment energy — brighter
-  monitor: 0.85, // watchtower — deepest
-  "ai-agent": 1.15, // assistant — highest
-  utilities: 0.92, // notifications — low-mid
-  localization: 1.08, // language desk — bright
-  storage: 0.88 // archive — low
+  os: 1.0, // command center lead — level anchor
+  iam: 0.95, // gatekeeper — firm, slightly low
+  "data-gateway": 0.8, // pipeline — low
+  logic: 1.2, // workflow brain — lifted
+  release: 1.35, // deployment energy — bright
+  monitor: 0.7, // watchtower — deepest
+  "ai-agent": 1.5, // assistant — highest, chirpy
+  utilities: 0.9, // notifications — low-mid
+  localization: 1.25, // language desk — bright
+  storage: 0.75 // archive — very low
+};
+
+const CAST_RATE: Record<PlatformId, number> = {
+  os: 1.0, // measured
+  iam: 0.95, // deliberate
+  "data-gateway": 0.9, // heavy
+  logic: 1.1, // brisk
+  release: 1.15, // quick
+  monitor: 0.85, // slow, deliberate watch
+  "ai-agent": 1.2, // fast assistant
+  utilities: 0.95, // even
+  localization: 1.1, // lively
+  storage: 0.85 // slow
 };
 
 export function pitchForPlatform(platform: SpeakerId): number {
   if (platform === "all-cast") return 1; // chorus lines — no single voice to tint
   return CAST_PITCH[platform] ?? 1;
+}
+
+/** Per-character speed multiplier layered on the playback rate. */
+export function rateForPlatform(platform: SpeakerId): number {
+  if (platform === "all-cast") return 1;
+  return CAST_RATE[platform] ?? 1;
 }
 
 /** English voices first (default narration language), then alphabetical. */
@@ -95,4 +117,46 @@ export function resolveVoice(voiceURI: string): SpeechSynthesisVoice | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Auto-cast: cycle the installed voices across the ten characters so the
+ * cast draws from every engine voice available (each with its own pitch on
+ * top). With one installed voice this degenerates to pitch-only casting;
+ * with more, neighbouring characters tend to sound different.
+ */
+export function castPlan(installed: NarrationVoice[]): Record<PlatformId, string> {
+  const plan = {} as Record<PlatformId, string>;
+  if (installed.length === 0) {
+    for (const character of CAST) plan[character.id] = "auto";
+    return plan;
+  }
+  CAST.forEach((character, i) => {
+    const voice = installed[i % installed.length];
+    plan[character.id] = voice ? voice.voiceURI : CAST_SETTING.auto;
+  });
+  return plan;
+}
+
+export const CAST_SETTING = { cast: "cast", auto: "auto" } as const;
+
+/**
+ * Voice for one dialogue line: the character's override, the auto-cast
+ * plan, or the global default ("auto"/all-cast lines). Falls back to the
+ * default voice whenever a saved URI no longer resolves.
+ */
+export function resolveSpeakerVoice(
+  speaker: SpeakerId,
+  overrides: Record<string, string>,
+  plan: Record<string, string>,
+  fallback: SpeechSynthesisVoice | null
+): SpeechSynthesisVoice | null {
+  if (speaker === "all-cast") return fallback;
+  const setting = overrides[speaker] ?? CAST_SETTING.cast;
+  const uri =
+    setting === CAST_SETTING.cast
+      ? (plan[speaker] ?? CAST_SETTING.auto)
+      : setting;
+  if (uri === CAST_SETTING.auto) return fallback;
+  return resolveVoice(uri) ?? fallback;
 }

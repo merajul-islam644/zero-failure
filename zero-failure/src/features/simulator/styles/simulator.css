@@ -1170,6 +1170,16 @@
   color: hsl(var(--sim-text-dim));
 }
 
+/* Per-character voice rows: tight label + select grid. */
+.sim-cast-field {
+  padding: 0.15rem 0;
+}
+
+.sim-cast-field .sim-select {
+  flex: 1 1 auto;
+  max-width: 13rem;
+}
+
 .sim-field .sim-select {
   width: auto;
   min-width: 8rem;

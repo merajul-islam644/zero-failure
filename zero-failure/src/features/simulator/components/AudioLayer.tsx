@@ -1,27 +1,45 @@
 // Audio layer: silent unless the user enables narration/sfx in settings.
 // Subscribes to the event index (discrete, not per-frame): every event
-// between the previous and current index fires its sound; a large jump
-// (seek) stays silent instead of machine-gunning the whole skip.
+// between the previous and current index fires its sound; seeks stay silent.
+//
+// Narration runs as audiobook mode: when a dialogue line starts, the story
+// pauses until the line has been spoken in full, then resumes. Chasing the
+// subtitle window instead forces mid-word cancellations (the engines speak
+// slower than the script pace) — waiting for the voice keeps every line
+// complete and perfectly matched to the subtitle on screen.
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Timeline } from "../engine/timeline";
+import type { SpeakerId } from "../engine/types";
 import { useEventIndex, usePlayer } from "../state/PlayerContext";
 import { useSettings } from "../state/SettingsContext";
 import { SfxController, speak, stopSpeech } from "../state/audio";
-import { pitchForPlatform, resolveVoice } from "../state/voices";
+import { castPlan, pitchForPlatform, rateForPlatform, resolveSpeakerVoice, resolveVoice, useVoices } from "../state/voices";
 
-/** More than this many events crossed in one tick means the user seeked. */
-const SEEK_JUMP_EVENTS = 4;
+/** Head movement beyond what the rate allows (plus slack) means the user seeked. */
+const SEEK_HEAD_TOLERANCE_MS = 1200;
+/** Absolute cap on crossed events per step — a fast seek crosses hundreds. */
+const SEEK_EVENT_CAP = 40;
 
 export function AudioLayer({ timeline }: { timeline: Timeline }) {
   const { clock, playing } = usePlayer();
-  const { narration, sfx, voice } = useSettings();
+  const { narration, sfx, voice, castVoices } = useSettings();
   const index = useEventIndex(timeline.events);
   const prevIndexRef = useRef(index);
   const sfxRef = useRef<SfxController | null>(null);
+  const lastRunRef = useRef<{ head: number; at: number }>({
+    head: clock.time,
+    at: performance.now()
+  });
+  // Audiobook flow bookkeeping: the next !playing run is our own narration
+  // pause, and (while set) a paused story waits for speech to finish.
+  const selfPauseRef = useRef(false);
+  const pendingResumeRef = useRef(false);
 
   // Resolve the saved voiceURI against installed voices; null = engine default.
   const narrationVoice = useMemo(() => resolveVoice(voice), [voice]);
+  const installed = useVoices();
+  const plan = useMemo(() => castPlan(installed), [installed]);
 
   // requestId -> final status, so resolves can blip fail vs success.
   const statusByRequest = useMemo(() => {
@@ -30,15 +48,61 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
     return map;
   }, [timeline]);
 
+  // Narration entry: character voice/pitch/speed; while the story plays,
+  // pause it for the duration and resume when the utterance completes.
+  const speakDialogue = useCallback(
+    (text: string, speaker: SpeakerId) => {
+      const spoke = speak(text, {
+        playbackRate: clock.playbackRate,
+        voice: resolveSpeakerVoice(speaker, castVoices, plan, narrationVoice),
+        pitch: pitchForPlatform(speaker),
+        rate: rateForPlatform(speaker),
+        onDone: () => {
+          if (pendingResumeRef.current) {
+            pendingResumeRef.current = false;
+            clock.play();
+          }
+        }
+      });
+      if (spoke && playing) {
+        selfPauseRef.current = true;
+        pendingResumeRef.current = true;
+        clock.pause();
+      }
+    },
+    [clock, castVoices, plan, narrationVoice, playing]
+  );
+
   useEffect(() => {
+    const now = performance.now();
+    const prev = lastRunRef.current;
+    lastRunRef.current = { head: clock.time, at: now };
+
     const crossed = timeline.events.slice(prevIndexRef.current + 1, index + 1);
     prevIndexRef.current = index;
 
-    if (!playing) {
+    const expectedMs = Math.max(0, (now - prev.at) * clock.playbackRate);
+    const movedMs = Math.abs(clock.time - prev.head);
+    const seeked =
+      movedMs > expectedMs + SEEK_HEAD_TOLERANCE_MS || crossed.length > SEEK_EVENT_CAP;
+    if (seeked) {
+      // A stale line must not play over the new position; its onDone resumes
+      // the story from wherever the head landed.
       stopSpeech();
       return;
     }
-    if (crossed.length === 0 || crossed.length > SEEK_JUMP_EVENTS) return; // seek: silence
+
+    if (!playing) {
+      if (selfPauseRef.current) {
+        selfPauseRef.current = false; // our narration pause — speech continues
+      } else {
+        pendingResumeRef.current = false; // user pause — no auto-resume
+        stopSpeech();
+      }
+      return;
+    }
+
+    if (crossed.length === 0) return;
 
     if (sfx) {
       const controller = sfxRef.current ?? new SfxController();
@@ -57,20 +121,45 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
     if (narration) {
       const dialogue = [...crossed].reverse().find((e) => e.kind === "dialogue");
       if (dialogue && dialogue.kind === "dialogue") {
-        speak(dialogue.text, {
-          playbackRate: clock.playbackRate,
-          voice: narrationVoice,
-          pitch: pitchForPlatform(dialogue.speaker)
-        });
+        speakDialogue(dialogue.text, dialogue.speaker);
       }
     }
-  }, [index, playing, narration, sfx, clock, timeline.events, statusByRequest, narrationVoice]);
+  }, [index, playing, narration, sfx, clock, timeline.events, statusByRequest, narrationVoice, castVoices, plan, speakDialogue]);
 
-  // Stop speech whenever narration turns off or the layer unmounts.
+  // Sync on resume/toggle: the subtitle already shows the line under the
+  // head when the user presses Play or enables narration mid-line.
+  const syncRefs = useRef({ playing, narration });
   useEffect(() => {
-    if (!narration) stopSpeech();
+    const resumed = playing && !syncRefs.current.playing;
+    const justEnabled = narration && !syncRefs.current.narration && playing;
+    syncRefs.current = { playing, narration };
+    if (!resumed && !justEnabled) return;
+
+    // Pressing Play during a narration pause means "skip the rest" — drop
+    // the line and let the story run.
+    if (pendingResumeRef.current) {
+      pendingResumeRef.current = false;
+      stopSpeech();
+      return;
+    }
+
+    const event = timeline.events[index];
+    if (!event || event.kind !== "dialogue" || !narration) return;
+    speakDialogue(event.text, event.speaker);
+  }, [playing, narration, index, clock, timeline.events, speakDialogue]);
+
+  // Stop speech whenever narration turns off or the layer unmounts; if the
+  // story was waiting on a line, let it continue.
+  useEffect(() => {
+    if (!narration) {
+      stopSpeech();
+      if (pendingResumeRef.current) {
+        pendingResumeRef.current = false;
+        clock.play();
+      }
+    }
     return () => stopSpeech();
-  }, [narration]);
+  }, [narration, clock]);
 
   useEffect(() => {
     return () => {

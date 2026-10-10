@@ -24,6 +24,8 @@ export interface Settings {
   narration: boolean;
   sfx: boolean;
   voice: VoicePreference;
+  /** Per-character voice: "cast" (auto-assign), "auto" (default) or a voiceURI. */
+  castVoices: Record<string, string>;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -31,7 +33,8 @@ const DEFAULT_SETTINGS: Settings = {
   motion: "system",
   narration: false,
   sfx: false,
-  voice: "auto"
+  voice: "auto",
+  castVoices: {}
 };
 
 const STORAGE_KEY = "zero-failure-settings";
@@ -46,7 +49,8 @@ function loadSettings(): Settings {
       motion: parsed.motion ?? DEFAULT_SETTINGS.motion,
       narration: parsed.narration ?? DEFAULT_SETTINGS.narration,
       sfx: parsed.sfx ?? DEFAULT_SETTINGS.sfx,
-      voice: parsed.voice ?? DEFAULT_SETTINGS.voice
+      voice: parsed.voice ?? DEFAULT_SETTINGS.voice,
+      castVoices: parsed.castVoices ?? DEFAULT_SETTINGS.castVoices
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -59,6 +63,7 @@ interface SettingsContextValue extends Settings {
   setNarration: (on: boolean) => void;
   setSfx: (on: boolean) => void;
   setVoice: (voice: VoicePreference) => void;
+  setCastVoice: (platform: string, voice: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -89,7 +94,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setMotion: (motion) => setSettings((s) => ({ ...s, motion })),
       setNarration: (narration) => setSettings((s) => ({ ...s, narration })),
       setSfx: (sfx) => setSettings((s) => ({ ...s, sfx })),
-      setVoice: (voice) => setSettings((s) => ({ ...s, voice }))
+      setVoice: (voice) => setSettings((s) => ({ ...s, voice })),
+      setCastVoice: (platform, castVoice) =>
+        setSettings((s) => ({
+          ...s,
+          castVoices: { ...s.castVoices, [platform]: castVoice }
+        }))
     }),
     [settings]
   );

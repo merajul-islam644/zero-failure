@@ -74,9 +74,47 @@ export interface SpeakOptions {
   voice?: SpeechSynthesisVoice | null;
   /** Per-character pitch (0–2 per the spec); default 1. */
   pitch?: number;
+  /** Per-character speed multiplier (e.g. brisk assistant, calm watchtower). */
+  rate?: number;
+  /**
+   * The line's on-screen display window (ms). When the engine would need
+   * longer than that to say the line at the requested rate, the rate is
+   * scaled up so narration finishes roughly with the subtitle.
+   */
+  fitMs?: number;
+  /**
+   * Called once the utterance leaves the engine — completed=true when it
+   * finished speaking, false when cancelled/interrupted. The audiobook
+   * flow resumes the paused story from here.
+   */
+  onDone?: (completed: boolean) => void;
 }
 
-export function speak(text: string, { playbackRate, voice, pitch }: SpeakOptions): boolean {
+/** Engines speak ≈155 wpm at rate 1; lines are authored at ~3.6 wps. */
+const WORDS_PER_SECOND_AT_RATE_1 = 2.6;
+/** Safety margin: engines drift slower than requested — finish ~15% early. */
+const FIT_MARGIN = 1.15;
+
+/**
+ * Effective utterance rate: the playback rate times the character's own
+ * speed profile, sped up just enough to fit the line's display window
+ * (with margin, so the voice ends before the subtitle changes).
+ */
+export function narrationRateFor(
+  text: string,
+  playbackRate: number,
+  charRate: number,
+  fitMs: number | undefined
+): number {
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const naturalMs = (words / WORDS_PER_SECOND_AT_RATE_1) * 1000;
+  const fit =
+    fitMs && fitMs > 0 && naturalMs > fitMs ? (naturalMs / fitMs) * FIT_MARGIN : 1;
+  const base = playbackRate === 0.5 ? 0.8 : playbackRate;
+  return Math.min(2, Math.max(0.6, base * charRate * fit));
+}
+
+export function speak(text: string, { playbackRate, voice, pitch, rate, fitMs, onDone }: SpeakOptions): boolean {
   if (playbackRate > NARRATION_MAX_RATE) return false;
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
   try {
@@ -85,7 +123,11 @@ export function speak(text: string, { playbackRate, voice, pitch }: SpeakOptions
     utterance.lang = voice?.lang ?? "en-US";
     if (voice) utterance.voice = voice;
     utterance.pitch = Math.min(2, Math.max(0, pitch ?? 1));
-    utterance.rate = Math.min(2, Math.max(0.6, playbackRate === 0.5 ? 0.8 : playbackRate));
+    utterance.rate = narrationRateFor(text, playbackRate, rate ?? 1, fitMs);
+    if (onDone) {
+      utterance.onend = () => onDone(true);
+      utterance.onerror = () => onDone(false);
+    }
     window.speechSynthesis.speak(utterance);
     return true;
   } catch {
