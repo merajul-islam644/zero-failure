@@ -8,16 +8,20 @@ import type { Timeline } from "../engine/timeline";
 import { useEventIndex, usePlayer } from "../state/PlayerContext";
 import { useSettings } from "../state/SettingsContext";
 import { SfxController, speak, stopSpeech } from "../state/audio";
+import { pitchForPlatform, resolveVoice } from "../state/voices";
 
 /** More than this many events crossed in one tick means the user seeked. */
 const SEEK_JUMP_EVENTS = 4;
 
 export function AudioLayer({ timeline }: { timeline: Timeline }) {
   const { clock, playing } = usePlayer();
-  const { narration, sfx } = useSettings();
+  const { narration, sfx, voice } = useSettings();
   const index = useEventIndex(timeline.events);
   const prevIndexRef = useRef(index);
   const sfxRef = useRef<SfxController | null>(null);
+
+  // Resolve the saved voiceURI against installed voices; null = engine default.
+  const narrationVoice = useMemo(() => resolveVoice(voice), [voice]);
 
   // requestId -> final status, so resolves can blip fail vs success.
   const statusByRequest = useMemo(() => {
@@ -53,10 +57,14 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
     if (narration) {
       const dialogue = [...crossed].reverse().find((e) => e.kind === "dialogue");
       if (dialogue && dialogue.kind === "dialogue") {
-        speak(dialogue.text, clock.playbackRate);
+        speak(dialogue.text, {
+          playbackRate: clock.playbackRate,
+          voice: narrationVoice,
+          pitch: pitchForPlatform(dialogue.speaker)
+        });
       }
     }
-  }, [index, playing, narration, sfx, clock, timeline.events, statusByRequest]);
+  }, [index, playing, narration, sfx, clock, timeline.events, statusByRequest, narrationVoice]);
 
   // Stop speech whenever narration turns off or the layer unmounts.
   useEffect(() => {

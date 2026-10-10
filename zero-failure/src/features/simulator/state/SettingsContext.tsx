@@ -1,4 +1,5 @@
-// User settings: theme, motion, narration and sound effects. Persisted in
+// User settings: theme, motion, narration (voice + toggle) and sound
+// effects. Persisted in
 // localStorage as a per-viewer convenience only — nothing here is run state.
 // Theme and motion apply as attributes on <html>; "system" removes the
 // attribute so the CSS media queries govern.
@@ -14,19 +15,23 @@ import {
 
 export type ThemePreference = "system" | "dark" | "light";
 export type MotionPreference = "system" | "reduce" | "full";
+/** "auto" = engine default; otherwise a speechSynthesis voiceURI. */
+export type VoicePreference = string;
 
 export interface Settings {
   theme: ThemePreference;
   motion: MotionPreference;
   narration: boolean;
   sfx: boolean;
+  voice: VoicePreference;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   theme: "system",
   motion: "system",
   narration: false,
-  sfx: false
+  sfx: false,
+  voice: "auto"
 };
 
 const STORAGE_KEY = "zero-failure-settings";
@@ -40,7 +45,8 @@ function loadSettings(): Settings {
       theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
       motion: parsed.motion ?? DEFAULT_SETTINGS.motion,
       narration: parsed.narration ?? DEFAULT_SETTINGS.narration,
-      sfx: parsed.sfx ?? DEFAULT_SETTINGS.sfx
+      sfx: parsed.sfx ?? DEFAULT_SETTINGS.sfx,
+      voice: parsed.voice ?? DEFAULT_SETTINGS.voice
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -52,6 +58,7 @@ interface SettingsContextValue extends Settings {
   setMotion: (motion: MotionPreference) => void;
   setNarration: (on: boolean) => void;
   setSfx: (on: boolean) => void;
+  setVoice: (voice: VoicePreference) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -81,7 +88,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setTheme: (theme) => setSettings((s) => ({ ...s, theme })),
       setMotion: (motion) => setSettings((s) => ({ ...s, motion })),
       setNarration: (narration) => setSettings((s) => ({ ...s, narration })),
-      setSfx: (sfx) => setSettings((s) => ({ ...s, sfx }))
+      setSfx: (sfx) => setSettings((s) => ({ ...s, sfx })),
+      setVoice: (voice) => setSettings((s) => ({ ...s, voice }))
     }),
     [settings]
   );

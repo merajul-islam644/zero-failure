@@ -94,6 +94,16 @@ test.describe("verdict matrix", () => {
     await openTab(page, "Inspector");
     await expect(page.getByText("Not Configured").first()).toBeVisible();
   });
+
+  test("config panel offers narration voice selection", async ({ page }) => {
+    await openTab(page, "Config");
+    const voiceSelect = page.locator('[aria-label="Narration voice"]');
+    await expect(voiceSelect).toBeVisible();
+    // Headless engines may load zero voices; Auto must always be there.
+    await expect(voiceSelect.locator('option[value="auto"]')).toHaveText(
+      "Auto (system default)",
+    );
+  });
 });
 
 test.describe("playback", () => {

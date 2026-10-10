@@ -68,13 +68,23 @@ export class SfxController {
   }
 }
 
-export function speak(text: string, playbackRate: number): boolean {
+export interface SpeakOptions {
+  playbackRate: number;
+  /** Chosen voice; null/undefined = the engine's default for en-US. */
+  voice?: SpeechSynthesisVoice | null;
+  /** Per-character pitch (0–2 per the spec); default 1. */
+  pitch?: number;
+}
+
+export function speak(text: string, { playbackRate, voice, pitch }: SpeakOptions): boolean {
   if (playbackRate > NARRATION_MAX_RATE) return false;
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
   try {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
+    utterance.lang = voice?.lang ?? "en-US";
+    if (voice) utterance.voice = voice;
+    utterance.pitch = Math.min(2, Math.max(0, pitch ?? 1));
     utterance.rate = Math.min(2, Math.max(0.6, playbackRate === 0.5 ? 0.8 : playbackRate));
     window.speechSynthesis.speak(utterance);
     return true;

@@ -6,11 +6,13 @@
 import { useRun } from "../../run/RunContext";
 import { usePlayer } from "../../state/PlayerContext";
 import { useSettings, type MotionPreference, type ThemePreference } from "../../state/SettingsContext";
+import { useVoices } from "../../state/voices";
 
 export function ConfigPanel() {
   const { scenarios, scenarioId, selectScenario, rerun, running } = useRun();
   const { clock, restart } = usePlayer();
   const settings = useSettings();
+  const voices = useVoices();
 
   const pickScenario = (id: string) => {
     selectScenario(id);
@@ -91,6 +93,26 @@ export function ConfigPanel() {
           />
           <span>Narrate dialogue (mutes above 2×)</span>
         </label>
+        <label className="sim-field">
+          <span>Voice</span>
+          <select
+            className="sim-select"
+            value={settings.voice}
+            onChange={(e) => settings.setVoice(e.target.value)}
+            aria-label="Narration voice"
+          >
+            <option value="auto">Auto (system default)</option>
+            {voices.map((v) => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {v.name} · {v.lang}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="sim-scenario-hint">
+          Each of the 10 characters speaks with its own pitch, so even one
+          voice reads like a cast.
+        </p>
         <label className="sim-toggle">
           <input
             type="checkbox"
