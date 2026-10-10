@@ -17,34 +17,36 @@ export interface NarrationVoice {
 /**
  * Per-character sound profile (speechSynthesis ranges 0–2 each). The engine
  * voices available to browsers are few — Windows typically ships three — so
- * identity comes from voice × pitch × speed together. Wide, deterministic
- * spreads make even one engine voice read as a cast; with several voices
- * cycled across the roster, every role is unmistakable.
+ * identity comes from voice × pitch × speed together. The auto-cast plan
+ * cycles installed voices across the roster in CAST order, so characters
+ * sharing an engine voice land 3 slots apart; the pitch table below is
+ * tuned to that cycle: each engine-voice group spans the full 0.5–1.7
+ * range, making even shared voices read as different people.
  */
 const CAST_PITCH: Record<PlatformId, number> = {
-  os: 1.0, // command center lead — level anchor
-  iam: 0.95, // gatekeeper — firm, slightly low
-  "data-gateway": 0.8, // pipeline — low
-  logic: 1.2, // workflow brain — lifted
-  release: 1.35, // deployment energy — bright
-  monitor: 0.7, // watchtower — deepest
-  "ai-agent": 1.5, // assistant — highest, chirpy
-  utilities: 0.9, // notifications — low-mid
-  localization: 1.25, // language desk — bright
-  storage: 0.75 // archive — very low
+  os: 1.0, // group A (engine voice 1) — level anchor
+  iam: 0.8, // group B — firm, low
+  "data-gateway": 0.7, // group C — low
+  logic: 1.35, // group A — lifted
+  release: 1.45, // group B — bright
+  monitor: 0.5, // group C — deepest of the cast
+  "ai-agent": 1.7, // group A — highest, chirpy
+  utilities: 1.15, // group B — mid-high
+  localization: 1.3, // group C — bright
+  storage: 0.55 // group A — very deep
 };
 
 const CAST_RATE: Record<PlatformId, number> = {
   os: 1.0, // measured
   iam: 0.95, // deliberate
   "data-gateway": 0.9, // heavy
-  logic: 1.1, // brisk
-  release: 1.15, // quick
-  monitor: 0.85, // slow, deliberate watch
-  "ai-agent": 1.2, // fast assistant
-  utilities: 0.95, // even
-  localization: 1.1, // lively
-  storage: 0.85 // slow
+  logic: 1.15, // brisk
+  release: 1.25, // quick, eager
+  monitor: 0.8, // slow, deliberate watch
+  "ai-agent": 1.35, // fast assistant
+  utilities: 1.0, // even
+  localization: 1.15, // lively
+  storage: 0.8 // slow
 };
 
 export function pitchForPlatform(platform: SpeakerId): number {

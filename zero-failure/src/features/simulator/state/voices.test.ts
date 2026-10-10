@@ -36,6 +36,15 @@ describe("cast sound profile", () => {
     }
   });
 
+  it("keeps characters sharing an engine voice far apart (auto-cast cycles voices 3 slots apart)", () => {
+    // With three installed voices, castPlan assigns CAST[i % 3] — so these
+    // groups share an engine voice and must differ by pitch alone, clearly.
+    for (let group = 0; group < 3; group += 1) {
+      const pitches = CAST.filter((_, i) => i % 3 === group).map((c) => pitchForPlatform(c.id));
+      expect(Math.max(...pitches) - Math.min(...pitches)).toBeGreaterThanOrEqual(0.6);
+    }
+  });
+
   it("is deterministic, defaults unknown platforms to neutral, and keeps chorus lines neutral", () => {
     expect(pitchForPlatform("monitor")).toBe(pitchForPlatform("monitor"));
     expect(pitchForPlatform("all-cast")).toBe(1);
