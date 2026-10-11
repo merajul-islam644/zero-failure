@@ -12,7 +12,7 @@ import { revealStatus, useReveal } from "./reveal";
 export function InspectorPanel({ timeline }: { timeline: Timeline }) {
   const { simulatedRegistry, liveRegistry, scenario, run } = useRun();
   const { windows, eventIndex } = useReveal(timeline);
-  const revealed = windows.filter((w) => eventIndex >= w.dispatchSeq);
+  const revealed = windows.filter((w) => eventIndex >= w.dispatchIndex);
 
   return (
     <>
@@ -73,7 +73,7 @@ export function InspectorPanel({ timeline }: { timeline: Timeline }) {
                   <div className="sim-msg-op">
                     {CAST_BY_ID[m.sourcePlatform].name} → {CAST_BY_ID[m.targetPlatform].name} · {m.operation}
                   </div>
-                  {eventIndex >= window.resolveSeq && (
+                  {eventIndex >= window.resolveIndex && (
                     <div className="sim-msg-detail">
                       {m.errorDetails ? (
                         <span className="sim-msg-error">

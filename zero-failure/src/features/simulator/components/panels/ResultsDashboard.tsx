@@ -41,12 +41,16 @@ export function ResultsDashboard({
   const { eventIndex } = useReveal(timeline);
   const [filter, setFilter] = useState<Filter>("all");
 
-  // assertionId -> reveal seq, driven by the run's assertion-result events.
-  const revealSeq = useMemo(() => {
+  // assertionId -> position in the sorted events array, on the same scale as
+  // eventIndex. event.seq is wrong here: assertion-result events are pushed
+  // after every scene event, but the time-sort lands them mid-timeline, so
+  // their seq sits far above their array position and comparing against seq
+  // hides every result until the finale.
+  const revealIndex = useMemo(() => {
     const map = new Map<string, number>();
-    for (const event of timeline.events) {
-      if (event.kind === "assertion-result") map.set(event.assertionId, event.seq);
-    }
+    timeline.events.forEach((event, index) => {
+      if (event.kind === "assertion-result") map.set(event.assertionId, index);
+    });
     return map;
   }, [timeline]);
 
@@ -55,8 +59,8 @@ export function ResultsDashboard({
   }
 
   const revealed = run.results.filter((r) => {
-    const seq = revealSeq.get(r.assertionId);
-    return seq !== undefined && eventIndex >= seq;
+    const index = revealIndex.get(r.assertionId);
+    return index !== undefined && eventIndex >= index;
   });
   const revealedIds = new Set(revealed.map((r) => r.assertionId));
 

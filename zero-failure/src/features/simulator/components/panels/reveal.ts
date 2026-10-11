@@ -9,37 +9,41 @@ import { useEventIndex } from "../../state/PlayerContext";
 
 export interface RevealWindow {
   message: StructuredMessage;
-  dispatchSeq: number;
-  arriveSeq: number;
-  resolveSeq: number;
+  // Positions in the sorted timeline.events array — the same scale as
+  // eventIndexAt/useEventIndex. Never compare those against event.seq: the
+  // sort by time reorders events (assertion-result events are pushed last
+  // but land mid-timeline), so seq and array position diverge.
+  dispatchIndex: number;
+  arriveIndex: number;
+  resolveIndex: number;
 }
 
 /** Status shown before the exchange resolves — never leak the final answer. */
 export function revealStatus(window: RevealWindow, eventIndex: number): MessageStatus {
-  if (eventIndex >= window.resolveSeq) return window.message.status;
-  if (eventIndex >= window.arriveSeq) return "processing";
+  if (eventIndex >= window.resolveIndex) return window.message.status;
+  if (eventIndex >= window.arriveIndex) return "processing";
   return "in-flight";
 }
 
 export function buildRevealWindows(timeline: Timeline): RevealWindow[] {
   const byRequest = new Map<string, RevealWindow>();
-  for (const event of timeline.events) {
+  timeline.events.forEach((event, index) => {
     if (event.kind === "message-dispatch") {
       byRequest.set(event.message.requestId, {
         message: event.message,
-        dispatchSeq: event.seq,
-        arriveSeq: Number.MAX_SAFE_INTEGER,
-        resolveSeq: Number.MAX_SAFE_INTEGER
+        dispatchIndex: index,
+        arriveIndex: Number.MAX_SAFE_INTEGER,
+        resolveIndex: Number.MAX_SAFE_INTEGER
       });
     } else if (event.kind === "message-arrive") {
       const window = byRequest.get(event.messageId);
-      if (window) window.arriveSeq = event.seq;
+      if (window) window.arriveIndex = index;
     } else if (event.kind === "message-resolve") {
       const window = byRequest.get(event.messageId);
-      if (window) window.resolveSeq = event.seq;
+      if (window) window.resolveIndex = index;
     }
-  }
-  return [...byRequest.values()].sort((a, b) => a.dispatchSeq - b.dispatchSeq);
+  });
+  return [...byRequest.values()].sort((a, b) => a.dispatchIndex - b.dispatchIndex);
 }
 
 /** Memoized windows + the current event index for a panel. */

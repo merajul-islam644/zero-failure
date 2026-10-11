@@ -169,10 +169,12 @@ describe("SequencerClock", () => {
     expect(clock.isPlaying).toBe(true);
   });
 
-  it("play at the end of the timeline is a no-op", () => {
+  it("play at the end of the timeline replays from zero", () => {
     const clock = new SequencerClock(1000);
     clock.seek(1000);
     clock.play();
-    expect(clock.isPlaying).toBe(false);
+    expect(clock.time).toBe(0);
+    expect(clock.isPlaying).toBe(true);
+    expect(raf.pending).toBe(1);
   });
 });

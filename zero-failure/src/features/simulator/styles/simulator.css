@@ -181,13 +181,66 @@
   min-height: 0;
   min-width: 0;
   display: flex;
+  flex-direction: column;
   overflow: hidden; /* the frame is sized to fit — never show scrollbars here */
   background: hsl(var(--sim-stage));
+  /* Aspect decides header-row vs left-rail mode below. Size-independent:
+     the stage's own box comes from flex layout, never from its content. */
+  container-type: size;
 }
 
-/* Exactly 16:9, sized by JS (useMeetBox): the SVG fills it edge to edge and
-   the overlays share one coordinate space with the constellation. Absolute
-   centering — flex margin:auto kept a stale-line offset. */
+/* Header strip above the canvas: scene heading left, stage note right.
+   Paddings/gaps stay tight — every pixel here comes off the 16:9 canvas. */
+.sim-stage-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem 2rem;
+  padding: 0.55rem 1.5rem 0.3rem;
+}
+
+/* The remaining vertical band hosts the centered 16:9 frame. */
+.sim-canvas-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Wide-short stage: a header row would spend scarce height while wide
+   side bands sit idle, so fold heading + note into a left rail. Breakpoint
+   is where (W − rail) still yields a taller 16:9 box than (H − header):
+   rail wins from aspect ≈ 2.4 up. The query cannot style .sim-stage itself
+   (containers don't match their own queries), so the two children go
+   absolute instead of flipping the stage's flex direction. Same flow
+   family either way — the cast is never covered. */
+@container (min-aspect-ratio: 12/5) {
+  .sim-stage-header {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(18rem, 30%);
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start; /* not the row's space-between: keep the
+                                    note beside the heading it describes */
+    gap: 1rem;
+    padding: 0.9rem 1rem 0.9rem 1.5rem;
+    overflow-y: auto;
+  }
+
+  .sim-canvas-area {
+    position: absolute;
+    inset: 0 0 0 min(18rem, 30%);
+  }
+
+  .sim-note {
+    max-width: none;
+  }
+}
+
+/* Exactly 16:9, sized by JS (useMeetBox): the SVG fills it edge to edge.
+   Absolute centering — flex margin:auto kept a stale-line offset. */
 .sim-canvas-frame {
   position: absolute;
   top: 50%;
@@ -202,17 +255,13 @@
   height: 100%;
 }
 
-/* ---- scene overlay ---- */
+/* ---- scene heading + stage note ---- */
 
-.sim-scene-overlay {
-  position: absolute;
-  top: 1rem;
-  left: 1.25rem;
-  max-width: min(30rem, 80%);
+.sim-scene-heading {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: none;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .sim-scene-kicker {
@@ -235,16 +284,12 @@
   color: hsl(var(--sim-text-dim));
 }
 
-/* Stage-direction chip, top-right of the canvas box: OS ends at viewBox
-  x 845 and Logic's halo at x 1011, so a chip capped at 32% of the canvas
-  width anchored 2.5% from the right stays left of both at any scale
-  (left edge ≥ viewBox 1048). Height varies with wrapping, but horizontal
-  clearance alone guarantees no node is ever covered. */
+/* Stage-direction chip, right side of the header strip — flow content above
+  the canvas, so it can never cover a character node or label at any window
+  size (the old in-canvas absolute placement could not guarantee that). */
 .sim-note {
-  position: absolute;
-  top: 1rem;
-  right: 2.5%;
-  max-width: min(24rem, 32%);
+  flex: 0 1 auto;
+  max-width: 24rem;
   margin: 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.82rem;
@@ -255,7 +300,6 @@
   border-left: 3px solid hsl(var(--sim-accent));
   border-radius: 0.5rem;
   backdrop-filter: blur(6px);
-  pointer-events: none;
 }
 
 .sim-note-kicker {
@@ -1410,8 +1454,8 @@
     font-size: 1.05rem;
   }
 
-  /* On a phone-width canvas no corner stays clear of the cast — drop the
-    chip; the subtitle bar carries the beat's text. */
+  /* On a phone the header would wrap and eat canvas height — drop the chip;
+    the subtitle bar carries the beat's text. */
   .sim-note {
     display: none;
   }

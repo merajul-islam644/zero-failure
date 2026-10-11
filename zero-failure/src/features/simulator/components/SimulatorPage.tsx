@@ -1,4 +1,5 @@
-// The simulator screen — public route ("/"). RunProvider pre-executes the
+// The simulator screen — mounted at "/" behind RequireAuth. RunProvider
+// pre-executes the
 // selected scenario up-front; the timeline compiles from its structured
 // messages, so playback is a pure fold over real results. Composes the
 // engine: clock via PlayerProvider, canvas, overlay, subtitles, transport,
@@ -50,7 +51,7 @@ function SimulatorScreen() {
 
 function SimulatorStage({ timeline }: { timeline: Timeline }) {
   const { clock, restart } = usePlayer();
-  const stageRef = useRef<HTMLElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const box = useMeetBox(stageRef);
 
   // Full playback map. Ignored while typing in form fields and never with
@@ -122,12 +123,15 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
         <AccountBar />
       </div>
       <div className="sim-main">
-        <main className="sim-stage" ref={stageRef}>
-          {/* Exactly 16:9, so the SVG's viewBox fills it edge to edge and the
-              overlays share one coordinate space with the constellation. */}
-          <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-            <CommandCanvas timeline={timeline} />
-            <SceneOverlay timeline={timeline} compact={box.h < 380} />
+        <main className="sim-stage">
+          <SceneOverlay timeline={timeline} />
+          {/* Exactly 16:9, centered in the area below the header strip. The
+              scene heading and stage note live in that strip — flow content,
+              never floating over the constellation. */}
+          <div className="sim-canvas-area" ref={stageRef}>
+            <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
+              <CommandCanvas timeline={timeline} />
+            </div>
           </div>
         </main>
         <PanelDeck timeline={timeline} />

@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function EvidencePanel({ timeline }: { timeline: Timeline }) {
   const { windows, eventIndex } = useReveal(timeline);
-  const revealed = windows.filter((w) => eventIndex >= w.dispatchSeq);
+  const revealed = windows.filter((w) => eventIndex >= w.dispatchIndex);
 
   const groups = new Map<string, RevealWindow[]>();
   for (const window of revealed) {
@@ -43,7 +43,7 @@ export function EvidencePanel({ timeline }: { timeline: Timeline }) {
                     attempt {m.attempt} · {m.operation} · {m.sourcePlatform} → {m.targetPlatform}
                   </span>
                   <span className="sim-status-chip">{STATUS_LABEL[status]}</span>
-                  {eventIndex >= window.resolveSeq && (
+                  {eventIndex >= window.resolveIndex && (
                     <span className="sim-evidence-detail">
                       {m.errorDetails
                         ? `${m.errorDetails.code}: ${m.errorDetails.message}`

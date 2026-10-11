@@ -72,7 +72,13 @@ export class SequencerClock {
   }
 
   play(): void {
-    if (this.playing || this.timeMs >= this.durationMs) return;
+    if (this.playing) return;
+    // Finished story: Play replays from the top (standard transport
+    // convention) — an enabled Play button must never be a silent no-op.
+    if (this.timeMs >= this.durationMs) {
+      this.resolveStop(null);
+      this.seek(0);
+    }
     this.playing = true;
     this.lastFrame = performance.now();
     this.rafId = requestAnimationFrame(this.tick);
@@ -100,7 +106,6 @@ export class SequencerClock {
     if (this.stopAt !== null && next !== this.stopAt) {
       this.resolveStop(null);
     }
-    if (next < this.durationMs && this.playing && next >= this.durationMs) this.pause();
     if (next >= this.durationMs && this.playing) this.pause();
     this.emit();
   }

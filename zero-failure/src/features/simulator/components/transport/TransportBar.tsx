@@ -1,7 +1,7 @@
 // Transport controls. The buttons are discrete (playing flag only); the
 // scrubber + clock readout are the designated per-frame subscriber.
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { usePlaybackTime, usePlayer } from "../../state/PlayerContext";
 import { formatTime } from "../../engine/format";
@@ -82,12 +82,15 @@ export function TransportBar({ timeline }: { timeline: Timeline }) {
 function Scrubber({ duration }: { duration: number }) {
   const { clock } = usePlayer();
   const time = usePlaybackTime();
-  const draggingRef = useRef(false);
+  // While a pointer drag is live, hold the thumb at the dragged position —
+  // otherwise the per-frame `time` snaps it back to the playhead mid-drag.
+  const pointerDownRef = useRef(false);
+  const [dragTime, setDragTime] = useState<number | null>(null);
 
   return (
     <div className="sim-scrubber">
       <span className="sim-clock" role="timer" aria-label="Playback time">
-        {formatTime(time)}
+        {formatTime(dragTime ?? time)}
       </span>
       <input
         type="range"
@@ -95,16 +98,22 @@ function Scrubber({ duration }: { duration: number }) {
         min={0}
         max={duration}
         step={100}
-        value={time}
+        value={dragTime ?? time}
         onChange={(e) => {
-          draggingRef.current = true;
-          clock.seek(Number(e.target.value));
+          const next = Number(e.target.value);
+          clock.seek(next);
+          if (pointerDownRef.current) setDragTime(next);
+        }}
+        onPointerDown={() => {
+          pointerDownRef.current = true;
         }}
         onPointerUp={() => {
-          draggingRef.current = false;
+          pointerDownRef.current = false;
+          setDragTime(null);
         }}
         onBlur={() => {
-          draggingRef.current = false;
+          pointerDownRef.current = false;
+          setDragTime(null);
         }}
         aria-label="Seek"
       />

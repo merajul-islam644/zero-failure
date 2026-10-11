@@ -7,3 +7,6 @@ env.*
 .cert/
 test-results/
 playwright-report/
+
+# Playwright auth session (contains live cookies - never commit)
+e2e/.auth/
