@@ -16,9 +16,10 @@ function dark(reason: string): LiveProbeState {
   return { status: "not-configured", reason, checkedAt: NOW };
 }
 
-/** All five probes configured with the given schema count as the variable. */
+/** All six probes configured with the given schema count as the variable. */
 function snapshot(counts: { schemas: number; languages: number; objects: number; inbox: number }): ProbeResults {
   return {
+    "os-session": ok("Platform session live for demo@example.test"),
     "iam-me": ok("Session confirmed for Demo User"),
     "data-schemas": ok(`${counts.schemas} data schemas visible`, counts.schemas),
     "localization-languages": ok(`${counts.languages} languages configured`, counts.languages),
@@ -52,7 +53,7 @@ describe("diffActivity", () => {
     });
     expect(inboxEvent).toMatchObject({
       probe: "notifier-inbox",
-      platform: "utilities",
+      platform: "logic",
       tone: "ok",
       label: "12 → 13 notifications in inbox"
     });
@@ -120,13 +121,14 @@ describe("diffActivity", () => {
   it("covers every probe key the poller can return", () => {
     // Every ProbeKey must have a noun and a platform mapping — a new probe
     // added to types.ts without an activity entry would silently never emit.
-    const keys: ProbeKey[] = ["iam-me", "data-schemas", "localization-languages", "storage-objects", "notifier-inbox"];
+    const keys: ProbeKey[] = ["os-session", "iam-me", "data-schemas", "localization-languages", "storage-objects", "notifier-inbox"];
     const before = snapshot({ schemas: 1, languages: 1, objects: 1, inbox: 1 });
     const after = snapshot({ schemas: 2, languages: 2, objects: 2, inbox: 2 });
     const events = diffActivity(before, after, NOW);
     const probes = new Set(events.map((e) => e.probe));
     for (const key of keys) {
-      if (key !== "iam-me") expect(probes.has(key)).toBe(true);
+      // The identity-style probes carry no tenant count, so nothing to drift.
+      if (key !== "iam-me" && key !== "os-session") expect(probes.has(key)).toBe(true);
     }
   });
 });

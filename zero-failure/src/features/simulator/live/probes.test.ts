@@ -16,20 +16,27 @@ describe("capability table", () => {
     expect(Object.keys(CAPABILITIES).sort()).toEqual([...PLATFORMS].sort());
   });
 
-  it("marks exactly the five SDK-backed platforms as sdk-read", () => {
+  it("marks exactly the seven SDK-backed platforms as sdk-read", () => {
     const sdkRead = PLATFORMS.filter((p) => CAPABILITIES[p].kind === "sdk-read").sort();
-    expect(sdkRead).toEqual(["data-gateway", "iam", "localization", "storage", "utilities"]);
+    expect(sdkRead).toEqual(["data-gateway", "iam", "localization", "logic", "os", "storage", "utilities"]);
     const noLiveApi = PLATFORMS.filter((p) => CAPABILITIES[p].kind === "no-live-api").sort();
-    expect(noLiveApi).toEqual(["ai-agent", "logic", "monitor", "os", "release"]);
+    expect(noLiveApi).toEqual(["ai-agent", "monitor", "release"]);
   });
 
   it("round-trips every probe key back to its platform", () => {
     for (const platform of PLATFORMS) {
       const capability = CAPABILITIES[platform];
-      if (capability.kind === "sdk-read") {
+      if (capability.kind === "sdk-read" && capability.probe) {
         expect(PLATFORM_FOR_PROBE[capability.probe]).toBe(platform);
       }
     }
+  });
+
+  it("leaves exactly one sdk-read platform without a probe — the refused-write one", () => {
+    const probeless = PLATFORMS.filter(
+      (p) => CAPABILITIES[p].kind === "sdk-read" && CAPABILITIES[p].probe === null
+    );
+    expect(probeless).toEqual(["utilities"]);
   });
 });
 
@@ -68,6 +75,7 @@ describe("classifyProbeError", () => {
 
 /** A minimal BlocksClient stand-in with configurable behavior per probe. */
 function fakeClient(behavior: {
+  userInfo?: () => Promise<unknown>;
   me?: () => Promise<unknown>;
   schemasList?: () => Promise<unknown>;
   languages?: () => Promise<unknown>;
@@ -75,6 +83,7 @@ function fakeClient(behavior: {
   notifications?: () => Promise<unknown>;
 } = {}): BlocksClient {
   return {
+    auth: { userInfo: behavior.userInfo ?? (async () => ({ email: "demo@example.test", sub: "u1" })) },
     iam: { me: behavior.me ?? (async () => ({ firstName: "Demo", lastName: "User", email: "demo@example.test" })) },
     data: {
       schemas: { list: behavior.schemasList ?? (async () => ({ data: { items: [{}], totalCount: 7 } })) },
@@ -91,6 +100,10 @@ function fakeClient(behavior: {
 describe("probes against a working tenant", () => {
   it("each probe reports configured with a count-bearing detail", async () => {
     const client = fakeClient();
+    await expect(PROBES["os-session"](client)).resolves.toMatchObject({
+      status: "configured",
+      detail: "Platform session live for demo@example.test"
+    });
     await expect(PROBES["iam-me"](client)).resolves.toMatchObject({
       status: "configured",
       detail: "Session confirmed for Demo User"
@@ -134,7 +147,7 @@ describe("probes against a working tenant", () => {
       })
     );
     expect(Object.keys(results).sort()).toEqual(
-      ["data-schemas", "iam-me", "localization-languages", "notifier-inbox", "storage-objects"].sort()
+      ["data-schemas", "iam-me", "localization-languages", "notifier-inbox", "os-session", "storage-objects"].sort()
     );
     expect(results["iam-me"]).toMatchObject({ status: "not-configured" });
     expect(results["data-schemas"]).toMatchObject({ status: "unreachable" });

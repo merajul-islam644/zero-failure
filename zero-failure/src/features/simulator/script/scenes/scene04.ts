@@ -24,7 +24,15 @@ export const scene04: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "logic",
-      text: "I’ll request the required configuration through the approved integration. I’ll proceed only when the response passes validation."
+      text: "I’ll request the required configuration through the approved integration. I’ll proceed only when the response passes validation.",
+      watch: {
+        correlationId: "s4-deploy-config",
+        variants: {
+          succeeded: "The deployment configuration came back and passed validation ({{data.version}}) — I’ll proceed in dependency order.",
+          failed: "The configuration response failed validation ({{error}}) — dependent deployment steps stay blocked.",
+          "not-configured": "Release has no live API — the configuration came back not-configured ({{error}}). I block the dependent steps rather than pretend they ran."
+        }
+      }
     },
     {
       type: "dialogue",
@@ -46,7 +54,14 @@ export const scene04: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "logic",
-      text: "That’s important. I’ll track each operation’s state and use an idempotency key where the integration supports it."
+      text: "That’s important. I’ll track each operation’s state and use an idempotency key where the integration supports it.",
+      watch: {
+        correlationId: "s4-idempotency",
+        variants: {
+          succeeded: "Idempotency-key support is confirmed for this run — I’ll carry the key on the notification call.",
+          failed: "The idempotency check failed ({{error}}) — I’ll track state but cannot assume duplicates are prevented."
+        }
+      }
     },
     {
       type: "dialogue",

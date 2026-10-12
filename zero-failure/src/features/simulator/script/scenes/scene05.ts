@@ -29,7 +29,15 @@ export const scene05: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "release",
-      text: "Authorization and configuration checks are complete. I’m starting the test deployment through the configured release process."
+      text: "Authorization and configuration checks are complete. I’m starting the test deployment through the configured release process.",
+      watch: {
+        correlationId: "s5-deploy-authz",
+        variants: {
+          succeeded: "The deployment identity is authorized live — {{data.roles}} role(s) granted. Starting the test deployment.",
+          failed: "The deployment identity was not authorized ({{error}}) — I will not start the deployment job."
+        },
+        fallback: "The authorization step never ran — its prerequisite failed, so the deployment stays blocked rather than half-started."
+      }
     },
     { type: "exchange", from: "logic", to: "release", operation: "start-deployment-job", correlationId: "s5-deploy-job", requestSummary: "Start the test-environment deployment job" },
     { type: "processing", platform: "release", weight: 2, label: "Deployment job executing" },
@@ -42,7 +50,15 @@ export const scene05: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "release",
-      text: "The deployment job has returned a result. I’ll now verify the actual job status and any available deployment metadata."
+      text: "The deployment job has returned a result. I’ll now verify the actual job status and any available deployment metadata.",
+      watch: {
+        correlationId: "s5-deploy-job",
+        variants: {
+          succeeded: "The deployment job returned a result in {{duration}} — I’ll verify the actual job status next.",
+          failed: "The deployment job came back {{status}} ({{error}}) — I record the actual result, not the intended one."
+        },
+        fallback: "The deployment job never ran — its prerequisite failed, so there is no job result to report."
+      }
     },
     { type: "note", text: "Release starts a deployment job; a progress indicator advances; Monitor receives deployment events; the application readiness check begins." },
     {

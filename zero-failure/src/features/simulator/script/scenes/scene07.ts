@@ -25,7 +25,17 @@ export const scene07: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "storage",
-      text: "The upload operation returned a successful result. I’ll now retrieve the artifact and compare it with the expected test file."
+      text: "The upload operation returned a successful result. I’ll now retrieve the artifact and compare it with the expected test file.",
+      watch: {
+        correlationId: "s7-evidence-metadata",
+        variants: {
+          succeeded: "The upload returned a successful result ({{data.rows}} metadata row(s) stored) — I’ll retrieve the artifact and compare.",
+          failed: "The evidence metadata write failed ({{error}}) — I cannot claim the artifact is stored."
+        },
+        onError: {
+          LIVE_READ_ONLY: "Nothing was stored — live mode refused the write ({{error}}) before any call. There is no artifact to retrieve in this run."
+        }
+      }
     },
     { type: "processing", platform: "storage", label: "Retrieving the artifact and comparing with the expected file" },
     {
@@ -53,7 +63,17 @@ export const scene07: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "utilities",
-      text: "The configured notification operation returned a successful result. I’ll record the provider response and delivery status available to us."
+      text: "The configured notification operation returned a successful result. I’ll record the provider response and delivery status available to us.",
+      watch: {
+        correlationId: "s7-notification",
+        variants: {
+          succeeded: "The notification operation succeeded — the test summary is queued for {{data.recipient}}. I’ll record exactly what the provider confirms.",
+          failed: "The notification operation failed ({{error}}) — no delivery confirmation exists for this run."
+        },
+        onError: {
+          LIVE_READ_ONLY: "Nothing was sent — live mode refused the notification write ({{error}}). No message left this system, so there is no delivery to claim."
+        }
+      }
     },
     {
       type: "dialogue",

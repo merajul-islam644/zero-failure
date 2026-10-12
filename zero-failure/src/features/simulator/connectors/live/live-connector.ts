@@ -154,6 +154,7 @@ async function executeLiveOperation(
       durationMs: elapsedMs(startedAt),
       responseSummary: outcome.responseSummary,
       errorDetails: outcome.errorDetails,
+      ...(outcome.data ? { data: outcome.data } : {}),
       mode: "live",
       simulated: false
     };

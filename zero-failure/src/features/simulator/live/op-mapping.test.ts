@@ -33,6 +33,7 @@ function liveFakeClient(behavior: {
   schemasList?: () => Promise<unknown>;
   languages?: () => Promise<unknown>;
   translations?: () => Promise<unknown>;
+  notifications?: () => Promise<unknown>;
 } = {}): BlocksClient {
   const forbidden = (name: string) => () => Promise.reject(new Error(`${name} must not be called by this test`));
   return {
@@ -49,7 +50,7 @@ function liveFakeClient(behavior: {
       languages: behavior.languages ?? forbidden("localization.languages"),
       translations: behavior.translations ?? forbidden("localization.translations")
     },
-    notifier: { getNotifications: forbidden("notifier.getNotifications") }
+    notifier: { getNotifications: behavior.notifications ?? forbidden("notifier.getNotifications") }
   } as unknown as BlocksClient;
 }
 
@@ -107,6 +108,45 @@ describe("live connector against a working tenant", () => {
     expect(response.simulated).toBe(false);
     expect(response.responseSummary).toContain("demo@example.test");
     expect(response.durationMs).toBeGreaterThan(0);
+  });
+
+  it("carries the real response values dialogue quotes", async () => {
+    const connector = createLiveConnector({
+      platform: "iam",
+      displayName: "IAM",
+      operations: OPERATIONS.iam,
+      client: liveFakeClient({ userInfo: async () => ({ email: "demo@example.test", sub: "u1" }) })
+    });
+    const response = await connector.execute("authenticate-identity", request("authenticate-identity"));
+    expect(response.data).toEqual({ user: "demo@example.test" });
+  });
+
+  it("the honest OS remap anchors the run to the live platform session", async () => {
+    const connector = createLiveConnector({
+      platform: "os",
+      displayName: "OS",
+      operations: OPERATIONS.os,
+      client: liveFakeClient({ userInfo: async () => ({ email: "os@example.test", sub: "u9" }) })
+    });
+    const response = await connector.execute("manage-test-run", request("manage-test-run"));
+    expect(response.status).toBe("succeeded");
+    expect(response.responseSummary).toContain("os@example.test");
+    expect(response.data).toEqual({ user: "os@example.test" });
+  });
+
+  it("the logic remap reads the live notifier feed", async () => {
+    const connector = createLiveConnector({
+      platform: "logic",
+      displayName: "Logic",
+      operations: OPERATIONS.logic,
+      client: liveFakeClient({
+        notifications: async () => ({ notifications: [], totalNotificationsCount: 9, unReadNotificationsCount: 0 })
+      })
+    });
+    const response = await connector.execute("coordinate-step", request("coordinate-step"));
+    expect(response.status).toBe("succeeded");
+    expect(response.responseSummary).toContain("9");
+    expect(response.data).toEqual({ notifications: 9 });
   });
 
   it("refused writes record LIVE_READ_ONLY without ever touching the client", async () => {
@@ -227,6 +267,7 @@ describe("negative test stays meaningful live", () => {
     expect(response.status).toBe("failed");
     expect(response.errorDetails?.code).toBe("MISSING_KEY_DETECTED");
     expect(response.responseSummary).toContain("en");
+    expect(response.data).toEqual({ language: "en", keysChecked: 1, keyPresent: false });
   });
 
   it("verify-idempotency-support succeeds by construction without any client call", async () => {

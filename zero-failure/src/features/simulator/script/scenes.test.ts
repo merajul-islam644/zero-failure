@@ -58,6 +58,35 @@ describe("script integrity", () => {
       s10?.type === "dialogue" && s10.text.startsWith("Remember: our goal is not to pretend")
     ).toBe(true);
   });
+
+  it("resolves every dialogue watch against an exchange dispatched before its line", () => {
+    // A watched line may only quote a chain the audience has already seen
+    // dispatched — a watch pointing at a later (or missing) exchange would
+    // either spoil the story or resolve against nothing.
+    const beats = SCENES.flatMap((s) => s.beats);
+    const firstByCorrelation = new Map<string, number>();
+    const firstByAttempt = new Map<string, number>();
+    beats.forEach((beat, i) => {
+      if (beat.type !== "exchange") return;
+      if (!firstByCorrelation.has(beat.correlationId)) {
+        firstByCorrelation.set(beat.correlationId, i);
+      }
+      const attemptKey = `${beat.correlationId}#${beat.attempt ?? 1}`;
+      if (!firstByAttempt.has(attemptKey)) firstByAttempt.set(attemptKey, i);
+    });
+    beats.forEach((beat, i) => {
+      if (beat.type !== "dialogue" || !beat.watch) return;
+      const label = `${beat.watch.correlationId} (line ${i})`;
+      if (beat.watch.attempt !== undefined) {
+        const attempt = firstByAttempt.get(`${beat.watch.correlationId}#${beat.watch.attempt}`);
+        expect(attempt, `${label}: no exchange beat for that attempt`).toBeDefined();
+        expect(attempt!, `${label}: watched attempt must precede its line`).toBeLessThan(i);
+      }
+      const seen = firstByCorrelation.get(beat.watch.correlationId);
+      expect(seen, `${label}: no exchange beat carries this correlationId`).toBeDefined();
+      expect(seen!, `${label}: watched chain must precede its line`).toBeLessThan(i);
+    });
+  });
 });
 
 describe("scene budgets", () => {

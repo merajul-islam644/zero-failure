@@ -20,7 +20,10 @@ const op = (
 
 /** The script's operation catalog per platform — exported for the live op-map tests. */
 export const OPERATIONS: Record<PlatformId, ConnectorOperation[]> = {
-  os: [op("manage-test-run", "Create and close the test run")],
+  // os and logic have no own Blocks API — live mode remaps both to honest
+  // read-only probes of real services (session / notifier), so their summaries
+  // say what actually executes.
+  os: [op("manage-test-run", "Anchor the test run to the live platform session (read-only)")],
   iam: [
     op("authenticate-identity", "Validate the test identity"),
     op("authorize-operation", "Check an operation against the access policy"),
@@ -34,7 +37,7 @@ export const OPERATIONS: Record<PlatformId, ConnectorOperation[]> = {
     op("isolated-timeout-probe", "Isolated probe used by failure scenarios", 800, 1, 500),
     op("store-evidence-metadata", "Store evidence metadata rows")
   ],
-  logic: [op("coordinate-step", "Execute one orchestrated workflow step")],
+  logic: [op("coordinate-step", "Read the orchestration context from the live notifier feed (read-only)")],
   release: [
     op("get-deployment-config", "Fetch the validated deployment configuration"),
     op("start-deployment-job", "Start the test-environment deployment job", 3000),

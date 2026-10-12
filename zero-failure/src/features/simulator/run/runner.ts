@@ -173,6 +173,13 @@ async function executeExchange(
     }
   }
 
+  // A message whose outcome was overridden to a failure must not quote the
+  // connector's success values — the dialogue only speaks numbers the run
+  // actually earned.
+  const overriddenToFailure =
+    injection !== null && (injection.outcome === "fail" || injection.outcome === "timeout" || injection.outcome === "not-configured");
+  const carriedData = overriddenToFailure ? undefined : response.data;
+
   return {
     runId: spec.runId,
     correlationId: spec.correlationId,
@@ -191,7 +198,8 @@ async function executeExchange(
     mode: response.mode,
     attempt: spec.attempt,
     idempotencyKey,
-    simulated: response.mode === "simulated"
+    simulated: response.mode === "simulated",
+    ...(carriedData ? { data: carriedData } : {})
   };
 }
 

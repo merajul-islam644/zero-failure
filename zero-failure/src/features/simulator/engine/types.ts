@@ -67,6 +67,8 @@ export interface StructuredMessage {
   attempt: number;
   idempotencyKey?: string;
   simulated: boolean;
+  /** Real values recorded with the response; quoted by dialogue and panels. */
+  data?: Record<string, unknown>;
 }
 
 // ---- Timeline events ----
@@ -204,6 +206,9 @@ export interface OperationResponse {
   errorDetails?: ErrorDetails;
   mode: ExecutionMode;
   simulated: boolean;
+  /** Real values the dialogue and panels may quote (counts, ids, names).
+   *  Dropped when an injected failure overrides the response. */
+  data?: Record<string, unknown>;
 }
 
 export interface PlatformConnector {
@@ -266,8 +271,34 @@ export interface RunReport {
 
 // ---- Scenes and beats (script data) ----
 
+/** What a dialogue line may say about a watched exchange, keyed by the
+ *  outcome the run actually recorded. "recovered" = the first attempt did
+ *  not succeed and a later attempt did. */
+export type WatchOutcome =
+  | "succeeded"
+  | "failed"
+  | "timed-out"
+  | "not-configured"
+  | "recovered";
+
+/** Attaches an outcome-narrating dialogue line to an exchange's real result.
+ *  The compiler picks the variant the recorded message actually earns, so the
+ *  same line tells the truth in every mode and scenario. Authoring rule: the
+ *  watched exchange beat must precede the line that watches it. */
+export interface DialogueWatch {
+  correlationId: string;
+  /** Specific attempt to watch; omitted = the final attempt of the chain. */
+  attempt?: number;
+  variants: Partial<Record<WatchOutcome, string>>;
+  /** Error-code-keyed lines, checked before status variants — e.g.
+   *  LIVE_TRANSPORT_ERROR vs MISSING_KEY_DETECTED are both status "failed". */
+  onError?: Partial<Record<string, string>>;
+  /** Used when the correlation has no messages (blocked live step). */
+  fallback?: string;
+}
+
 export type Beat =
-  | { type: "dialogue"; speaker: SpeakerId; text: string }
+  | { type: "dialogue"; speaker: SpeakerId; text: string; watch?: DialogueWatch }
   | {
       type: "exchange";
       from: PlatformId;

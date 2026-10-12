@@ -40,12 +40,29 @@ export const scene02: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "iam",
-      text: "The valid test identity has passed authentication, and the requested permission is confirmed by the configured access policy."
+      text: "The valid test identity has passed authentication, and the requested permission is confirmed by the configured access policy.",
+      watch: {
+        correlationId: "s2-identity-check",
+        variants: {
+          succeeded: "The live session is confirmed — signed in as {{data.user}} — and the requested permission is confirmed by the tenant's access policy.",
+          failed: "The identity check failed ({{error}}) — I cannot claim the test identity passed. Authentication must hold before anything else runs.",
+          "not-configured": "The identity check came back not-configured ({{error}}) — I cannot confirm the test identity against the tenant."
+        },
+        fallback: "The identity check recorded no result — authentication stays unverified in this run."
+      }
     },
     {
       type: "dialogue",
       speaker: "data-gateway",
-      text: "Authorization confirmed. I can now process the permitted request."
+      text: "Authorization confirmed. I can now process the permitted request.",
+      watch: {
+        correlationId: "s2-authorize-read",
+        variants: {
+          succeeded: "Live policy confirms {{data.roles}} role(s) — the permitted request may proceed.",
+          failed: "The live authorization check failed ({{error}}) — this request does not proceed.",
+          "not-configured": "Authorization is not verifiable live ({{error}}) — I treat this request as unpermitted."
+        }
+      }
     },
     {
       type: "dialogue",
@@ -57,7 +74,15 @@ export const scene02: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "data-gateway",
-      text: "The restricted request was denied. No protected record was modified."
+      text: "The restricted request was denied. No protected record was modified.",
+      watch: {
+        correlationId: "s2-authorize-restricted",
+        variants: {
+          failed: "The restricted request was denied ({{error}}). No protected record was touched.",
+          succeeded: "The restricted request was not denied — that is a real access-policy finding, not a pass."
+        },
+        fallback: "The restricted check recorded no result — there is no denial to confirm in this run."
+      }
     },
     {
       type: "dialogue",

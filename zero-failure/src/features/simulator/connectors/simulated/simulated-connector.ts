@@ -62,11 +62,69 @@ export function createSimulatedConnector(options: SimulatedConnectorOptions): Pl
         status: "succeeded",
         durationMs: op ? Math.round(300 + rng() * Math.min(1700, op.timeoutMs - 400)) : 900,
         responseSummary: defaultResponseSummary(operation, request),
+        data: simulatedDataFor(operation, request.requestId),
         mode: "simulated",
         simulated: true
       });
     }
   };
+}
+
+/**
+ * Deterministic response values the dialogue and panels may quote, seeded on
+ * a FRESH rng stream (":data" suffix) so the duration stream above — and with
+ * it every golden outcome — stays byte-identical. These are simulated values
+ * in a mode the UI labels simulated everywhere; live mode records real ones.
+ */
+export function simulatedDataFor(operation: string, requestId: string): Record<string, unknown> | undefined {
+  const rng = rngFor(`${requestId}:${operation}:data`);
+  const int = (min: number, span: number) => min + Math.floor(rng() * span);
+  const hex4 = () => Math.floor(rng() * 0xffff).toString(16).padStart(4, "0");
+
+  switch (operation) {
+    case "authenticate-identity":
+      return { user: "test-identity", roles: 2 };
+    case "authorize-operation":
+      return { roles: 2 };
+    case "authorize-deployment-identity":
+      return { roles: int(3, 6) };
+    case "query-project-record":
+      return {
+        schemas: int(3, 10),
+        environmentMatch: true,
+        detail: "the returned project matches the expected test environment"
+      };
+    case "create-test-record":
+      return { recordId: `REC-${hex4()}` };
+    case "read-test-record":
+      return { fieldsMatch: true, fields: int(6, 9) };
+    case "load-translation-resources":
+      return { languages: 2, keys: int(180, 140), detail: "English and Bengali resources loaded" };
+    case "check-missing-key":
+      return { key: "simulator.probe.key-that-must-not-exist", keyPresent: false };
+    case "isolated-timeout-probe":
+      return { schemas: 1, latency: int(300, 480) };
+    case "store-evidence-metadata":
+      return { rows: 3 };
+    case "register-evidence-metadata":
+      return { artifacts: 1 };
+    case "get-deployment-config": {
+      const v = int(1, 8);
+      return { version: `cfg-1.${v}.${v}`, valid: true };
+    }
+    case "start-deployment-job":
+      return { jobId: `JOB-${hex4()}` };
+    case "run-readiness-check":
+      return { healthy: true };
+    case "observe-deployment-events":
+      return { events: int(12, 28) };
+    case "verify-idempotency-support":
+      return { supported: true };
+    case "send-test-notification":
+      return { queued: true, recipient: "test-recipient@blocks.test" };
+    default:
+      return undefined;
+  }
 }
 
 /** Human-readable, script-aligned response summaries per known operation. */

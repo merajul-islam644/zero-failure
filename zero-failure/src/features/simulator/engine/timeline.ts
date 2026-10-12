@@ -9,6 +9,7 @@
 // envelopes so the skeleton still plays end to end.
 
 import { budgetScene, clampProcessingMs, type BudgetedItem } from "./budget";
+import { resolveScenes } from "./dialogue";
 import { buildSceneTable, type SceneWindow } from "./select";
 import type {
   Beat,
@@ -115,7 +116,10 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
     }
   };
 
-  for (const scene of scenes) {
+  // Watched dialogue lines resolve against the run's real messages BEFORE
+  // budgeting, so line durations match the words actually spoken. With no
+  // run (bring-up) scenes pass through untouched — static text, as always.
+  for (const scene of resolveScenes(scenes, run?.messages ?? null)) {
     const budget = budgetScene(scene.beats, scene.targetDurationMs);
     const sceneStart = cursor;
     push({

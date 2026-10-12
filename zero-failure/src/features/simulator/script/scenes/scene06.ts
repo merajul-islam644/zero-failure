@@ -28,7 +28,17 @@ export const scene06: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "monitor",
-      text: "Yes. A completed deployment and a healthy application are different conditions. I’ll correlate the failure with the deployment timestamp and the test-run ID."
+      text: "Yes. A completed deployment and a healthy application are different conditions. I’ll correlate the failure with the deployment timestamp and the test-run ID.",
+      watch: {
+        correlationId: "s6-readiness",
+        attempt: 1,
+        variants: {
+          failed: "The first readiness attempt failed ({{error}}) — I’ll correlate it with the deployment timestamp and the test-run ID.",
+          "timed-out": "The first readiness attempt timed out after {{duration}} ({{error}}) — I’ll correlate the trace with the test-run ID.",
+          succeeded: "The first readiness attempt actually passed in {{duration}} — there is no failure to correlate in this run."
+        },
+        fallback: "The readiness chain never ran — its prerequisite is not configured, so there is no attempt to correlate yet."
+      }
     },
     { type: "processing", platform: "monitor", label: "Correlating failure with deployment timestamp and RUN-001" },
     {
@@ -56,7 +66,16 @@ export const scene06: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "monitor",
-      text: "The second readiness check has now returned a successful result in this simulation. I’ll preserve both attempts so the first failure is not erased."
+      text: "The second readiness check has now returned a successful result in this simulation. I’ll preserve both attempts so the first failure is not erased.",
+      watch: {
+        correlationId: "s6-readiness",
+        variants: {
+          recovered: "The retry came back healthy in {{duration}} — attempt 1 failed ({{firstError}}), attempt {{attempt}} succeeded. I keep both so the first failure is not erased.",
+          succeeded: "The readiness check passed on the first attempt in {{duration}} — there was no failure to recover from in this run.",
+          failed: "The retry did not recover — the readiness check still reports {{error}}. Both attempts stay in the trace."
+        },
+        fallback: "The readiness check never ran — its prerequisite is not configured live, so neither failure nor recovery applies here."
+      }
     },
     { type: "note", text: "A retry succeeds while the original failure remains in the timeline." },
     {
@@ -67,7 +86,15 @@ export const scene06: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "ai-agent",
-      text: "I’ll mark the readiness check as recovered after retry, retain the first failure as a warning, and include both results in the final report."
+      text: "I’ll mark the readiness check as recovered after retry, retain the first failure as a warning, and include both results in the final report.",
+      watch: {
+        correlationId: "s6-readiness",
+        variants: {
+          recovered: "Marked recovered after retry — attempt 1 failed ({{firstError}}), attempt {{attempt}} succeeded; the warning stays in the report.",
+          succeeded: "No recovery to mark — the check passed first try, so the report records a clean pass, not a warning."
+        },
+        fallback: "The readiness check never ran, so the report marks it not tested rather than recovered."
+      }
     }
   ],
   checkpoints: [

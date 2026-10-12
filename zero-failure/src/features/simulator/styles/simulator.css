@@ -230,7 +230,8 @@
 }
 
 .sim-conn-row[data-tone="unknown"] .sim-conn-status,
-.sim-conn-row[data-tone="no-api"] .sim-conn-status {
+.sim-conn-row[data-tone="no-api"] .sim-conn-status,
+.sim-conn-row[data-tone="refused"] .sim-conn-status {
   color: hsl(var(--sim-text-dim));
 }
 
@@ -1220,6 +1221,11 @@
   font-size: 0.7rem;
 }
 
+.sim-msg-data {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
 /* ---- panel tabs ---- */
 
 .sim-tabs {
@@ -1509,6 +1515,26 @@
   color: hsl(var(--sim-text-dim));
   font-size: 0.72rem;
   line-height: 1.4;
+}
+
+/* ---- zoom (full-display) mode ---- */
+
+/* The zoomed canvas leaves the stage band for a fixed full-display layer.
+   Same 16:9 meet-box math — measured against the viewport instead of the
+   stage — so the solar system and galaxy fill the display edge to edge
+   without ever cropping. */
+.sim-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  /* Above the mobile drawer (55/56); the report overlay (60) still wins. */
+  z-index: 57;
+  background: hsl(var(--sim-stage));
+}
+
+.sim-zoom-exit {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 /* ---- report overlay ---- */

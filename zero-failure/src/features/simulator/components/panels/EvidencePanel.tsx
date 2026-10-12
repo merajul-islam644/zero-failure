@@ -2,6 +2,7 @@
 // attempts in order — the same evidence the report appendix exports.
 
 import type { Timeline } from "../../engine/timeline";
+import { dataReadout } from "../../engine/dialogue";
 import { useReveal, revealStatus, type RevealWindow } from "./reveal";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -48,6 +49,7 @@ export function EvidencePanel({ timeline }: { timeline: Timeline }) {
                       {m.errorDetails
                         ? `${m.errorDetails.code}: ${m.errorDetails.message}`
                         : m.responseSummary}
+                      {dataReadout(m.data)}
                     </span>
                   )}
                 </li>

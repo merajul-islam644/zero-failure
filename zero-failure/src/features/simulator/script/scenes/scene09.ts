@@ -32,7 +32,16 @@ export const scene09: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "logic",
-      text: "The request timed out. I’ve recorded the failed attempt and will follow the configured retry policy."
+      text: "The request timed out. I’ve recorded the failed attempt and will follow the configured retry policy.",
+      watch: {
+        correlationId: "s9-timeout-probe",
+        attempt: 1,
+        variants: {
+          "timed-out": "The probe timed out after {{duration}} ({{error}}). I’ve recorded the failed attempt and will follow the retry policy.",
+          succeeded: "The first probe actually came back clean in {{duration}} — there is no timeout to record, so I will not stage one.",
+          failed: "The first probe failed outright ({{error}}) — recorded as-is, and the retry policy follows."
+        }
+      }
     },
     { type: "note", text: "The timeout timer expires; a retry starts." },
     {
@@ -56,12 +65,28 @@ export const scene09: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "data-gateway",
-      text: "The dependency is available again. The retry returned a successful response in this simulated scenario."
+      text: "The dependency is available again. The retry returned a successful response in this simulated scenario.",
+      watch: {
+        correlationId: "s9-timeout-probe",
+        variants: {
+          recovered: "The dependency is available again — attempt 1 timed out ({{firstError}}), attempt {{attempt}} returned a real response in {{duration}}.",
+          succeeded: "Both probe attempts came back clean — the dependency never went down in this run.",
+          failed: "The retry did not recover — the probe still reports {{error}}. Both attempts stay in the trace."
+        }
+      }
     },
     {
       type: "dialogue",
       speaker: "monitor",
-      text: "I can confirm that the test observed the timeout and subsequent recovery. I’ll preserve both attempts in the trace."
+      text: "I can confirm that the test observed the timeout and subsequent recovery. I’ll preserve both attempts in the trace.",
+      watch: {
+        correlationId: "s9-timeout-probe",
+        variants: {
+          recovered: "Confirmed: the trace shows the timeout and the recovery — both attempts preserved, {{firstError}} then success.",
+          succeeded: "The trace shows no timeout — both attempts succeeded, so there is no recovery to confirm.",
+          failed: "Confirmed: the probe is still failing ({{error}}) — the trace preserves both attempts and no recovery."
+        }
+      }
     },
     {
       type: "dialogue",

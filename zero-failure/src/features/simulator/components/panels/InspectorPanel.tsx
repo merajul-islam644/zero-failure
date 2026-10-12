@@ -10,6 +10,7 @@ import { RefreshCw } from "lucide-react";
 import type { Timeline } from "../../engine/timeline";
 import { useRun } from "../../run/RunContext";
 import { CAST_BY_ID } from "../../script/cast";
+import { dataReadout } from "../../engine/dialogue";
 import type { LiveActivityEvent } from "../../live/activity";
 import { capabilityFor } from "../../live/capabilities";
 import type { LiveProbeState } from "../../live/types";
@@ -94,13 +95,23 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
           {Object.values(liveRegistry).map((connector) => {
             const capability = capabilityFor(connector.platform);
             const status =
-              capability.kind === "sdk-read"
-                ? liveStatusText(probes.data?.[capability.probe])
-                : {
-                    text: "no live API — simulated",
-                    tone: "no-api",
-                    title: "No SELISE Blocks API backs this platform — it always runs simulated."
-                  };
+              capability.kind === "sdk-read" ? (
+                capability.probe ? (
+                  liveStatusText(probes.data?.[capability.probe])
+                ) : (
+                  {
+                    text: "read-only · writes refused · no probe",
+                    tone: "refused",
+                    title: "Every live operation on this platform is a write, so live mode refuses them all — there is nothing to probe."
+                  }
+                )
+              ) : (
+                {
+                  text: "no live API — simulated",
+                  tone: "no-api",
+                  title: "No SELISE Blocks API backs this platform — it always runs simulated."
+                }
+              );
             return (
               <li key={connector.platform} className="sim-conn-row" data-tone={status.tone} title={status.title}>
                 <span className="sim-conn-name">{connector.displayName}</span>
@@ -161,6 +172,7 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
                       ) : (
                         <span>{m.responseSummary}</span>
                       )}
+                      {dataReadout(m.data) && <span className="sim-msg-data">{dataReadout(m.data)}</span>}
                       <span className="sim-msg-duration">{m.durationMs} ms</span>
                     </div>
                   )}

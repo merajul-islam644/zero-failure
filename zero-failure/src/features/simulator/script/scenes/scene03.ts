@@ -29,7 +29,15 @@ export const scene03: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "data-gateway",
-      text: "The query completed. The response contains the requested fields, and the returned project matches the expected test environment."
+      text: "The query completed. The response contains the requested fields, and the returned project matches the expected test environment.",
+      watch: {
+        correlationId: "s3-query-record",
+        variants: {
+          succeeded: "The query completed in {{duration}} — the permitted fields came back, {{data.schemas}} schema value(s) in the response.",
+          failed: "The live query failed ({{error}}) — no project fields came back, so the workflow's data premise is unverified.",
+          "not-configured": "The live query is not available ({{error}}) — I cannot confirm the project record in this run."
+        }
+      }
     },
     {
       type: "dialogue",
@@ -52,7 +60,18 @@ export const scene03: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "data-gateway",
-      text: "The record was created. I’ve retrieved it again, and its stored fields match the submitted values."
+      text: "The record was created. I’ve retrieved it again, and its stored fields match the submitted values.",
+      watch: {
+        correlationId: "s3-read-back",
+        variants: {
+          succeeded: "The record was created and read back — {{data.fields}} field(s) match the submitted values.",
+          failed: "The create/read-back check failed ({{error}}) — persistence is not proven in this run.",
+          "not-configured": "The persistence check is not configured ({{error}}) — no create/read-back ran."
+        },
+        onError: {
+          LIVE_READ_ONLY: "Nothing was created or read back — live refused the write ({{error}}); the persistence claim does not hold here."
+        }
+      }
     },
     { type: "note", text: "JSON-style data cards travel between Logic and Data Gateway; a record is created, read back and compared." },
     {

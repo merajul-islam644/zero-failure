@@ -50,6 +50,13 @@ async function probe(
 }
 
 export const PROBES: Record<ProbeKey, (client: BlocksClient) => Promise<LiveProbeState>> = {
+  "os-session": (client) =>
+    probe(client, "os-session", async (c) => {
+      const info = await c.auth.userInfo();
+      const who = info.email ?? info.name ?? info.sub ?? "the signed-in user";
+      // No count: a session is presence, not a tenant metric the differ tracks.
+      return { detail: `Platform session live for ${who}` };
+    }),
   "iam-me": (client) =>
     probe(client, "iam-me", async (c) => {
       const me = await c.iam.me();

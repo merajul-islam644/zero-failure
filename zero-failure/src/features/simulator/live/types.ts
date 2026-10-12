@@ -3,8 +3,9 @@
 // engine's ExecutionMode says which registry runs; these types describe what
 // "live" honestly means per platform.
 
-/** The five read-only probes the live layer polls — one per SDK-backed platform. */
+/** The read-only probes the live layer polls — one per probed SDK-backed platform. */
 export type ProbeKey =
+  | "os-session"
   | "iam-me"
   | "data-schemas"
   | "localization-languages"
@@ -12,10 +13,10 @@ export type ProbeKey =
   | "notifier-inbox";
 
 export type LiveCapability =
-  | { kind: "sdk-read"; probe: ProbeKey }
+  | { kind: "sdk-read"; probe: ProbeKey | null }
   /** SDK surface exists but is send-only (mail) — nothing safe to probe or run. */
   | { kind: "send-only" }
-  /** No SELISE Blocks API backs this platform (os, logic, release, …) — simulated only. */
+  /** No SELISE Blocks API backs this platform (release, monitor, …) — simulated only. */
   | { kind: "no-live-api" };
 
 export type LiveProbeState =

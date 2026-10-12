@@ -9,6 +9,7 @@ import { scenarioById, SCENARIOS, SCENARIO_DEFAULT } from "../scenarios/registry
 import { ASSERTIONS } from "./assertions";
 import { countStatuses, computeOverall } from "./verdict";
 import { buildTimeline } from "../engine/timeline";
+import { resolveScenes } from "../engine/dialogue";
 import { SCENES } from "../script/scenes";
 import type { BlocksClient } from "@seliseblocks/client";
 import type { AssertionStatus, ExecutionMode, RunResult, TestResult } from "../engine/types";
@@ -288,6 +289,14 @@ describe("run-driven timeline compilation", () => {
       )
     ).toBe(true);
   });
+
+  it("compiles identical simulated runs into identical dialogue — broadcast-safe", async () => {
+    const a = buildTimeline(SCENES, await runScenario("default-storyline"));
+    const b = buildTimeline(SCENES, await runScenario("default-storyline"));
+    const dialogueJson = (t: typeof a) =>
+      t.events.filter((e) => e.kind === "dialogue").map((e) => JSON.stringify(e));
+    expect(dialogueJson(a)).toEqual(dialogueJson(b));
+  });
 });
 
 // ---- Live mode: real connectors, read-only refusals, generated run ids ----
@@ -384,5 +393,36 @@ describe("live runs (real connectors, fake tenant)", () => {
     }
     // A live run is never dressed up as a pass: refused writes dominate.
     expect(verdictOf(live)).toBe("failed");
+  });
+
+  it("speaks the truth live: refusal and no-live-api admissions replace the scripted claims", async () => {
+    const live = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+    const resolved = resolveScenes(SCENES, live.messages);
+
+    // Scene 3: the persistence claim becomes a refusal admission.
+    const scene3 = resolved[2]?.beats.find(
+      (b) => b.type === "dialogue" && b.text.startsWith("Nothing was created or read back")
+    );
+    expect(scene3?.type === "dialogue" && scene3.text).toContain("refused");
+
+    // Scene 4: the configuration gate admits Release has no live API.
+    const scene4 = resolved[3]?.beats.find(
+      (b) => b.type === "dialogue" && b.text.includes("no live API")
+    );
+    expect(scene4?.type === "dialogue").toBe(true);
+  });
+
+  it("reality decides: a live probe that succeeds speaks the no-timeout variant", async () => {
+    const live = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+    const resolved = resolveScenes(SCENES, live.messages);
+
+    // Locate W17 by its static text, then check the SAME slot now carries the
+    // succeeded variant — the scripted timeout drama is not staged live.
+    const w17Index = SCENES[8]?.beats.findIndex(
+      (b) => b.type === "dialogue" && b.text.startsWith("The request timed out.")
+    );
+    expect(w17Index).toBeGreaterThanOrEqual(0);
+    const resolvedBeat = w17Index === undefined ? undefined : resolved[8]?.beats[w17Index];
+    expect(resolvedBeat?.type === "dialogue" && resolvedBeat.text).toContain("no timeout to record");
   });
 });

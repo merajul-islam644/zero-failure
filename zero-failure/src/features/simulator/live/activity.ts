@@ -26,6 +26,7 @@ export interface LiveActivityEvent {
 
 /** The per-probe noun a count change is phrased with ("3 → 5 data schemas visible"). */
 const PROBE_NOUN: Record<ProbeKey, string> = {
+  "os-session": "platform session",
   "iam-me": "session",
   "data-schemas": "data schemas visible",
   "localization-languages": "languages configured",
