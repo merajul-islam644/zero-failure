@@ -32,11 +32,7 @@ export function SolarNodeLayer({ states, visibleCast }: SolarNodeLayerProps) {
   return (
     <g className="sim-nodes">
       <g transform={`translate(${ORBIT_CENTER.x} ${ORBIT_CENTER.y})`}>
-        <CharacterNode
-          character={CAST_BY_ID.os}
-          state={states.os}
-          dimmed={!visibleCast.includes("os")}
-        />
+        <CharacterNode character={CAST_BY_ID.os} state={states.os} dimmed={!visibleCast.includes("os")} />
       </g>
       {planets.map(({ character, point }) => (
         <g key={character.id} transform={`translate(${point.x} ${point.y})`}>

@@ -495,6 +495,60 @@
   transition: opacity 600ms ease;
 }
 
+/* ---- speech bubble — who is talking right now ---- */
+
+/* Mounted on every node, shown only while the state is speaking: a short
+   fade keeps the flip from flickering without ever covering a second node's
+   own bubble for long. */
+.sim-node-speech {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+  pointer-events: none;
+}
+
+.sim-node-speech[data-show] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sim-node-speech-box {
+  fill: hsl(var(--sim-panel) / 0.97);
+  stroke: hsl(var(--node-hue) / 0.75);
+  stroke-width: 1.5;
+}
+
+.sim-node-speech-tip {
+  fill: hsl(var(--node-hue) / 0.9);
+}
+
+.sim-node-speech-name {
+  font-size: 14px;
+  font-weight: 700;
+  fill: hsl(var(--node-hue));
+}
+
+.sim-node-speech-text {
+  font-size: 13px;
+  fill: hsl(var(--sim-text));
+}
+
+/* OS's accent hue is blue, but the star itself burns in literal fire colors
+   (see the sun block) — its bubble burns with it. */
+.sim-node-speech[data-sun] .sim-node-speech-box {
+  stroke: #ff9433bf;
+}
+
+.sim-node-speech[data-sun] .sim-node-speech-tip {
+  fill: #ff8c1fe6;
+}
+
+.sim-node-speech[data-sun] .sim-node-speech-name {
+  fill: #ffc46a;
+}
+
 .sim-node[data-state="speaking"] .sim-node-halo {
   stroke: hsl(var(--node-hue) / 0.85);
   animation: sim-pulse 1.6s ease-in-out infinite;
@@ -1848,6 +1902,10 @@
   .sim-node[data-dimmed] {
     transition: none;
   }
+
+  .sim-node-speech {
+    transition: none;
+  }
 }
 
 /* Manual motion overrides (SettingsContext sets data-motion on <html>;
@@ -1865,6 +1923,10 @@ html[data-motion="reduce"] .sim-live-pulse {
 }
 
 html[data-motion="reduce"] .sim-node[data-dimmed] {
+  transition: none;
+}
+
+html[data-motion="reduce"] .sim-node-speech {
   transition: none;
 }
 

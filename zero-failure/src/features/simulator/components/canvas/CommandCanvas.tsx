@@ -12,6 +12,7 @@ import type { LiveActivityEvent } from "../../live/activity";
 import { ORBIT_CENTER, ORBIT_RINGS } from "./orbits";
 import { GalaxyLayer } from "./GalaxyLayer";
 import { SolarNodeLayer } from "./SolarNodeLayer";
+import { SpeechBubbleLayer } from "./SpeechBubbleLayer";
 import { PacketLayer } from "./PacketLayer";
 import { LivePulseLayer } from "./LivePulseLayer";
 
@@ -86,6 +87,9 @@ export function CommandCanvas({ timeline, liveEvents }: CommandCanvasProps) {
       <SolarNodeLayer states={snapshot.states} visibleCast={visibleCast} />
       <PacketLayer timeline={timeline} />
       {liveEvents && liveEvents.length > 0 && <LivePulseLayer events={liveEvents} />}
+      {/* the speaker's bubble paints above everything — neighbors and
+          packets can never cover the words */}
+      <SpeechBubbleLayer dialogue={snapshot.dialogue} states={snapshot.states} />
     </svg>
   );
 }
