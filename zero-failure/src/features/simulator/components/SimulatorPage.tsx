@@ -2,7 +2,7 @@
 // pre-executes the
 // selected scenario up-front; the timeline compiles from its structured
 // messages, so playback is a pure fold over real results. Composes the
-// engine: clock via PlayerProvider, canvas, overlay, subtitles, transport,
+// engine: clock via PlayerProvider, canvas, overlay, transport,
 // audio (opt-in) and the panel deck.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -24,7 +24,6 @@ import { AccountBar } from "./AccountBar";
 import { SimulationBadge } from "./SimulationBadge";
 import { LiveHonestyStrip, LiveModeToggle } from "./LiveModeControl";
 import { BroadcastControl } from "./BroadcastControl";
-import { SubtitleBar } from "./SubtitleBar";
 import { TransportBar, SPEEDS } from "./transport/TransportBar";
 import { AudioLayer } from "./AudioLayer";
 import { PanelDeck } from "./panels/PanelDeck";
@@ -69,6 +68,9 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
   // and the canvas is a pure subscriber that simply re-parents.
   const [zoomed, setZoomed] = useState(false);
   const box = useMeetBox(zoomed ? zoomRef : stageRef);
+  // The zoom overlay's raw size: zoom stretches the sky to the window's
+  // whole shape instead of the stage band's 16:9.
+  const zoomArea = useAreaSize(zoomed ? zoomRef : null);
   // Broadcast owns the room (poll + publish); actions wraps every transport
   // call so local moves reach the shared head. Off, they are plain clock
   // calls — zero behavior change.
@@ -174,7 +176,6 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
         </main>
         <PanelDeck timeline={timeline} liveEvents={liveEvents} actions={actions} />
       </div>
-      <SubtitleBar timeline={timeline} />
       <TransportBar
         timeline={timeline}
         actions={actions}
@@ -183,8 +184,12 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
       />
       {zoomed && (
         <div className="sim-zoom-overlay" ref={zoomRef}>
-          <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-            <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
+          <div className="sim-canvas-frame" style={{ width: zoomArea.w, height: zoomArea.h }}>
+            <CommandCanvas
+              timeline={timeline}
+              liveEvents={liveEvents}
+              aspect={zoomArea.h > 0 ? zoomArea.w / zoomArea.h : undefined}
+            />
           </div>
           <button
             type="button"
@@ -247,6 +252,28 @@ function useMeetBox(ref: RefObject<HTMLElement | null>): { w: number; h: number 
     return () => observer.disconnect();
   }, [ref]);
   return box;
+}
+
+/** The raw measured size of the ref's element — no 16:9 clamp. Lets the
+ *  zoom overlay stretch the canvas across the whole window. Null ref means
+ *  "not mounted" (stage mode) and reports 0x0. */
+function useAreaSize(ref: RefObject<HTMLElement | null> | null): { w: number; h: number } {
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = ref?.current;
+    if (!el) return;
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const w = Math.floor(width);
+      const h = Math.floor(height);
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
 }
 
 /** Next/previous scene start; "previous" returns to this scene's start first. */

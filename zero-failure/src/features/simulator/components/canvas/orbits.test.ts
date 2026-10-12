@@ -15,7 +15,7 @@ import {
 } from "./orbits";
 
 const SAMPLED_T = [0, 5_000, 91_313, 250_000, 600_000];
-const LABEL_CLEARANCE = 104; // planet halo (52) vs sun corona (~94) worst case
+const LABEL_CLEARANCE = 104; // planet halo (52) vs the sun's label ring worst case
 const ALL_IDS: PlatformId[] = ["os", ...PLANET_IDS];
 
 describe("orbitPosition", () => {

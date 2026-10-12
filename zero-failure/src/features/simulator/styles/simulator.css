@@ -336,14 +336,23 @@
   flex-wrap: wrap;
   gap: 0.35rem 2rem;
   padding: 0.55rem 1.5rem 0.3rem;
+  /* the same raised surface as the .sim-aside on the right — both flanking
+     panels read as one material in rail and row layouts alike */
+  background: hsl(var(--sim-bg-raised));
 }
 
-/* The remaining vertical band hosts the centered 16:9 frame. */
+/* The remaining vertical band hosts the centered 16:9 frame. Its background
+   IS the sky: the room glow that used to be an SVG rect inside the frame now
+   spreads across the whole band, so the letterbox and the solar system share
+   one continuous gradient — no black seam at the frame edge. */
 .sim-canvas-area {
   position: relative;
   flex: 1;
   min-height: 0;
   min-width: 0;
+  background:
+    radial-gradient(80% 80% at 50% 18%, hsl(var(--sim-accent) / 0.14), transparent),
+    hsl(var(--sim-stage));
 }
 
 /* Wide-short stage: a header row would spend scarce height while wide
@@ -358,6 +367,10 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: min(18rem, 30%);
+    /* same raised surface and edge as the .sim-aside on the right — the
+       two flanking panels read as one material */
+    background: hsl(var(--sim-bg-raised));
+    border-right: 1px solid hsl(var(--sim-border));
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: flex-start; /* not the row's space-between: keep the
@@ -433,11 +446,12 @@
   font-size: 0.82rem;
   line-height: 1.45;
   color: hsl(var(--sim-text));
-  background: hsl(var(--sim-panel) / 0.82);
+  /* same surface as the stage section around it — no raised card floating
+     on the rail */
+  background: transparent;
   border: 1px solid hsl(var(--sim-border));
   border-left: 3px solid hsl(var(--sim-accent));
   border-radius: 0.5rem;
-  backdrop-filter: blur(6px);
 }
 
 .sim-note-kicker {
@@ -629,11 +643,19 @@
 
 /* ---- deep-sky backdrop ---- */
 
-/* Distant galaxies around the solar system. Per-galaxy opacity arrives via
+/* The real galactic neighborhood. Per-galaxy opacity arrives via
    --gal-alpha (distance-faded); spin runs on the inner group so the CSS
    transform never fights the positioning transform attribute. */
 .sim-galaxy {
   opacity: var(--gal-alpha, 0.6);
+}
+
+/* names of our real neighbors — every one named, however small its disk;
+   the label holds still while the disk behind it slowly turns */
+.sim-galaxy-name {
+  fill: #cdd9f0;
+  font-size: 11px;
+  opacity: 0.82;
 }
 
 .sim-galaxy-spin {
@@ -644,6 +666,72 @@
 
 .sim-galaxy-core {
   fill: #fff7e0;
+}
+
+/* ---- comets ---- */
+/* Occasional visitors: the head rides its chord for the first 6% of the
+   schedule and stays dark the rest; the swing layer turns the tail between
+   the anti-sun bearings at each end. Keyframe percentages cannot use var(),
+   so the 6% crossing is baked into both animations — keep them in sync. */
+.sim-comet {
+  opacity: 0;
+  animation: sim-comet-fly var(--cycle, 50s) linear var(--delay, 0s) infinite;
+}
+
+.sim-comet-swing {
+  animation: sim-comet-swing var(--cycle, 50s) linear var(--delay, 0s) infinite;
+}
+
+.sim-comet-head {
+  fill: #f6faff;
+}
+
+.sim-comet-tail {
+  fill: url(#sim-comet-tail-grad);
+}
+
+.sim-comet-tail-inner {
+  fill: url(#sim-comet-tail-inner-grad);
+}
+
+@keyframes sim-comet-fly {
+  0% {
+    transform: translate(calc(1px * var(--x1, 0)), calc(1px * var(--y1, 0)));
+    opacity: 0;
+  }
+  0.8% {
+    opacity: 1;
+  }
+  5.2% {
+    opacity: 1;
+  }
+  6% {
+    transform: translate(calc(1px * var(--x2, 0)), calc(1px * var(--y2, 0)));
+    opacity: 0;
+  }
+  6.01% {
+    transform: translate(calc(1px * var(--x1, 0)), calc(1px * var(--y1, 0)));
+    opacity: 0;
+  }
+  100% {
+    transform: translate(calc(1px * var(--x1, 0)), calc(1px * var(--y1, 0)));
+    opacity: 0;
+  }
+}
+
+@keyframes sim-comet-swing {
+  0% {
+    transform: rotate(var(--a1, 0deg));
+  }
+  6% {
+    transform: rotate(var(--a2, 0deg));
+  }
+  6.01% {
+    transform: rotate(var(--a1, 0deg));
+  }
+  100% {
+    transform: rotate(var(--a1, 0deg));
+  }
 }
 
 .sim-star {
@@ -703,12 +791,83 @@
   animation: sim-sun-breathe 5.5s ease-in-out infinite;
 }
 
-/* ray streaks fan out and rotate, the way flares spray in all directions */
+/* flare streaks hold their bearing — a star doesn't wheel them around like
+   a pinwheel; each streak only shimmers */
 .sim-sun-rays {
   stroke: none;
+}
+
+.sim-sun-ray {
+  opacity: 0.7;
+  animation: sim-sun-ray-flick var(--flick, 5s) ease-in-out var(--fdelay, 0s) infinite;
+}
+
+@keyframes sim-sun-ray-flick {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* The photosphere turns like a real sphere — front to back, not around
+   like a clock. Cells and spots emerge at one limb, sweep across the face
+   while rising toward the far side (we look down on the orbital plane, so
+   "away" is up), foreshorten (scaleX) and fade around the far limb, then
+   re-emerge on the other side. The position jump at the loop point hides
+   in the limb fade. */
+.sim-sun-granule {
+  fill: #ffd985;
+  mix-blend-mode: screen;
+  opacity: var(--peak, 0.3);
   transform-box: fill-box;
   transform-origin: center;
-  animation: sim-sweep 90s linear infinite;
+  animation: sim-sun-drift var(--drift, 4.5s) linear var(--delay, 0s) infinite;
+}
+
+.sim-sun-spot {
+  opacity: var(--peak, 0.7);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sim-sun-drift var(--drift, 8s) linear var(--delay, 0s) infinite;
+}
+
+.sim-sun-spot-penumbra {
+  fill: #a34712;
+  opacity: 0.5;
+}
+
+.sim-sun-spot-umbra {
+  fill: #63210a;
+  opacity: 0.85;
+}
+
+@keyframes sim-sun-drift {
+  0% {
+    transform: translate(calc(-1px * var(--amp, 60)), 0) scaleX(0.3);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--peak, 0.3);
+  }
+  25% {
+    transform: translate(calc(-0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
+  }
+  50% {
+    transform: translate(0, calc(-1px * var(--arc, 16))) scaleX(1);
+  }
+  75% {
+    transform: translate(calc(0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
+  }
+  90% {
+    opacity: var(--peak, 0.3);
+  }
+  100% {
+    transform: translate(calc(1px * var(--amp, 60)), 0) scaleX(0.3);
+    opacity: 0;
+  }
 }
 
 @keyframes sim-sun-breathe {
@@ -719,16 +878,6 @@
   50% {
     opacity: 1;
   }
-}
-
-.sim-sun-corona {
-  fill: none;
-  stroke: #ffb14e80;
-  stroke-width: 2;
-  stroke-dasharray: 14 26;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sim-sweep 26s linear infinite;
 }
 
 /* ---- live activity pulses ---- */
@@ -893,41 +1042,6 @@
 .sim-btn:disabled {
   opacity: 0.4;
   cursor: default;
-}
-
-/* ---- subtitles ---- */
-
-.sim-subtitle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 4.5rem;
-  padding: 0.75rem 1.25rem;
-  background: hsl(var(--sim-bg-raised));
-  border-top: 1px solid hsl(var(--sim-border));
-}
-
-.sim-subtitle-empty {
-  visibility: hidden;
-}
-
-.sim-subtitle-speaker {
-  flex: none;
-  min-width: 4.5rem;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-align: center;
-  color: hsl(var(--node-hue));
-  border: 1px solid hsl(var(--node-hue) / 0.5);
-  border-radius: 999px;
-  background: hsl(var(--node-hue) / 0.1);
-}
-
-.sim-subtitle-text {
-  margin: 0;
-  font-size: 1.02rem;
-  line-height: 1.5;
 }
 
 /* ---- transport ---- */
@@ -1582,7 +1696,10 @@
   inset: 0;
   /* Above the mobile drawer (55/56); the report overlay (60) still wins. */
   z-index: 57;
-  background: hsl(var(--sim-stage));
+  /* Same sky as the stage band — the zoomed frame keeps blending into it. */
+  background:
+    radial-gradient(80% 80% at 50% 18%, hsl(var(--sim-accent) / 0.14), transparent),
+    hsl(var(--sim-stage));
 }
 
 .sim-zoom-exit {
@@ -1827,6 +1944,25 @@
   display: flex;
   align-items: flex-start;
   gap: 0.4rem;
+  /* pinned header: stays at the top of the scrolling panel. Full-bleed
+     over the aside's padding, with deep bottom padding that also covers
+     the flex gap, so nothing peeks through while content slides under. */
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: -0.9rem -1rem -1.1rem;
+  padding: 0.9rem 1rem 1.6rem;
+  background: hsl(var(--sim-bg-raised));
+}
+
+/* The scenario summary pins right below the tabs (Inspector/Config). */
+.sim-aside > .sim-inspector-section:nth-child(2) {
+  position: sticky;
+  top: 4.1rem; /* tucked under the tabs — overlap, never a see-through gap */
+  z-index: 2;
+  margin: 0 -1rem;
+  padding: 0.35rem 1rem 0.55rem;
+  background: hsl(var(--sim-bg-raised));
 }
 
 .sim-aside-top .sim-tabs {
@@ -1867,13 +2003,9 @@
   }
 
   /* On a phone the header would wrap and eat canvas height — drop the chip;
-    the subtitle bar carries the beat's text. */
+    the canvas and its speech bubbles carry the beat. */
   .sim-note {
     display: none;
-  }
-
-  .sim-subtitle-text {
-    font-size: 0.92rem;
   }
 
   .sim-node-name {
@@ -1891,10 +2023,13 @@
   .sim-node[data-state="speaking"] .sim-node-halo,
   .sim-node-sweep,
   .sim-sun-glow,
-  .sim-sun-rays,
-  .sim-sun-corona,
+  .sim-sun-ray,
+  .sim-sun-granule,
+  .sim-sun-spot,
   .sim-galaxy-spin,
   .sim-star[data-twinkle],
+  .sim-comet,
+  .sim-comet-swing,
   .sim-live-pulse {
     animation: none;
   }
@@ -1914,10 +2049,13 @@
 html[data-motion="reduce"] .sim-node[data-state="speaking"] .sim-node-halo,
 html[data-motion="reduce"] .sim-node-sweep,
 html[data-motion="reduce"] .sim-sun-glow,
-html[data-motion="reduce"] .sim-sun-rays,
-html[data-motion="reduce"] .sim-sun-corona,
+html[data-motion="reduce"] .sim-sun-ray,
+html[data-motion="reduce"] .sim-sun-granule,
+html[data-motion="reduce"] .sim-sun-spot,
 html[data-motion="reduce"] .sim-galaxy-spin,
 html[data-motion="reduce"] .sim-star[data-twinkle],
+html[data-motion="reduce"] .sim-comet,
+html[data-motion="reduce"] .sim-comet-swing,
 html[data-motion="reduce"] .sim-live-pulse {
   animation: none;
 }
@@ -1942,12 +2080,13 @@ html[data-motion="full"] .sim-node-sweep {
   animation: sim-sweep 1.4s linear infinite;
 }
 
-html[data-motion="full"] .sim-sun-corona {
-  animation: sim-sweep 26s linear infinite;
+html[data-motion="full"] .sim-sun-ray {
+  animation: sim-sun-ray-flick var(--flick, 5s) ease-in-out var(--fdelay, 0s) infinite;
 }
 
-html[data-motion="full"] .sim-sun-rays {
-  animation: sim-sweep 90s linear infinite;
+html[data-motion="full"] .sim-sun-granule,
+html[data-motion="full"] .sim-sun-spot {
+  animation: sim-sun-drift var(--drift, 4.5s) linear var(--delay, 0s) infinite;
 }
 
 html[data-motion="full"] .sim-sun-glow {
@@ -1960,6 +2099,14 @@ html[data-motion="full"] .sim-galaxy-spin {
 
 html[data-motion="full"] .sim-star[data-twinkle] {
   animation: sim-twinkle var(--tw-dur, 3.5s) ease-in-out var(--tw-delay, 0s) infinite;
+}
+
+html[data-motion="full"] .sim-comet {
+  animation: sim-comet-fly var(--cycle, 50s) linear var(--delay, 0s) infinite;
+}
+
+html[data-motion="full"] .sim-comet-swing {
+  animation: sim-comet-swing var(--cycle, 50s) linear var(--delay, 0s) infinite;
 }
 
 html[data-motion="full"] .sim-node[data-dimmed] {

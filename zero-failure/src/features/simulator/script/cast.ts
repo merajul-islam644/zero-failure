@@ -79,8 +79,8 @@ export const CAST: CharacterDef[] = [
   },
   {
     id: "storage",
-    name: "Storage",
-    role: "Evidence Manager",
+    name: "Studio",
+    role: "Studio Manager",
     personality: "Reliable",
     hue: "172 66% 45%",
     glyph: "HardDrive"

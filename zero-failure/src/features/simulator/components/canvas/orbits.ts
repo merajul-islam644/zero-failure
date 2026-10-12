@@ -10,6 +10,19 @@ import { cubicPath, type Point } from "./geometry";
 /** Canvas center in the 1600x900 viewBox — the sun sits here. */
 export const ORBIT_CENTER: Point = { x: 800, y: 450 };
 
+/** How far past the 1600x900 design frame the deep sky keeps drawing. A
+ *  zoom window wider or taller than 16:9 grows its viewBox into this
+ *  padding — centered on the sun — instead of letterboxing, so the sky
+ *  reaches every edge of the display with nothing cropped. */
+export const SKY_PAD = { x: 900, y: 900 };
+
+export const SKY_BOUNDS = {
+  x: -SKY_PAD.x,
+  y: -SKY_PAD.y,
+  w: 1600 + SKY_PAD.x * 2,
+  h: 900 + SKY_PAD.y * 2
+};
+
 /** rx = ry * SQUASH: squashed circles read as a tilted-view solar system
  *  and fill the 16:9 viewBox instead of wasting the horizontal frame. */
 const SQUASH = 1.6;

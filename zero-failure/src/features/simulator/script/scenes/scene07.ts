@@ -1,11 +1,11 @@
-// Scene 7 — Storage, Evidence and Notifications
-// (Storage + Utilities + Data Gateway, 05:50–06:45). Dialogue verbatim.
+// Scene 7 — Studio, Evidence and Notifications
+// (Studio + Utilities + Data Gateway, 05:50–06:45). Dialogue verbatim.
 
 import type { SceneDefinition } from "../../engine/types";
 
 export const scene07: SceneDefinition = {
   index: 7,
-  title: "Storage, Evidence and Notifications",
+  title: "Studio, Evidence and Notifications",
   environment: "Evidence and Notification Center",
   cast: ["storage", "data-gateway", "ai-agent", "utilities", "os", "monitor"],
   targetDurationMs: 55000,
@@ -48,7 +48,7 @@ export const scene07: SceneDefinition = {
       speaker: "storage",
       text: "The comparison passed in this simulation. The evidence reference is ready for the report."
     },
-    { type: "note", text: "A test artifact moves into Storage; its metadata appears in Data Gateway; a notification travels to a test inbox." },
+    { type: "note", text: "A test artifact moves into Studio; its metadata appears in Data Gateway; a notification travels to a test inbox." },
     {
       type: "dialogue",
       speaker: "utilities",
