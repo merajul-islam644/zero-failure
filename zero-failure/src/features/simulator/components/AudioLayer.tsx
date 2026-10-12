@@ -1,6 +1,7 @@
-// Audio layer: silent unless the user enables narration/sfx in settings.
-// Subscribes to the event index (discrete, not per-frame): every event
-// between the previous and current index fires its sound; seeks stay silent.
+// Audio layer: narration and sfx default ON (transport speaker button or
+// the Config panel toggles turn them off). Subscribes to the event index
+// (discrete, not per-frame): every event between the previous and current
+// index fires its sound; seeks stay silent.
 //
 // Narration runs as audiobook mode: when a dialogue line starts, the story
 // pauses until the line has been spoken in full, then resumes. Chasing the
@@ -21,7 +22,17 @@ const SEEK_HEAD_TOLERANCE_MS = 1200;
 /** Absolute cap on crossed events per step — a fast seek crosses hundreds. */
 const SEEK_EVENT_CAP = 40;
 
-export function AudioLayer({ timeline }: { timeline: Timeline }) {
+export function AudioLayer({
+  timeline,
+  onNarrationPause,
+  onNarrationResume
+}: {
+  timeline: Timeline;
+  /** Published when narration pauses the story (audiobook mode) — broadcast rooms share the rhythm. */
+  onNarrationPause?: () => void;
+  /** Published when a finished line resumes the story. */
+  onNarrationResume?: () => void;
+}) {
   const { clock, playing } = usePlayer();
   const { narration, sfx, voice, castVoices } = useSettings();
   const index = useEventIndex(timeline.events);
@@ -35,6 +46,9 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
   // pause, and (while set) a paused story waits for speech to finish.
   const selfPauseRef = useRef(false);
   const pendingResumeRef = useRef(false);
+  // Keep the publish callbacks current for onDone, which speech fires later.
+  const narrationCallbacksRef = useRef({ onNarrationPause, onNarrationResume });
+  narrationCallbacksRef.current = { onNarrationPause, onNarrationResume };
 
   // Resolve the saved voiceURI against installed voices; null = engine default.
   const narrationVoice = useMemo(() => resolveVoice(voice), [voice]);
@@ -61,6 +75,7 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
           if (pendingResumeRef.current) {
             pendingResumeRef.current = false;
             clock.play();
+            narrationCallbacksRef.current.onNarrationResume?.();
           }
         }
       });
@@ -68,6 +83,7 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
         selfPauseRef.current = true;
         pendingResumeRef.current = true;
         clock.pause();
+        narrationCallbacksRef.current.onNarrationPause?.();
       }
     },
     [clock, castVoices, plan, narrationVoice, playing]
@@ -149,13 +165,15 @@ export function AudioLayer({ timeline }: { timeline: Timeline }) {
   }, [playing, narration, index, clock, timeline.events, speakDialogue]);
 
   // Stop speech whenever narration turns off or the layer unmounts; if the
-  // story was waiting on a line, let it continue.
+  // story was waiting on a line, let it continue (and publish — followers
+  // are paused on the room doc until this resume lands).
   useEffect(() => {
     if (!narration) {
       stopSpeech();
       if (pendingResumeRef.current) {
         pendingResumeRef.current = false;
         clock.play();
+        narrationCallbacksRef.current.onNarrationResume?.();
       }
     }
     return () => stopSpeech();

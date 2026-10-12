@@ -3,7 +3,7 @@
 // appendix — exportable as JSON or Markdown. Exports of a live report are
 // refused while any integration is unconfigured (assertExportable).
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Timeline } from "../../engine/timeline";
 import { useRun } from "../../run/RunContext";
 import { assertionById } from "../../run/assertions";
@@ -32,6 +32,10 @@ export function ReportView({
   onClose: () => void;
 }) {
   const { run } = useRun();
+  // Surfaced when assertExportable refuses a live report that still has
+  // not-configured rows — the refusal reason belongs in the UI, not just
+  // the console.
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const report = useMemo(
     () => (run ? buildReport(run, timeline.totalMs) : null),
@@ -48,14 +52,23 @@ export function ReportView({
 
   const resultsById = new Map(report.results.map((r) => [r.assertionId, r]));
 
-  const exportJson = () => {
-    assertExportable(report);
-    downloadText(`${report.runId}-${report.scenarioId}.json`, toJSON(report), "application/json");
+  const guardedExport = (download: () => void) => {
+    try {
+      assertExportable(report);
+      setExportError(null);
+      download();
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export refused.");
+    }
   };
-  const exportMarkdown = () => {
-    assertExportable(report);
-    downloadText(`${report.runId}-${report.scenarioId}.md`, toMarkdown(report), "text/markdown");
-  };
+  const exportJson = () =>
+    guardedExport(() =>
+      downloadText(`${report.runId}-${report.scenarioId}.json`, toJSON(report), "application/json")
+    );
+  const exportMarkdown = () =>
+    guardedExport(() =>
+      downloadText(`${report.runId}-${report.scenarioId}.md`, toMarkdown(report), "text/markdown")
+    );
 
   return (
     <div className="sim-report-overlay" role="dialog" aria-label="Full test report">
@@ -77,6 +90,11 @@ export function ReportView({
       </div>
 
       <div className="sim-report-body">
+        {exportError && (
+          <p className="sim-report-export-error" role="alert">
+            {exportError}
+          </p>
+        )}
         <p className="sim-report-disclaimer">{report.disclaimer}</p>
 
         <section className="sim-report-section">

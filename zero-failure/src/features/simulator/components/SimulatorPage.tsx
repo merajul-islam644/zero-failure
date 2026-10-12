@@ -10,6 +10,10 @@ import type { RefObject } from "react";
 import { SCENES } from "../script/scenes";
 import { buildTimeline } from "../engine/timeline";
 import type { Timeline } from "../engine/timeline";
+import type { LiveActivityEvent } from "../live/activity";
+import { useLiveActivity } from "../live/useLiveActivity";
+import { useBroadcast } from "../live/broadcast/useBroadcast";
+import { useBroadcastActions } from "../live/broadcast/useBroadcastActions";
 import { PlayerProvider, usePlayer } from "../state/PlayerContext";
 import { RunProvider, useRun } from "../run/RunContext";
 import { SettingsProvider } from "../state/SettingsContext";
@@ -17,6 +21,8 @@ import { CommandCanvas } from "./canvas/CommandCanvas";
 import { SceneOverlay } from "./canvas/SceneOverlay";
 import { AccountBar } from "./AccountBar";
 import { SimulationBadge } from "./SimulationBadge";
+import { LiveHonestyStrip, LiveModeToggle } from "./LiveModeControl";
+import { BroadcastControl } from "./BroadcastControl";
 import { SubtitleBar } from "./SubtitleBar";
 import { TransportBar, SPEEDS } from "./transport/TransportBar";
 import { AudioLayer } from "./AudioLayer";
@@ -36,23 +42,32 @@ export function SimulatorPage() {
 }
 
 function SimulatorScreen() {
-  const { run } = useRun();
+  const { run, mode } = useRun();
   // Compiled from the pre-executed run: same envelopes the dashboard and
   // report see. Budgets depend only on the beats, so the span is identical
   // whether run has landed yet or not — the clock never jumps.
   const timeline = useMemo(() => buildTimeline(SCENES, run), [run]);
+  // One live-activity instance for the whole page: it owns the 20s tenant
+  // poll; the canvas and the Inspector both render from its event list.
+  const activity = useLiveActivity(mode === "live");
 
   return (
     <PlayerProvider duration={timeline.totalMs}>
-      <SimulatorStage timeline={timeline} />
+      <SimulatorStage timeline={timeline} liveEvents={activity.events} />
     </PlayerProvider>
   );
 }
 
-function SimulatorStage({ timeline }: { timeline: Timeline }) {
-  const { clock, restart } = usePlayer();
+function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEvents: LiveActivityEvent[] }) {
+  const { clock } = usePlayer();
+  const { mode } = useRun();
   const stageRef = useRef<HTMLDivElement | null>(null);
   const box = useMeetBox(stageRef);
+  // Broadcast owns the room (poll + publish); actions wraps every transport
+  // call so local moves reach the shared head. Off, they are plain clock
+  // calls — zero behavior change.
+  const broadcast = useBroadcast();
+  const actions = useBroadcastActions(broadcast);
 
   // Full playback map. Ignored while typing in form fields and never with
   // modifier keys (no hijacking browser shortcuts).
@@ -72,15 +87,15 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
       switch (e.code) {
         case "Space":
           e.preventDefault();
-          clock.toggle();
+          actions.togglePlay();
           break;
         case "ArrowLeft":
           e.preventDefault();
-          clock.step(-SKIP_MS);
+          actions.step(-SKIP_MS);
           break;
         case "ArrowRight":
           e.preventDefault();
-          clock.step(SKIP_MS);
+          actions.step(SKIP_MS);
           break;
         case "ArrowUp":
         case "ArrowDown": {
@@ -88,38 +103,43 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
           const current = nearestSpeedIndex(clock.playbackRate);
           const next = e.code === "ArrowUp" ? current + 1 : current - 1;
           const clamped = Math.min(SPEEDS.length - 1, Math.max(0, next));
-          clock.setRate(SPEEDS[clamped] ?? 1);
+          const rate = SPEEDS[clamped];
+          if (rate !== undefined) actions.setRate(rate);
           break;
         }
         case "PageDown":
         case "PageUp": {
           e.preventDefault();
           const targetMs = sceneJumpMs(timeline, clock.time, e.code === "PageDown");
-          clock.seek(targetMs);
+          actions.seek(targetMs);
           break;
         }
         case "Home":
           e.preventDefault();
-          clock.seek(0);
+          actions.seek(0);
           break;
         case "End":
           e.preventDefault();
-          clock.seek(timeline.totalMs);
+          actions.seek(timeline.totalMs);
           break;
         case "KeyR":
           e.preventDefault();
-          restart();
+          actions.restart();
           break;
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [clock, restart, timeline]);
+  }, [actions, clock, timeline]);
 
   return (
     <div className="simulator-root">
       <div className="sim-topbar">
-        <SimulationBadge />
+        {/* Exactly one honesty strip: the live strip replaces this one while
+            live, whose "no real services are contacted" claim would be false. */}
+        {mode === "live" ? <LiveHonestyStrip /> : <SimulationBadge />}
+        <LiveModeToggle onModeChange={actions.publishMode} />
+        <BroadcastControl broadcast={broadcast} />
         <AccountBar />
       </div>
       <div className="sim-main">
@@ -130,15 +150,22 @@ function SimulatorStage({ timeline }: { timeline: Timeline }) {
               never floating over the constellation. */}
           <div className="sim-canvas-area" ref={stageRef}>
             <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-              <CommandCanvas timeline={timeline} />
+              <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
             </div>
           </div>
         </main>
-        <PanelDeck timeline={timeline} />
+        <PanelDeck timeline={timeline} liveEvents={liveEvents} actions={actions} />
       </div>
       <SubtitleBar timeline={timeline} />
-      <TransportBar timeline={timeline} />
-      <AudioLayer timeline={timeline} />
+      <TransportBar timeline={timeline} actions={actions} />
+      {/* Narration's audiobook pauses/resumes publish too: the presenter's
+          speech rhythm is the room's rhythm, and a follower's own narration
+          pause is never overridden by a stale "playing" doc mid-line. */}
+      <AudioLayer
+        timeline={timeline}
+        onNarrationPause={actions.narrationPause}
+        onNarrationResume={actions.narrationResume}
+      />
     </div>
   );
 }

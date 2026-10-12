@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import type { Timeline } from "../../engine/timeline";
+import type { LiveActivityEvent } from "../../live/activity";
+import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
 import { InspectorPanel } from "./InspectorPanel";
 import { ResultsDashboard } from "./ResultsDashboard";
 import { EvidencePanel } from "./EvidencePanel";
@@ -21,7 +23,15 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "config", label: "Config" }
 ];
 
-export function PanelDeck({ timeline }: { timeline: Timeline }) {
+export function PanelDeck({
+  timeline,
+  liveEvents,
+  actions
+}: {
+  timeline: Timeline;
+  liveEvents: LiveActivityEvent[];
+  actions: BroadcastActions;
+}) {
   const [tab, setTab] = useState<Tab>("inspector");
   const [reportOpen, setReportOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -74,12 +84,12 @@ export function PanelDeck({ timeline }: { timeline: Timeline }) {
           </button>
         </div>
 
-        {tab === "inspector" && <InspectorPanel timeline={timeline} />}
+        {tab === "inspector" && <InspectorPanel timeline={timeline} liveEvents={liveEvents} />}
         {tab === "results" && (
           <ResultsDashboard timeline={timeline} onOpenReport={() => setReportOpen(true)} />
         )}
         {tab === "evidence" && <EvidencePanel timeline={timeline} />}
-        {tab === "config" && <ConfigPanel />}
+        {tab === "config" && <ConfigPanel actions={actions} />}
 
         {reportOpen && <ReportView timeline={timeline} onClose={() => setReportOpen(false)} />}
       </aside>

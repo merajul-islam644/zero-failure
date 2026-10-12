@@ -5,11 +5,12 @@
 
 import { describe, expect, it } from "vitest";
 import { executeScenario, RUN_ID } from "./runner";
-import { scenarioById, SCENARIOS } from "../scenarios/registry";
+import { scenarioById, SCENARIOS, SCENARIO_DEFAULT } from "../scenarios/registry";
 import { ASSERTIONS } from "./assertions";
 import { countStatuses, computeOverall } from "./verdict";
 import { buildTimeline } from "../engine/timeline";
 import { SCENES } from "../script/scenes";
+import type { BlocksClient } from "@seliseblocks/client";
 import type { AssertionStatus, ExecutionMode, RunResult, TestResult } from "../engine/types";
 
 const runScenario = (id: string): Promise<RunResult> => executeScenario(scenarioById(id), "simulated");
@@ -286,5 +287,102 @@ describe("run-driven timeline compilation", () => {
         (e) => e.kind === "message-dispatch" && e.message.correlationId === "s7-notification"
       )
     ).toBe(true);
+  });
+});
+
+// ---- Live mode: real connectors, read-only refusals, generated run ids ----
+
+/**
+ * A fully-permissioned fake tenant behind the same BlocksClient surface the
+ * live handlers use. Tests never touch the network (AGENTS.md).
+ */
+function liveFakeClient(): BlocksClient {
+  return {
+    auth: { userInfo: async () => ({ email: "demo@example.test", sub: "u1" }) },
+    iam: {
+      me: async () => ({ data: { roles: ["role-1"] } }),
+      roles: { list: async () => ({ data: [], totalCount: 4 }) }
+    },
+    data: {
+      schemas: { list: async () => ({ data: { items: [{}], totalCount: 7 } }) },
+      objects: { list: async () => ({ hasMore: false, items: [], totalChildCount: 3 }) }
+    },
+    localization: {
+      languages: async () => [{ code: "en", isDefault: true }],
+      translations: async () => ({ "some.key": "value" })
+    },
+    notifier: { getNotifications: async () => ({ notifications: [], totalNotificationsCount: 0, unReadNotificationsCount: 0 }) }
+  } as unknown as BlocksClient;
+}
+
+describe("live runs (real connectors, fake tenant)", () => {
+  it("generates a unique run id per execution and carries it through every record", async () => {
+    const a = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+    const b = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+
+    expect(a.runId).not.toBe(RUN_ID);
+    expect(b.runId).not.toBe(RUN_ID);
+    expect(a.runId).not.toBe(b.runId);
+    for (const message of a.messages) {
+      expect(message.runId).toBe(a.runId);
+      expect(message.idempotencyKey).toBe(`${a.runId}:${message.correlationId}`);
+    }
+    for (const result of a.results) {
+      expect(result.runId).toBe(a.runId);
+    }
+  });
+
+  it("records live, non-simulated messages with a real measured execution duration", async () => {
+    const live = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+    const simulated = await runScenario("default-storyline");
+
+    for (const message of live.messages) {
+      expect(message.mode).toBe("live");
+      expect(message.simulated).toBe(false);
+    }
+    expect(typeof live.executionDurationMs).toBe("number");
+    expect(live.executionDurationMs).toBeGreaterThanOrEqual(0);
+    // Simulation never fakes a wall clock.
+    expect(simulated.executionDurationMs).toBeNull();
+    expect(simulated.runId).toBe(RUN_ID);
+    expect(simulated.messages.every((m) => m.simulated)).toBe(true);
+  });
+
+  it("drops injections for the default storyline in live mode", async () => {
+    const injectedDefault = {
+      ...SCENARIO_DEFAULT,
+      injections: [
+        { match: { correlationId: "s2-identity-check" }, outcome: "fail" as const, errorCode: "TEST_INJECTION" }
+      ]
+    };
+    const live = await executeScenario(injectedDefault, "live", liveFakeClient());
+    // The injection must be ignored: identity check reflects the (fake) tenant.
+    expect(
+      live.messages.find((m) => m.correlationId === "s2-identity-check")?.status
+    ).toBe("succeeded");
+  });
+
+  it("keeps injections for failure scenarios in live mode (recorded overrides)", async () => {
+    const live = await executeScenario(scenarioById("auth-fails"), "live", liveFakeClient());
+    expect(
+      live.messages.find((m) => m.correlationId === "s2-identity-check")?.status
+    ).toBe("failed");
+  });
+
+  it("honestly diverges from the scripted story: write-dependent checkpoints fail under read-only refusals", async () => {
+    const live = await executeScenario(scenarioById("default-storyline"), "live", liveFakeClient());
+    const results = new Map(live.results.map((r) => [r.assertionId, r]));
+
+    // A real gateway read never claims "environment matches" — env-match fails.
+    expect(results.get("A-3-2")?.status).toBe("failed");
+    // The create/read-back chain is refused (nothing was created, nothing read back).
+    expect(results.get("A-3-3")?.status).toBe("failed");
+    // Notification refused — never a real send.
+    expect(results.get("A-7-4")?.status).toBe("failed");
+    for (const id of ["A-3-3", "A-7-4"]) {
+      expect(results.get(id)?.attempts.some((a) => a.errorDetails?.code === "LIVE_READ_ONLY")).toBe(true);
+    }
+    // A live run is never dressed up as a pass: refused writes dominate.
+    expect(verdictOf(live)).toBe("failed");
   });
 });

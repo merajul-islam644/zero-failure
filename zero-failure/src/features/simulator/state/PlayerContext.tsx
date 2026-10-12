@@ -98,6 +98,17 @@ export function usePlaybackTime(): number {
   );
 }
 
+/** Playback rate — re-renders only when the speed actually changes
+ * (Speed select, keyboard ↑/↓). */
+export function usePlaybackRate(): number {
+  const { clock } = usePlayer();
+  return useSyncExternalStore(
+    (onChange) => clock.subscribe(() => onChange()),
+    () => clock.playbackRate,
+    () => 1
+  );
+}
+
 /**
  * Re-renders only when the event under the head changes — for subtitle,
  * scene title, state-driven node styling and the transport's discrete UI.

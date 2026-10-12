@@ -17,6 +17,8 @@ import type { ExecutionMode, RunResult, ScenarioDefinition } from "../engine/typ
 import { executeScenario } from "./runner";
 import { SCENARIOS, SCENARIO_DEFAULT, scenarioById } from "../scenarios/registry";
 import { registryFor, type ConnectorRegistry } from "../connectors/registry";
+import { blocksClient } from "../../../lib/blocks/client";
+import { useSettings } from "../state/SettingsContext";
 
 interface RunContextValue {
   scenario: ScenarioDefinition;
@@ -44,14 +46,23 @@ export function RunProvider({ children }: { children: ReactNode }) {
 
   const scenario = useMemo(() => scenarioById(scenarioId), [scenarioId]);
 
-  // Simulation is deterministic and synchronous-resolving; live mode will
-  // later record real executions into the same shape.
-  const mode: ExecutionMode = "simulated";
+  // The persisted settings store is the single writer of the execution mode
+  // (LiveModeControl toggles it there); the run context follows so every
+  // consumer sees one ExecutionMode, and the effect below re-executes on
+  // change. Simulation is deterministic and synchronous-resolving; live mode
+  // records real executions into the same shape.
+  const { executionMode } = useSettings();
+  const [mode, setMode] = useState<ExecutionMode>(executionMode);
+  useEffect(() => {
+    setMode(executionMode);
+  }, [executionMode]);
 
   useEffect(() => {
     let cancelled = false;
     setRunning(true);
-    executeScenario(scenario, mode).then((result) => {
+    // Simulated mode ignores the client; live mode executes against the real
+    // (read-only) Blocks services through it.
+    executeScenario(scenario, mode, blocksClient).then((result) => {
       if (cancelled) return;
       setRun(result);
       setRunning(false);
@@ -64,7 +75,7 @@ export function RunProvider({ children }: { children: ReactNode }) {
   // Registries are static description data (platform, auth method, operation
   // list, config status) — built once for the inspector tables.
   const simulatedRegistry = useMemo(() => registryFor("simulated"), []);
-  const liveRegistry = useMemo(() => registryFor("live"), []);
+  const liveRegistry = useMemo(() => registryFor("live", blocksClient), []);
 
   const value = useMemo<RunContextValue>(
     () => ({

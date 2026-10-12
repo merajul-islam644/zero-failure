@@ -87,12 +87,16 @@ test.describe("verdict matrix", () => {
     ).toHaveCount(0);
   });
 
-  test("simulation badge and not-configured live strip are visible", async ({
+  test("simulation badge and static live capability rows are visible", async ({
     page,
   }) => {
     await expect(page.getByText(/SIMULATION ONLY/i).first()).toBeVisible();
     await openTab(page, "Inspector");
-    await expect(page.getByText("Not Configured").first()).toBeVisible();
+    // Static capability truth — independent of tenant state or probe timing
+    // (the SDK-backed rows render live probe results, which vary by tenant).
+    await expect(
+      page.getByText("no live API — simulated").first(),
+    ).toBeVisible();
   });
 
   test("config panel offers narration voice selection", async ({ page }) => {

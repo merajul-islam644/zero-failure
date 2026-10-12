@@ -10,7 +10,8 @@ import { registryFor, type ConnectorRegistry } from "../connectors/registry";
 import { matchInjection } from "../connectors/simulated/simulated-connector";
 import { ASSERTIONS, type AssertionOutcome } from "./assertions";
 import { evaluateProcessRule } from "./process-rules";
-import { RUN_ID } from "./run-id";
+import { RUN_ID, generateRunId } from "./run-id";
+import { SCENARIO_DEFAULT } from "../scenarios/registry";
 
 export { RUN_ID };
 import type {
@@ -21,6 +22,7 @@ import type {
   StructuredMessage,
   TestResult
 } from "../engine/types";
+import type { BlocksClient } from "@seliseblocks/client";
 import type { ScenarioDefinition } from "../engine/types";
 
 /**
@@ -34,11 +36,22 @@ const DEPENDENCY_BLOCKERS: Record<string, string[]> = {
 
 export async function executeScenario(
   scenario: ScenarioDefinition,
-  mode: ExecutionMode = "simulated"
+  mode: ExecutionMode = "simulated",
+  /** Live mode injects the Blocks client here (tests pass a stand-in). */
+  client?: BlocksClient
 ): Promise<RunResult> {
-  const registry: ConnectorRegistry = registryFor(mode);
+  const registry = registryFor(mode, client);
+  const runId = mode === "simulated" ? RUN_ID : generateRunId();
   const messages: StructuredMessage[] = [];
   const blockedOperations = new Set<string>();
+  const startedAt = performance.now();
+
+  // Injections policy: live mode runs the default storyline as-is — its
+  // outcomes are what the tenant actually returned. The 14 failure scenarios
+  // keep their injections as recorded overrides in both modes (disclosed by
+  // the live disclaimer; they exist to exercise the test layer itself).
+  const effectiveScenario =
+    mode === "live" && scenario.id === SCENARIO_DEFAULT.id ? { ...scenario, injections: [] } : scenario;
 
   for (const scene of SCENES) {
     for (const beat of scene.beats) {
@@ -61,19 +74,28 @@ export async function executeScenario(
       const target = registry[beat.to];
       const requestId = `${beat.correlationId}#a${attempt}`;
 
-      const message = await executeExchange(scenario, source, target, {
+      const message = await executeExchange(effectiveScenario, source, target, {
         correlationId: beat.correlationId,
         requestId,
         operation: beat.operation,
         attempt,
-        requestSummary: beat.requestSummary
+        requestSummary: beat.requestSummary,
+        runId
       });
       messages.push(message);
     }
   }
 
-  const results = evaluateAssertions(messages, scenario, mode);
-  return { runId: RUN_ID, mode, scenarioId: scenario.id, messages, results };
+  const results = evaluateAssertions(messages, scenario, mode, runId);
+  return {
+    runId,
+    mode,
+    scenarioId: scenario.id,
+    messages,
+    results,
+    // Simulation never fakes a wall clock — only live runs measure execution.
+    executionDurationMs: mode === "simulated" ? null : Math.round(performance.now() - startedAt)
+  };
 }
 
 async function executeExchange(
@@ -86,11 +108,12 @@ async function executeExchange(
     operation: string;
     attempt: number;
     requestSummary: string;
+    runId: string;
   }
 ): Promise<StructuredMessage> {
-  const idempotencyKey = `${RUN_ID}:${spec.correlationId}`;
+  const idempotencyKey = `${spec.runId}:${spec.correlationId}`;
   const request = {
-    runId: RUN_ID,
+    runId: spec.runId,
     correlationId: spec.correlationId,
     requestId: spec.requestId,
     operation: spec.operation,
@@ -151,7 +174,7 @@ async function executeExchange(
   }
 
   return {
-    runId: RUN_ID,
+    runId: spec.runId,
     correlationId: spec.correlationId,
     requestId: spec.requestId,
     sourcePlatform: source.platform,
@@ -168,7 +191,7 @@ async function executeExchange(
     mode: response.mode,
     attempt: spec.attempt,
     idempotencyKey,
-    simulated: true
+    simulated: response.mode === "simulated"
   };
 }
 
@@ -177,22 +200,24 @@ type PlatformKey = keyof ReturnType<typeof registryFor>;
 export function evaluateAssertions(
   messages: StructuredMessage[],
   scenario: ScenarioDefinition,
-  mode: ExecutionMode
+  mode: ExecutionMode,
+  runId: string = RUN_ID
 ): TestResult[] {
   return ASSERTIONS.map((assertion) => {
     let outcome: AssertionOutcome;
     if (assertion.rule.kind === "message") {
       outcome = evaluateMessageRule(assertion.rule.correlationId, assertion.rule.expectation, messages);
     } else {
-      outcome = evaluateProcessRule(assertion.rule.process, { messages, scenarioId: scenario.id, mode });
+      outcome = evaluateProcessRule(assertion.rule.process, { messages, scenarioId: scenario.id, mode, runId });
     }
     return {
       assertionId: assertion.id,
-      runId: RUN_ID,
+      runId,
       kind: assertion.rule.kind,
       status: outcome.status,
       mode,
-      expected: assertion.expected,
+      // No-op in simulation (runId is RUN-001); live runs expect their own id.
+      expected: assertion.expected.replaceAll("RUN-001", runId),
       actual: outcome.actual,
       correlationId: outcome.correlationId,
       attempts: outcome.attempts.map(toAttemptRecord),

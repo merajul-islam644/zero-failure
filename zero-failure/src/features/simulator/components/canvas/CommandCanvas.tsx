@@ -1,7 +1,8 @@
 // The command-center canvas: fixed 1600x900 viewBox, scales with its
 // container. Edges + nodes are discrete (one useSimSnapshot); packets are
-// the per-frame layer. One useSimSnapshot subscription for the whole canvas
-// keeps re-renders off the 60fps path.
+// the per-frame layer; live pulses are an additive overlay driven by the
+// activity poller, independent of the compiled timeline. One useSimSnapshot
+// subscription for the whole canvas keeps re-renders off the 60fps path.
 
 import { useMemo } from "react";
 import { CAST } from "../../script/cast";
@@ -9,17 +10,20 @@ import { SCENES } from "../../script/scenes";
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { PlatformId } from "../../engine/types";
 import type { Timeline } from "../../engine/timeline";
+import type { LiveActivityEvent } from "../../live/activity";
 import { quadPath } from "./geometry";
 import { CharacterNode } from "./CharacterNode";
 import { PacketLayer } from "./PacketLayer";
+import { LivePulseLayer } from "./LivePulseLayer";
 
 const sceneCastMap = new Map<number, PlatformId[]>(SCENES.map((s) => [s.index, s.cast]));
 
 interface CommandCanvasProps {
   timeline: Timeline;
+  liveEvents?: LiveActivityEvent[];
 }
 
-export function CommandCanvas({ timeline }: CommandCanvasProps) {
+export function CommandCanvas({ timeline, liveEvents }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
 
   const visibleCast = useMemo(() => {
@@ -76,6 +80,7 @@ export function CommandCanvas({ timeline }: CommandCanvasProps) {
       </g>
 
       <PacketLayer timeline={timeline} />
+      {liveEvents && liveEvents.length > 0 && <LivePulseLayer events={liveEvents} />}
     </svg>
   );
 }

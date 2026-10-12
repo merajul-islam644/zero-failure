@@ -339,4 +339,6 @@ export interface RunResult {
   scenarioId: string;
   messages: StructuredMessage[];
   results: TestResult[];
+  /** Real wall clock spent executing in live mode; null in simulation. */
+  executionDurationMs: number | null;
 }

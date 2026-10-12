@@ -6,7 +6,7 @@
 // building dressed as a test result.
 
 import { ASSERTIONS, assertionById } from "../run/assertions";
-import { countStatuses, computeOverall, REPORT_DISCLAIMER } from "../run/verdict";
+import { countStatuses, computeOverall, LIVE_REPORT_DISCLAIMER, REPORT_DISCLAIMER } from "../run/verdict";
 import { CAST_BY_ID } from "../script/cast";
 import type { PlatformId, RunReport, RunResult } from "../engine/types";
 
@@ -23,8 +23,9 @@ export function buildReport(
     startedAt: now,
     completedAt: now,
     presentationDurationMs,
-    executionDurationMs: null,
-    disclaimer: REPORT_DISCLAIMER,
+    // Simulation never fakes a wall clock; live runs record their real execution time.
+    executionDurationMs: run.executionDurationMs,
+    disclaimer: run.mode === "live" ? LIVE_REPORT_DISCLAIMER : REPORT_DISCLAIMER,
     counts: countStatuses(run.results),
     overall: computeOverall(run.results, countStatuses(run.results)),
     results: run.results,

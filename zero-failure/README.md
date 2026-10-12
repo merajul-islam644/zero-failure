@@ -42,6 +42,59 @@ The scaffold includes `Dockerfile` and `nginx.conf` for Blocks Release. The Rele
 
 During each environment build, `scripts/write-release-env.mjs` writes `dist/env.<environment>` from client-safe Docker build args or local `.env` files. Root `.env` remains gitignored and must not be committed.
 
+## Synced viewing (Broadcast)
+
+The simulator's Broadcast toggle (top bar) turns on a shared playback head: every signed-in viewer with Broadcast on watches the same story — same scenario, same mode, same play/pause, same rate, same position. There is no push channel in the Blocks SDK, so sync is a 4-second poll plus wall-clock projection (the head is extrapolated from the doc's `epochMs`, so followers stay frame-accurate between polls; drift beyond 400 ms is corrected, gently up to 2.5 s, then with a hard seek).
+
+The room state lives in one Data Gateway document. To enable Broadcast on a tenant, create a collection named `broadcast_state` (Data Gateway → new collection) and make sure signed-in users have **read and write** permission on it. Until the collection exists — or the account lacks permission — the toggle stays available and the status line says exactly which gap was hit; sync never silently no-ops.
+
+The document shape the app reads and writes (note: on the wire `epochMs` and `updatedAt` travel as **strings** — see the gateway facts below):
+
+```json
+{
+  "epochMs": "1760250000000",
+  "headMs": 42000,
+  "playing": true,
+  "rate": 1,
+  "scenarioId": "default-storyline",
+  "mode": "simulated",
+  "updatedAt": "1760250000000",
+  "updatedBy": "Jane Doe",
+  "rev": 7
+}
+```
+
+- `epochMs` — writer's wall clock (ms) when this state was authored; the projection origin. String-typed on the wire.
+- `headMs` — the head position (timeline ms) at `epochMs`.
+- `playing` / `rate` — transport state; `rate` is one of `0.5, 1, 2, 4, 8, 16`.
+- `scenarioId` / `mode` — which story the head indexes into; followers switch to match.
+- `updatedAt` — authoring timestamp, kept distinct from `epochMs` for diagnostics. String-typed on the wire.
+- `updatedBy` — display name of the last writer only. No tokens, credentials, or emails are ever stored in this document.
+- `rev` — writer count; every write bumps it so readers can order states and ignore their own echoes. Revs live and die with one row — when the room's row is replaced (e.g. maintenance deleted it and a tab re-created it), readers detect the new `ItemId` and re-baseline their rev memory, so a fresh row starting at `rev: 1` is followed even by a tab that once saw `rev: 104`.
+
+Any document that fails validation (wrong types, negative head, unknown mode) is ignored by every viewer — a bad write disables sync for that reader rather than corrupting playback. Live mode remains read-only throughout: Broadcast coordinates *viewing* only, it never performs story operations on tenant data.
+
+### Narration rhythm is the presenter's
+
+With narration on, the audiobook pauses the story at every dialogue line and resumes after. Publishing each of those pauses from *every* playing tab would make two tabs fight over the room's rhythm — 4-second polls cannot phase-lock two speech engines, and the room's play/pause would flip-flop at every line. So narration pauses/resumes are published **only by the presenting tab** (the doc is empty, or `updatedBy` is this viewer's display name), and never from a hidden tab (browsers interrupt hidden-tab audio every few seconds; that churn stays local).
+
+Two known, accepted limitations:
+
+- **Two tabs of the *same* user both pass the presenter gate** (the doc carries display names, not accounts), so they can still fight each other's narration rhythm. Distinct users in a room are calm.
+- A follower running its own narration may occasionally hear a line cut short when the room re-syncs — a local artifact of the reconcile pause, not a desync.
+
+### Data Gateway facts this feature depends on
+
+Learned the hard way against `blocksapi.slsblx.com` — worth knowing before touching the collection:
+
+- **The gateway wraps every collection payload** as `{ data: { <op><Schema>s: … } }` — e.g. `data.getbroadcast_states.items`, `data.insertbroadcast_state.itemId`. The SDK's HTTP layer returns that body verbatim; the app unwraps it defensively.
+- **The SDK's default field selection is `ItemId` only.** Reads must pass an explicit `fields` list, or nothing parses.
+- **Numeric writes are 32-bit.** A ms epoch (~1.7e12) overflows the numeric write path into a masked "Unexpected Execution Error" — hence `epochMs`/`updatedAt` as strings; `headMs`, `rate` and `rev` (small floats) stay numeric.
+- **Deletes are `mutation { deletebroadcast_state(where: { ItemId: { eq: "<id>" } }, input: { isHardDelete: true }) { acknowledged } }`** — soft delete is the default without `isHardDelete`. Multiple aliased delete fields in **one** mutation document (`d1: deletebroadcast_state(…) d2: deletebroadcast_state(…) …`) commit in a single request — how a 24-row cleanup became one call.
+- **The physical collection is named `blx_broadcast_states`** (`blx_{SchemaName}s`); the schema/collection name the app and CLI use is `broadcast_state`.
+- **`update` on a vanished row acknowledges with `totalImpactedData: 0`** — it does not error. The app treats impact 0 as "row gone under us" and falls through to a create, so the room always keeps a real document (unit-tested; exercised live after a cleanup).
+- The Data app playground is handy for one-off record surgery, but its LB instance can serve a stale schema cache ("Field `getbroadcast_states` does not exist on type `Query`") while the app itself talks to a healthy instance — reload the playground or trust the app's own traffic before concluding the schema broke.
+
 ## What's included
 
 - `/login` — login page (redirects to Blocks IAM).

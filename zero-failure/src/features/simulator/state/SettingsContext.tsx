@@ -12,6 +12,7 @@ import {
   useState,
   type ReactNode
 } from "react";
+import type { ExecutionMode } from "../engine/types";
 
 export type ThemePreference = "system" | "dark" | "light";
 export type MotionPreference = "system" | "reduce" | "full";
@@ -26,15 +27,26 @@ export interface Settings {
   voice: VoicePreference;
   /** Per-character voice: "cast" (auto-assign), "auto" (default) or a voiceURI. */
   castVoices: Record<string, string>;
+  /** Which connector registry executes: simulated fakes or read-only live probes. */
+  executionMode: ExecutionMode;
+  /** Broadcast: slave the clock to the shared playback head (Phase C). */
+  broadcast: boolean;
+  /** Schema version — drives the one-time audio-defaults migration. */
+  version: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   theme: "system",
   motion: "system",
-  narration: false,
-  sfx: false,
+  // Sound on: the simulator is a narrated demo, and audio hidden in the
+  // Config panel read as "no voice" to every visitor who never found it.
+  narration: true,
+  sfx: true,
   voice: "auto",
-  castVoices: {}
+  castVoices: {},
+  executionMode: "simulated",
+  broadcast: false,
+  version: 2
 };
 
 const STORAGE_KEY = "zero-failure-settings";
@@ -44,13 +56,23 @@ function loadSettings(): Settings {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<Settings>;
+    // v1 saved narration:false / sfx:false silently on first mount — an
+    // opt-in nobody could find. Bump once to the sound-on defaults; after
+    // that a stored off stays off (deliberate choice via the toggles).
+    const stale = parsed.version !== DEFAULT_SETTINGS.version;
     return {
       theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
       motion: parsed.motion ?? DEFAULT_SETTINGS.motion,
-      narration: parsed.narration ?? DEFAULT_SETTINGS.narration,
-      sfx: parsed.sfx ?? DEFAULT_SETTINGS.sfx,
+      narration: stale ? DEFAULT_SETTINGS.narration : (parsed.narration ?? DEFAULT_SETTINGS.narration),
+      sfx: stale ? DEFAULT_SETTINGS.sfx : (parsed.sfx ?? DEFAULT_SETTINGS.sfx),
       voice: parsed.voice ?? DEFAULT_SETTINGS.voice,
-      castVoices: parsed.castVoices ?? DEFAULT_SETTINGS.castVoices
+      castVoices: parsed.castVoices ?? DEFAULT_SETTINGS.castVoices,
+      // Newer fields merge additively with ?? — deliberately NOT a version
+      // bump: bumping `version` would re-run the audio-defaults migration and
+      // reset every existing visitor's narration/sfx choices.
+      executionMode: parsed.executionMode === "live" ? "live" : "simulated",
+      broadcast: parsed.broadcast ?? DEFAULT_SETTINGS.broadcast,
+      version: DEFAULT_SETTINGS.version
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -64,6 +86,8 @@ interface SettingsContextValue extends Settings {
   setSfx: (on: boolean) => void;
   setVoice: (voice: VoicePreference) => void;
   setCastVoice: (platform: string, voice: string) => void;
+  setExecutionMode: (mode: ExecutionMode) => void;
+  setBroadcast: (on: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -99,7 +123,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setSettings((s) => ({
           ...s,
           castVoices: { ...s.castVoices, [platform]: castVoice }
-        }))
+        })),
+      setExecutionMode: (executionMode) => setSettings((s) => ({ ...s, executionMode })),
+      setBroadcast: (broadcast) => setSettings((s) => ({ ...s, broadcast }))
     }),
     [settings]
   );

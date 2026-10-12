@@ -2,7 +2,7 @@
 // no-speech-engine guards (jsdom has no speechSynthesis — exactly the
 // degradation path real headless/embedded contexts hit).
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CAST, PLATFORMS } from "../script/cast";
 import { narrationRateFor, speak, stopSpeech } from "./audio";
 import {
@@ -109,6 +109,104 @@ describe("no-speech-engine degradation", () => {
     expect(listNarrationVoices()).toEqual([]);
     expect(resolveVoice("auto")).toBeNull();
     expect(resolveVoice("some-voice-uri")).toBeNull();
+  });
+});
+
+describe("speak() stuck-utterance watchdog", () => {
+  /**
+   * A speechSynthesis that accepts utterances but stays silent unless poked.
+   * The suite runs in node (no window / no engine) — the stub must install
+   * the globals speak() touches: window, speechSynthesis and the utterance
+   * constructor.
+   */
+  function stubSilentEngine() {
+    const g = globalThis as unknown as Record<string, unknown>;
+    const savedWindow = g.window;
+    const savedSynth = g.speechSynthesis;
+    const savedUtterance = g.SpeechSynthesisUtterance;
+    const spoken: Array<Record<string, unknown>> = [];
+    g.window = globalThis;
+    g.speechSynthesis = {
+      cancel: () => spoken.splice(0),
+      speak: (u: Record<string, unknown>) => spoken.push(u)
+    };
+    g.SpeechSynthesisUtterance = class {
+      text: string;
+      lang = "";
+      voice: unknown = null;
+      pitch = 1;
+      rate = 1;
+      onstart: ((e: Event) => void) | null = null;
+      onend: ((e: Event) => void) | null = null;
+      onerror: ((e: Event) => void) | null = null;
+      constructor(text: string) {
+        this.text = text;
+      }
+    };
+    return {
+      spoken,
+      restore: () => {
+        g.window = savedWindow;
+        g.speechSynthesis = savedSynth;
+        g.SpeechSynthesisUtterance = savedUtterance;
+      }
+    };
+  }
+
+  it("releases the story when the engine never starts the utterance", () => {
+    const { spoken, restore } = stubSilentEngine();
+    try {
+      vi.useFakeTimers();
+      const done: boolean[] = [];
+      expect(speak("hello", { playbackRate: 1, onDone: (c) => done.push(c) })).toBe(true);
+      expect(spoken).toHaveLength(1);
+      vi.advanceTimersByTime(3499);
+      expect(done).toEqual([]);
+      vi.advanceTimersByTime(1);
+      expect(done).toEqual([false]); // onDone(false) resumes the paused clock
+    } finally {
+      vi.useRealTimers();
+      restore();
+    }
+  });
+
+  it("a started utterance is never released by the watchdog", () => {
+    const { spoken, restore } = stubSilentEngine();
+    try {
+      vi.useFakeTimers();
+      const done: boolean[] = [];
+      speak("hello", { playbackRate: 1, onDone: (c) => done.push(c) });
+      const line = spoken[0] as { onstart: ((e: Event) => void) | null; onend: ((e: Event) => void) | null; onerror: ((e: Event) => void) | null };
+      line.onstart?.(new Event("start"));
+      vi.advanceTimersByTime(60_000);
+      expect(done).toEqual([]); // still speaking — the guard stood down
+      line.onend?.(new Event("end"));
+      expect(done).toEqual([true]);
+      vi.advanceTimersByTime(60_000);
+      expect(done).toEqual([true]); // exactly once
+    } finally {
+      vi.useRealTimers();
+      restore();
+    }
+  });
+
+  it("an engine error also finishes the line exactly once", () => {
+    const { spoken, restore } = stubSilentEngine();
+    try {
+      vi.useFakeTimers();
+      const done: boolean[] = [];
+      speak("hello", { playbackRate: 1, onDone: (c) => done.push(c) });
+      const line = spoken[0] as { onstart: ((e: Event) => void) | null; onend: ((e: Event) => void) | null; onerror: ((e: Event) => void) | null };
+      line.onstart?.(new Event("start"));
+      line.onerror?.(new Event("error"));
+      line.onend?.(new Event("end"));
+      expect(done).toEqual([false]);
+      vi.advanceTimersByTime(60_000);
+      expect(done).toEqual([false]);
+    } finally {
+      vi.useRealTimers();
+      restore();
+    }
   });
 });
 

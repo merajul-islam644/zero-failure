@@ -1,13 +1,13 @@
 // Story strip: scene blocks proportionally sized on the 570s canvas with a
-// playhead. Per-frame subscriber (designated); click seeks, and each block
-// doubles as a scene tooltip.
+// playhead. Per-frame subscriber (designated); click seeks (through the
+// injected seek, so it reaches the shared head), and each block doubles as
+// a scene tooltip.
 
-import { usePlaybackTime, usePlayer } from "../../state/PlayerContext";
+import { usePlaybackTime } from "../../state/PlayerContext";
 import { formatTime } from "../../engine/format";
 import type { Timeline } from "../../engine/timeline";
 
-export function TimelineStrip({ timeline }: { timeline: Timeline }) {
-  const { clock } = usePlayer();
+export function TimelineStrip({ timeline, seek }: { timeline: Timeline; seek: (headMs: number) => void }) {
   const t = usePlaybackTime();
   const duration = timeline.totalMs || 1;
 
@@ -20,7 +20,7 @@ export function TimelineStrip({ timeline }: { timeline: Timeline }) {
             type="button"
             className="sim-strip-block"
             style={{ width: `${((scene.endMs - scene.startMs) / duration) * 100}%` }}
-            onClick={() => clock.seek(scene.startMs + 1)}
+            onClick={() => seek(scene.startMs + 1)}
             title={`${scene.index}. ${scene.title} (${formatTime(scene.startMs)})`}
             aria-label={`Scene ${scene.index}: ${scene.title}`}
           >

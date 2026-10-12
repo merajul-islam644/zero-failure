@@ -44,6 +44,21 @@ describe("buildReport", () => {
       toJSON(buildReport(run, DEFAULT_PRESENTATION_MS, FIXED_NOW))
     );
   });
+
+  it("live runs carry the live disclaimer and their real execution duration", () => {
+    const liveRun: RunResult = {
+      runId: "RUN-ABC-1",
+      mode: "live",
+      scenarioId: "default-storyline",
+      messages: [],
+      executionDurationMs: 4211,
+      results: []
+    };
+    const report = buildReport(liveRun, DEFAULT_PRESENTATION_MS, FIXED_NOW);
+    expect(report.disclaimer).toContain("Live mode:");
+    expect(report.executionDurationMs).toBe(4211);
+    expect(toMarkdown(report)).toContain("Live mode:");
+  });
 });
 
 describe("toJSON", () => {
@@ -107,6 +122,7 @@ describe("assertExportable", () => {
       mode: "live",
       scenarioId: "default-storyline",
       messages: [],
+      executionDurationMs: null,
       results: [
         {
           assertionId: "A-1-1",

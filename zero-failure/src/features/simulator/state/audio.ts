@@ -1,10 +1,11 @@
 // Optional audio: WebAudio blips for packet events and speechSynthesis
-// narration for dialogue. Both default OFF and both are gesture-gated — the
-// AudioContext is only created from the settings toggle's user activation.
+// narration for dialogue. Both are gesture-gated — the AudioContext is only
+// created from a user-initiated path (Play, the transport voice toggle).
 // Narration auto-mutes above 2× playback (speech cannot keep up and would
 // desync from the story).
 
-const NARRATION_MAX_RATE = 2;
+/** Narration refuses to speak above this playback rate. */
+export const NARRATION_MAX_RATE = 2;
 
 export type BlipKind = "dispatch" | "resolve" | "fail";
 
@@ -125,8 +126,27 @@ export function speak(text: string, { playbackRate, voice, pitch, rate, fitMs, o
     utterance.pitch = Math.min(2, Math.max(0, pitch ?? 1));
     utterance.rate = narrationRateFor(text, playbackRate, rate ?? 1, fitMs);
     if (onDone) {
-      utterance.onend = () => onDone(true);
-      utterance.onerror = () => onDone(false);
+      // Some engines never start an utterance (voice list still empty right
+      // after load, suspended engine) and never fire onend — the audiobook
+      // pause would freeze the story mid-line. If onstart hasn't arrived
+      // within the window, release the story as interrupted.
+      const START_TIMEOUT_MS = 3500;
+      let started = false;
+      let finished = false;
+      const finish = (completed: boolean) => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(guard);
+        onDone(completed);
+      };
+      const guard = window.setTimeout(() => {
+        if (!started) finish(false);
+      }, START_TIMEOUT_MS);
+      utterance.onstart = () => {
+        started = true;
+      };
+      utterance.onend = () => finish(true);
+      utterance.onerror = () => finish(false);
     }
     window.speechSynthesis.speak(utterance);
     return true;

@@ -1,31 +1,48 @@
 // Transport controls. The buttons are discrete (playing flag only); the
 // scrubber + clock readout are the designated per-frame subscriber.
+//
+// Every transport action goes through BroadcastActions (useBroadcastActions):
+// with Broadcast off those are plain clock calls, with it on each action is
+// published to the shared head.
 
 import { useRef, useState } from "react";
-import { Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { usePlaybackTime, usePlayer } from "../../state/PlayerContext";
+import { Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight, Volume2, VolumeX } from "lucide-react";
+import { usePlaybackRate, usePlaybackTime, usePlayer } from "../../state/PlayerContext";
+import { useSettings } from "../../state/SettingsContext";
+import { NARRATION_MAX_RATE } from "../../state/audio";
 import { formatTime } from "../../engine/format";
 import { SceneNav } from "./SceneNav";
 import { TimelineStrip } from "./TimelineStrip";
 import type { Timeline } from "../../engine/timeline";
+import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
 
 export const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
 const SKIP_MS = 10000;
 
-export function TransportBar({ timeline }: { timeline: Timeline }) {
-  const { clock, playing, restart } = usePlayer();
+export function TransportBar({ timeline, actions }: { timeline: Timeline; actions: BroadcastActions }) {
+  const { clock, playing } = usePlayer();
+  const { narration, setNarration } = useSettings();
+  const rate = usePlaybackRate();
   const duration = timeline.totalMs;
+  // Narration auto-mutes above 2× (speech cannot keep up); say so on the
+  // button instead of leaving the silence unexplained.
+  const mutedByRate = narration && rate > NARRATION_MAX_RATE;
+  const voiceTitle = !narration
+    ? "Narration off — click to hear the dialogue"
+    : mutedByRate
+      ? "Narration on — muted above 2× speed"
+      : "Narration on — the story pauses while each line is spoken";
 
   return (
     <div className="sim-transport">
-      <TimelineStrip timeline={timeline} />
-      <Scrubber duration={duration} />
+      <TimelineStrip timeline={timeline} seek={actions.seek} />
+      <Scrubber duration={duration} actions={actions} />
       <div className="sim-transport-row">
         <div className="sim-transport-buttons">
           <button
             type="button"
             className="sim-btn"
-            onClick={restart}
+            onClick={actions.restart}
             aria-label="Restart from beginning"
             title="Restart"
           >
@@ -34,7 +51,7 @@ export function TransportBar({ timeline }: { timeline: Timeline }) {
           <button
             type="button"
             className="sim-btn"
-            onClick={() => clock.step(-SKIP_MS)}
+            onClick={() => actions.step(-SKIP_MS)}
             aria-label="Back 10 seconds"
             title="Back 10s"
           >
@@ -43,7 +60,7 @@ export function TransportBar({ timeline }: { timeline: Timeline }) {
           <button
             type="button"
             className="sim-btn sim-btn-primary"
-            onClick={() => clock.toggle()}
+            onClick={actions.togglePlay}
             aria-label={playing ? "Pause" : "Play"}
             title={playing ? "Pause" : "Play"}
           >
@@ -52,19 +69,29 @@ export function TransportBar({ timeline }: { timeline: Timeline }) {
           <button
             type="button"
             className="sim-btn"
-            onClick={() => clock.step(SKIP_MS)}
+            onClick={() => actions.step(SKIP_MS)}
             aria-label="Forward 10 seconds"
             title="Forward 10s"
           >
             <ChevronsRight size={18} aria-hidden />
           </button>
-          <SceneNav timeline={timeline} />
+          <button
+            type="button"
+            className={`sim-btn sim-voice-btn${narration ? "" : " sim-voice-off"}${mutedByRate ? " sim-voice-muted" : ""}`}
+            onClick={() => setNarration(!narration)}
+            aria-pressed={narration}
+            aria-label={narration ? "Narration on" : "Narration off"}
+            title={voiceTitle}
+          >
+            {narration ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
+          </button>
+          <SceneNav timeline={timeline} seek={actions.seek} />
         </div>
         <label className="sim-speed">
           <span>Speed</span>
           <select
             value={String(clock.playbackRate)}
-            onChange={(e) => clock.setRate(Number(e.target.value))}
+            onChange={(e) => actions.setRate(Number(e.target.value))}
           >
             {SPEEDS.map((s) => (
               <option key={s} value={s}>
@@ -79,8 +106,7 @@ export function TransportBar({ timeline }: { timeline: Timeline }) {
 }
 
 /** Range input + clock readout; the one per-frame element in the transport. */
-function Scrubber({ duration }: { duration: number }) {
-  const { clock } = usePlayer();
+function Scrubber({ duration, actions }: { duration: number; actions: BroadcastActions }) {
   const time = usePlaybackTime();
   // While a pointer drag is live, hold the thumb at the dragged position —
   // otherwise the per-frame `time` snaps it back to the playhead mid-drag.
@@ -101,7 +127,7 @@ function Scrubber({ duration }: { duration: number }) {
         value={dragTime ?? time}
         onChange={(e) => {
           const next = Number(e.target.value);
-          clock.seek(next);
+          actions.seek(next);
           if (pointerDownRef.current) setDragTime(next);
         }}
         onPointerDown={() => {

@@ -103,6 +103,137 @@
   font-weight: 700;
 }
 
+/* ---- live-mode honesty strip + toggle ---- */
+
+.sim-badge-live {
+  color: hsl(var(--sim-good));
+  background: hsl(var(--sim-good) / 0.08);
+  border-bottom-color: hsl(var(--sim-good) / 0.35);
+}
+
+.sim-topbar .sim-badge-live {
+  background: transparent;
+  border-bottom: 0;
+}
+
+.sim-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-right: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-panel));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.sim-mode-toggle:hover:not(:disabled) {
+  background: hsl(var(--sim-accent) / 0.12);
+  border-color: hsl(var(--sim-accent) / 0.5);
+}
+
+.sim-mode-toggle:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sim-mode-toggle.sim-mode-live {
+  color: hsl(var(--sim-good));
+  border-color: hsl(var(--sim-good) / 0.5);
+}
+
+/* ---- broadcast (synced viewing) ---- */
+
+.sim-broadcast {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  margin-right: 0.75rem;
+}
+
+/* The toggle reuses .sim-mode-toggle (which carries its own margin-right) —
+   cancel it so the gap above is the only spacing. */
+.sim-broadcast .sim-mode-toggle {
+  margin-right: 0;
+}
+
+.sim-broadcast-status {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: hsl(var(--sim-text) / 0.6);
+}
+
+.sim-broadcast-status[data-state="on"] {
+  color: hsl(var(--sim-good));
+}
+
+.sim-broadcast-status[data-state="error"] {
+  color: hsl(var(--sim-bad));
+}
+
+/* ---- inspector: live connector probes ---- */
+
+.sim-live-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sim-conn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.sim-conn-refresh:hover:not(:disabled) {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--sim-accent) / 0.5);
+}
+
+.sim-conn-refresh:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sim-conn-row[data-tone="ok"] .sim-conn-status {
+  color: hsl(var(--sim-good));
+}
+
+.sim-conn-row[data-tone="warn"] .sim-conn-status {
+  color: hsl(var(--sim-warn));
+}
+
+.sim-conn-row[data-tone="bad"] .sim-conn-status {
+  color: hsl(var(--sim-bad));
+}
+
+.sim-conn-row[data-tone="unknown"] .sim-conn-status,
+.sim-conn-row[data-tone="no-api"] .sim-conn-status {
+  color: hsl(var(--sim-text-dim));
+}
+
 /* ---- account entry (top bar, right) ---- */
 
 .sim-account {
@@ -169,6 +300,12 @@
 
 @media (max-width: 640px) {
   .sim-account-name {
+    display: none;
+  }
+
+  /* Phones: keep the toggles, drop the prose — the button's title tooltip
+     and the topbar's width budget both stay intact. */
+  .sim-broadcast-status {
     display: none;
   }
 }
@@ -435,6 +572,37 @@
   }
 }
 
+/* ---- live activity pulses ---- */
+
+/* One expanding ring per fresh tenant event, centered on the owning node.
+   The ring runs three expansions (~2.7s) and ends invisible; the layer
+   prunes the element afterwards. Decorative: the same event is listed in
+   the Inspector. */
+.sim-live-pulse {
+  fill: none;
+  stroke: hsl(var(--sim-good) / 0.8);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: sim-live-ring 0.9s ease-out 3;
+}
+
+.sim-live-pulses [data-tone="warn"] .sim-live-pulse {
+  stroke: hsl(var(--sim-warn) / 0.8);
+}
+
+@keyframes sim-live-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
 /* ---- edges ---- */
 
 .sim-edge {
@@ -688,6 +856,20 @@
   background: hsl(var(--sim-accent) / 0.85);
 }
 
+/* Narration toggle on the transport: lit while on, dimmed while off, and
+ * half-faded when auto-muted by playback speed (title explains why). */
+.sim-voice-btn {
+  color: hsl(var(--sim-accent));
+}
+
+.sim-voice-btn.sim-voice-off {
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-voice-btn.sim-voice-muted {
+  opacity: 0.55;
+}
+
 .sim-speed {
   display: flex;
   align-items: center;
@@ -792,6 +974,41 @@
 }
 
 .sim-conn-row[data-configured="not-configured"] .sim-conn-status {
+  color: hsl(var(--sim-warn));
+}
+
+.sim-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sim-activity-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+  border-radius: 0.35rem;
+  background: hsl(var(--sim-panel));
+}
+
+.sim-activity-time {
+  font-size: 0.7rem;
+  color: hsl(var(--sim-text-dim));
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-activity-label {
+  color: hsl(var(--sim-good));
+  line-height: 1.45;
+}
+
+.sim-activity-row[data-tone="warn"] .sim-activity-label {
   color: hsl(var(--sim-warn));
 }
 
@@ -1229,6 +1446,17 @@
   border-radius: 0.5rem;
 }
 
+.sim-report-export-error {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: hsl(var(--sim-bad));
+  background: hsl(var(--sim-bad) / 0.08);
+  border: 1px solid hsl(var(--sim-bad) / 0.35);
+  border-radius: 0.5rem;
+}
+
 .sim-report-body {
   flex: 1;
   overflow-y: auto;
@@ -1477,7 +1705,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sim-node[data-state="speaking"] .sim-node-halo,
-  .sim-node-sweep {
+  .sim-node-sweep,
+  .sim-live-pulse {
     animation: none;
   }
 
@@ -1490,7 +1719,8 @@
   "system" removes the attribute so the media query above governs). */
 
 html[data-motion="reduce"] .sim-node[data-state="speaking"] .sim-node-halo,
-html[data-motion="reduce"] .sim-node-sweep {
+html[data-motion="reduce"] .sim-node-sweep,
+html[data-motion="reduce"] .sim-live-pulse {
   animation: none;
 }
 

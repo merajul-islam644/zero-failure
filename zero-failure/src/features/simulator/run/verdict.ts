@@ -16,6 +16,9 @@ import type { AssertionStatus, OverallStatus, TestResult } from "../engine/types
 export const REPORT_DISCLAIMER =
   "Simulation only: these results come from deterministic simulated connectors, not from real SELISE Blocks services. Not-configured integrations are never marked as passed.";
 
+export const LIVE_REPORT_DISCLAIMER =
+  "Live mode: results were recorded from real SELISE Blocks services reached read-only from the browser. Write operations were refused by design (LIVE_READ_ONLY), and the default storyline runs without scenario injections, so its outcomes are what the services actually returned. Not-configured integrations are never marked as passed.";
+
 export const EMPTY_COUNTS: Record<AssertionStatus, number> = {
   passed: 0,
   failed: 0,

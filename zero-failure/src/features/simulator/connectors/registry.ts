@@ -1,12 +1,14 @@
 // Connector registry: what each platform can do, in both modes.
 // Simulated mode: all 10 providers active (the script needs every platform
-// reporting). Live mode: all 10 honest stubs — Not Configured until real
-// SDK connectors land.
+// reporting). Live mode: SDK-backed platforms execute real read-only calls;
+// the rest record NO_LIVE_API — honest about having no live surface.
 
 import { CAST_BY_ID } from "../script/cast";
+import type { BlocksClient } from "@seliseblocks/client";
 import type { ConnectorOperation, PlatformConnector, PlatformId } from "../engine/types";
+import { capabilityFor } from "../live/capabilities";
 import { createSimulatedConnector } from "./simulated/simulated-connector";
-import { createLiveConnectorStub } from "./live/live-connector";
+import { createLiveConnector, createNoLiveApiConnector } from "./live/live-connector";
 
 const op = (
   id: string,
@@ -16,7 +18,8 @@ const op = (
   backoffMs = 750
 ): ConnectorOperation => ({ id, summary, timeoutMs, retryPolicy: { maxRetries, backoffMs } });
 
-const OPERATIONS: Record<PlatformId, ConnectorOperation[]> = {
+/** The script's operation catalog per platform — exported for the live op-map tests. */
+export const OPERATIONS: Record<PlatformId, ConnectorOperation[]> = {
   os: [op("manage-test-run", "Create and close the test run")],
   iam: [
     op("authenticate-identity", "Validate the test identity"),
@@ -64,19 +67,34 @@ export function simulatedRegistry(): ConnectorRegistry {
   ) as ConnectorRegistry;
 }
 
-export function liveStubRegistry(): ConnectorRegistry {
+/**
+ * Live registry. The Blocks client is injected by the caller (RunContext
+ * passes the shared singleton) so the simulator core never imports the
+ * real client — constructing it outside a browser throws, which would
+ * break every node-env test on import.
+ */
+export function liveRegistry(client: BlocksClient): ConnectorRegistry {
   return Object.fromEntries(
-    (Object.keys(OPERATIONS) as PlatformId[]).map((platform) => [
-      platform,
-      createLiveConnectorStub({
+    (Object.keys(OPERATIONS) as PlatformId[]).map((platform) => {
+      const base = {
         platform,
         displayName: CAST_BY_ID[platform].name,
         operations: OPERATIONS[platform]
-      })
-    ])
+      };
+      return [
+        platform,
+        capabilityFor(platform).kind === "sdk-read"
+          ? createLiveConnector({ ...base, client })
+          : createNoLiveApiConnector(base)
+      ];
+    })
   ) as ConnectorRegistry;
 }
 
-export function registryFor(mode: "simulated" | "live"): ConnectorRegistry {
-  return mode === "simulated" ? simulatedRegistry() : liveStubRegistry();
+export function registryFor(mode: "simulated" | "live", client?: BlocksClient): ConnectorRegistry {
+  if (mode === "live") {
+    if (!client) throw new Error("Live mode requires a Blocks client — inject blocksClient from the caller.");
+    return liveRegistry(client);
+  }
+  return simulatedRegistry();
 }

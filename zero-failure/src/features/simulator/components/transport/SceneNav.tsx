@@ -1,19 +1,19 @@
 // Scene jump controls — discrete. Numbers jump straight to a scene's start.
+// Jumps go through the injected seek (BroadcastActions.seek), so a scene
+// change reaches the shared head too.
 
-import { usePlayer } from "../../state/PlayerContext";
 import { sceneWindowByIndex } from "../../engine/select";
 import type { Timeline } from "../../engine/timeline";
 import { useSimSnapshot } from "../../state/PlayerContext";
 
-export function SceneNav({ timeline }: { timeline: Timeline }) {
-  const { clock } = usePlayer();
+export function SceneNav({ timeline, seek }: { timeline: Timeline; seek: (headMs: number) => void }) {
   const snapshot = useSimSnapshot(timeline.events);
   const current = snapshot.scene?.index ?? 1;
   const count = timeline.scenes.length;
 
   const jump = (sceneIndex: number) => {
     const window = sceneWindowByIndex(timeline.sceneTable, sceneIndex);
-    if (window) clock.seek(window.startMs + 1);
+    if (window) seek(window.startMs + 1);
   };
 
   return (

@@ -4,7 +4,7 @@
 // the actual text says exactly what was checked.
 
 import type { AssertionOutcome, EvalContext, ProcessRuleId } from "./assertions";
-import { RUN_ID } from "./run-id";
+import { CAPABILITIES } from "../live/capabilities";
 
 const TERMINAL: ReadonlySet<string> = new Set(["succeeded", "failed", "timed-out", "not-configured"]);
 const SIDE_EFFECT_OPERATIONS = new Set(["send-test-notification", "isolated-timeout-probe", "create-test-record"]);
@@ -18,16 +18,24 @@ export function evaluateProcessRule(rule: ProcessRuleId, ctx: EvalContext): Asse
 
   switch (rule) {
     case "run-initialized":
-      return { status: "passed", actual: `${RUN_ID} initialized before the first exchange`, attempts: [] };
-    case "connectors-identified":
+      return { status: "passed", actual: `${ctx.runId} initialized before the first exchange`, attempts: [] };
+    case "connectors-identified": {
+      if (ctx.mode === "simulated") {
+        return {
+          status: "passed",
+          actual: "Ten simulated connectors registered (configured, simulated)",
+          attempts: []
+        };
+      }
+      const capabilities = Object.values(CAPABILITIES);
+      const sdkBacked = capabilities.filter((c) => c.kind === "sdk-read").length;
+      const withoutApi = capabilities.length - sdkBacked;
       return {
         status: "passed",
-        actual:
-          ctx.mode === "simulated"
-            ? "Ten simulated connectors registered (configured, simulated); live strip shows all ten Not Configured"
-            : "Ten live connectors registered — all Not Configured",
+        actual: `Ten live connectors registered: ${sdkBacked} SDK-backed read-only, ${withoutApi} without a live API (simulated)`,
         attempts: []
       };
+    }
     case "correlation-created":
       return messages.every((m) => m.correlationId)
         ? { status: "passed", actual: `${new Set(messages.map((m) => m.correlationId)).size} correlations across ${messages.length} messages`, attempts: [] }
@@ -55,7 +63,12 @@ export function evaluateProcessRule(rule: ProcessRuleId, ctx: EvalContext): Asse
         : { status: "failed", actual: "Response did not confirm the test environment", correlationId: query.correlationId, attempts: [query] };
     }
     case "durations-captured": {
-      const measurable = messages.filter((m) => m.status !== "not-configured");
+      // Read-only refusals (LIVE_READ_ONLY) and no-live-API rows never reach a
+      // service, so their ~0 duration is honest — they are excluded from the
+      // check. Everything that actually executed must carry a measured duration.
+      const measurable = messages.filter(
+        (m) => m.status !== "not-configured" && m.errorDetails?.code !== "LIVE_READ_ONLY"
+      );
       if (measurable.length === 0) {
         return { status: "not-configured", actual: "No durations recorded — integration not configured", attempts: [] };
       }
@@ -118,9 +131,9 @@ export function evaluateProcessRule(rule: ProcessRuleId, ctx: EvalContext): Asse
       return { status: "passed", actual: "No operation targets production; the only deployment target is the test environment", attempts: [] };
     case "correlation-with-run": {
       const failures = messages.filter((m) => m.errorDetails);
-      return failures.every((m) => m.runId === RUN_ID) && failures.length > 0
-        ? { status: "passed", actual: `${failures.length} failure records correlated under ${RUN_ID}`, attempts: failures }
-        : { status: "passed", actual: `All evidence carries run id ${RUN_ID}`, attempts: [] };
+      return failures.every((m) => m.runId === ctx.runId) && failures.length > 0
+        ? { status: "passed", actual: `${failures.length} failure records correlated under ${ctx.runId}`, attempts: failures }
+        : { status: "passed", actual: `All evidence carries run id ${ctx.runId}`, attempts: [] };
     }
     case "cause-undetermined":
       return { status: "passed", actual: "Cause classified as undetermined; recommendations separated from confirmed causes", attempts: [] };
@@ -142,8 +155,8 @@ export function evaluateProcessRule(rule: ProcessRuleId, ctx: EvalContext): Asse
       return { status: "passed", actual: "Artifact content compared rather than only referencing the file", attempts: [] };
     case "metadata-has-run-id": {
       const meta = messages.find((m) => m.operation === "store-evidence-metadata");
-      return meta?.idempotencyKey?.includes(RUN_ID)
-        ? { status: "passed", actual: `Evidence metadata associated with ${RUN_ID}`, correlationId: meta.correlationId, attempts: [meta] }
+      return meta?.idempotencyKey?.includes(ctx.runId)
+        ? { status: "passed", actual: `Evidence metadata associated with ${ctx.runId}`, correlationId: meta.correlationId, attempts: [meta] }
         : { status: meta ? "passed" : "not-tested", actual: meta ? "Evidence metadata linked to the run key" : "No evidence metadata recorded in this scenario", correlationId: meta?.correlationId, attempts: meta ? [meta] : [] };
     }
     case "config-paths-respected":

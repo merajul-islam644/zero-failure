@@ -1,0 +1,16 @@
+{
+  "schemaName": "broadcast_state",
+  "collectionName": "broadcast_state",
+  "schemaType": 1,
+  "fields": [
+    { "name": "epochMs", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "headMs", "type": "Float", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "playing", "type": "Boolean", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "rate", "type": "Float", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "scenarioId", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "mode", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "updatedAt", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "updatedBy", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "rev", "type": "Float", "isArray": false, "isPIIData": false, "isUniqueData": false }
+  ]
+}

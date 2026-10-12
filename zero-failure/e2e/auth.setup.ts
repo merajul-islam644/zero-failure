@@ -29,20 +29,37 @@ test("sign in through the login gate", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
   await page.getByRole("button", { name: "Continue with Blocks" }).click();
 
-  // Either IAM auto-redirects home (live session) or shows its form — and
-  // the app -> authorize -> form redirect chain can outlast a naive wait
-  // (it has once already). fill() waits through the chain; on the
-  // auto-redirect path it times out harmlessly and we are already home.
+  // The IAM SPA is slow and lossy: its shell can sit blank past 20s, and its
+  // controlled inputs have been observed remounting mid-fill — clearing the
+  // email before submit and leaving the pipeline "Awaiting User Input"
+  // forever. So: check for the auto-redirect path, fill, VERIFY the values
+  // held, submit — and if the form is still there shortly after, do it again.
   const form = page.getByRole("textbox", { name: "Work Email" });
-  const showedForm = await form
-    .fill(email, { timeout: 20_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (showedForm) {
+  const passwordBox = page.getByRole("textbox", { name: "Password" });
+  const loginButton = page.getByRole("button", { name: /login/i });
+  const backHome = () =>
+    page.waitForURL(/\/(\?|$)/, { timeout: 30_000 }).then(() => true).catch(() => false);
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    // IAM may auto-redirect when it still holds a live session — the form
+    // never appears and the callback has already fired.
+    if (await page.waitForURL(/\/(\?|$)/, { timeout: 5_000 }).then(() => true).catch(() => false)) break;
+
+    const filled = await form
+      .fill(email, { timeout: 30_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!filled) continue;
     // By role/name, not input[type=password]: the field's type attribute is
     // IAM's business (show/hide toggle) and has already drifted once.
-    await page.getByRole("textbox", { name: "Password" }).fill(password);
-    await page.getByRole("button", { name: /login/i }).click();
+    await passwordBox.fill(password);
+    // A late SPA re-render resets controlled inputs; make sure both held.
+    await page.waitForTimeout(1_500);
+    const emailHeld = (await form.inputValue().catch(() => "")) === email;
+    const passwordHeld = (await passwordBox.inputValue().catch(() => "")) === password;
+    if (!emailHeld || !passwordHeld) continue;
+    await loginButton.click();
+    if (await backHome()) break;
   }
 
   // Through /login/callback, the gate returns us to the simulator. IAM's

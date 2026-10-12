@@ -4,14 +4,13 @@
 // the animation is always a faithful rendering of the executed run.
 
 import { useRun } from "../../run/RunContext";
-import { usePlayer } from "../../state/PlayerContext";
 import { useSettings, type MotionPreference, type ThemePreference } from "../../state/SettingsContext";
 import { CAST } from "../../script/cast";
 import { CAST_SETTING, useVoices } from "../../state/voices";
+import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
 
-export function ConfigPanel() {
-  const { scenarios, scenarioId, selectScenario, rerun, running } = useRun();
-  const { clock, restart } = usePlayer();
+export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
+  const { scenarios, scenarioId, running } = useRun();
   const settings = useSettings();
   const voices = useVoices();
 
@@ -27,11 +26,6 @@ export function ConfigPanel() {
     </>
   );
 
-  const pickScenario = (id: string) => {
-    selectScenario(id);
-    clock.restart();
-  };
-
   return (
     <div className="sim-config">
       <section className="sim-inspector-section">
@@ -39,7 +33,7 @@ export function ConfigPanel() {
         <select
           className="sim-select"
           value={scenarioId}
-          onChange={(e) => pickScenario(e.target.value)}
+          onChange={(e) => actions.selectScenario(e.target.value)}
           aria-label="Select failure scenario"
         >
           {scenarios.map((scenario) => (
@@ -59,10 +53,7 @@ export function ConfigPanel() {
           type="button"
           className="sim-report-btn"
           disabled={running}
-          onClick={() => {
-            rerun();
-            clock.restart();
-          }}
+          onClick={actions.rerun}
         >
           {running ? "Executing…" : "Run again from start"}
         </button>
@@ -97,7 +88,10 @@ export function ConfigPanel() {
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Audio (off by default)</h3>
+        <h3 className="sim-inspector-heading">Audio (on by default)</h3>
+        <p className="sim-scenario-hint">
+          The speaker button on the transport bar toggles narration too.
+        </p>
         <label className="sim-toggle">
           <input
             type="checkbox"

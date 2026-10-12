@@ -68,6 +68,8 @@ export interface EvalContext {
   messages: StructuredMessage[];
   scenarioId: string;
   mode: ExecutionMode;
+  /** RUN-001 in simulation; the generated id of the live execution. */
+  runId: string;
 }
 
 export interface AssertionOutcome {
