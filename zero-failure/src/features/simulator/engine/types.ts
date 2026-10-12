@@ -301,8 +301,6 @@ export interface CharacterDef {
   /** Tailwind-compatible HSL triple, e.g. "215 90% 60%". */
   hue: string;
   glyph: string;
-  x: number;
-  y: number;
 }
 
 // ---- Derived playback state (pure fold output) ----

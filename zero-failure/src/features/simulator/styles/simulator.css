@@ -572,6 +572,110 @@
   }
 }
 
+/* ---- deep-sky backdrop ---- */
+
+/* Distant galaxies around the solar system. Per-galaxy opacity arrives via
+   --gal-alpha (distance-faded); spin runs on the inner group so the CSS
+   transform never fights the positioning transform attribute. */
+.sim-galaxy {
+  opacity: var(--gal-alpha, 0.6);
+}
+
+.sim-galaxy-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sim-sweep var(--spin, 240s) linear infinite;
+}
+
+.sim-galaxy-core {
+  fill: #fff7e0;
+}
+
+.sim-star {
+  fill: #dfe9ff;
+  opacity: var(--star-alpha, 0.4);
+}
+
+.sim-star[data-twinkle] {
+  animation: sim-twinkle var(--tw-dur, 3.5s) ease-in-out var(--tw-delay, 0s) infinite;
+}
+
+@keyframes sim-twinkle {
+  0%,
+  100% {
+    opacity: var(--star-alpha, 0.4);
+  }
+  50% {
+    opacity: 0.06;
+  }
+}
+
+/* On the light theme the sky is a pale panel — sink the backdrop hard so
+   rings and nodes stay legible. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .sim-galaxies {
+    opacity: 0.4;
+  }
+}
+
+:root[data-theme="light"] .sim-galaxies {
+  opacity: 0.4;
+}
+
+/* ---- sun ---- */
+
+/* OS as the star: literal fire colors (see the defs comment in
+   CommandCanvas) so it reads as burning in every theme. State styling
+   (speaking/success/failure halos) stays intact. */
+.sim-node[data-sun] .sim-node-body {
+  fill: url(#sim-sun-fill);
+  stroke: #ff7a1a;
+  stroke-width: 2.5;
+}
+
+/* dark burnt-orange on the white-hot core, like sunspot detail */
+.sim-node[data-sun] .sim-node-glyph {
+  color: #8a3a0c;
+}
+
+.sim-node[data-sun] .sim-node-halo {
+  stroke: #ffb75e59;
+}
+
+/* radiation spreading off the limb; breathes slowly */
+.sim-sun-glow {
+  stroke: none;
+  animation: sim-sun-breathe 5.5s ease-in-out infinite;
+}
+
+/* ray streaks fan out and rotate, the way flares spray in all directions */
+.sim-sun-rays {
+  stroke: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sim-sweep 90s linear infinite;
+}
+
+@keyframes sim-sun-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.sim-sun-corona {
+  fill: none;
+  stroke: #ffb14e80;
+  stroke-width: 2;
+  stroke-dasharray: 14 26;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sim-sweep 26s linear infinite;
+}
+
 /* ---- live activity pulses ---- */
 
 /* One expanding ring per fresh tenant event, centered on the owning node.
@@ -603,13 +707,13 @@
   }
 }
 
-/* ---- edges ---- */
+/* ---- orbit rings ---- */
 
-.sim-edge {
+.sim-orbit {
   fill: none;
-  stroke: hsl(var(--sim-accent) / 0.22);
-  stroke-width: 1.6;
-  stroke-dasharray: 5 7;
+  stroke: hsl(var(--sim-accent) / 0.3);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 7;
 }
 
 .sim-edge-active {
@@ -1706,6 +1810,11 @@
 @media (prefers-reduced-motion: reduce) {
   .sim-node[data-state="speaking"] .sim-node-halo,
   .sim-node-sweep,
+  .sim-sun-glow,
+  .sim-sun-rays,
+  .sim-sun-corona,
+  .sim-galaxy-spin,
+  .sim-star[data-twinkle],
   .sim-live-pulse {
     animation: none;
   }
@@ -1720,6 +1829,11 @@
 
 html[data-motion="reduce"] .sim-node[data-state="speaking"] .sim-node-halo,
 html[data-motion="reduce"] .sim-node-sweep,
+html[data-motion="reduce"] .sim-sun-glow,
+html[data-motion="reduce"] .sim-sun-rays,
+html[data-motion="reduce"] .sim-sun-corona,
+html[data-motion="reduce"] .sim-galaxy-spin,
+html[data-motion="reduce"] .sim-star[data-twinkle],
 html[data-motion="reduce"] .sim-live-pulse {
   animation: none;
 }
@@ -1738,6 +1852,26 @@ html[data-motion="full"] .sim-node[data-state="speaking"] .sim-node-halo {
 
 html[data-motion="full"] .sim-node-sweep {
   animation: sim-sweep 1.4s linear infinite;
+}
+
+html[data-motion="full"] .sim-sun-corona {
+  animation: sim-sweep 26s linear infinite;
+}
+
+html[data-motion="full"] .sim-sun-rays {
+  animation: sim-sweep 90s linear infinite;
+}
+
+html[data-motion="full"] .sim-sun-glow {
+  animation: sim-sun-breathe 5.5s ease-in-out infinite;
+}
+
+html[data-motion="full"] .sim-galaxy-spin {
+  animation: sim-sweep var(--spin, 240s) linear infinite;
+}
+
+html[data-motion="full"] .sim-star[data-twinkle] {
+  animation: sim-twinkle var(--tw-dur, 3.5s) ease-in-out var(--tw-delay, 0s) infinite;
 }
 
 html[data-motion="full"] .sim-node[data-dimmed] {

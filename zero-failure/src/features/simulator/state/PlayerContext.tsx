@@ -9,6 +9,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -88,7 +89,8 @@ export function usePlayer(): PlayerContextValue {
   return ctx;
 }
 
-/** Per-frame playback head. Only for the three designated components. */
+/** Per-frame playback head. Only for the designated per-frame layers:
+ *  SolarNodeLayer, PacketLayer and LivePulseLayer. */
 export function usePlaybackTime(): number {
   const { clock } = usePlayer();
   return useSyncExternalStore(
@@ -96,6 +98,85 @@ export function usePlaybackTime(): number {
     () => clock.time,
     () => 0
   );
+}
+
+// ---- orbit time ----
+// The sky rides the story head while it plays, and keeps advancing on wall
+// time whenever the head is parked — dialogue beats, checkpoints, manual
+// pause — so the planets never freeze mid-sentence. Seeking snaps the sky
+// back onto the story head; a hidden tab pauses the drift (rAF stops, same
+// rule as the clock's own frame clamp).
+//
+// The rAF loop deliberately has no listener-count teardown: React re-runs
+// subscribe effects around commits (and StrictMode double-mounts), and a
+// momentary empty listener set must not discard the accumulated drift —
+// the loop just keeps ticking until the clock itself is garbage collected.
+
+interface OrbitLoop {
+  listeners: Set<() => void>;
+  raf: number;
+  lastWall: number;
+  lastPlaying: boolean;
+  /** Story head at the moment the clock paused. */
+  pausedFrom: number;
+  /** Wall ms accumulated while paused (per-frame clamped like the clock). */
+  credit: number;
+  cached: number;
+}
+
+const orbitLoops = new WeakMap<SequencerClock, OrbitLoop>();
+
+function orbitSnapshot(clock: SequencerClock): number {
+  return orbitLoops.get(clock)?.cached ?? clock.time;
+}
+
+function orbitSubscribe(clock: SequencerClock, onChange: () => void): () => void {
+  let existing = orbitLoops.get(clock);
+  if (!existing) {
+    existing = {
+      listeners: new Set(),
+      raf: 0,
+      lastWall: performance.now(),
+      lastPlaying: clock.isPlaying,
+      pausedFrom: clock.time,
+      credit: 0,
+      cached: clock.time
+    };
+    orbitLoops.set(clock, existing);
+    const loop = existing;
+    const frame = (now: number) => {
+      const delta = Math.min(now - loop.lastWall, 250);
+      loop.lastWall = now;
+      if (clock.isPlaying) {
+        loop.credit = 0;
+        loop.cached = clock.time;
+      } else {
+        if (loop.lastPlaying) loop.pausedFrom = clock.time;
+        loop.credit += delta;
+        loop.cached = loop.pausedFrom + loop.credit;
+      }
+      loop.lastPlaying = clock.isPlaying;
+      loop.raf = requestAnimationFrame(frame);
+      for (const listener of loop.listeners) listener();
+    };
+    loop.raf = requestAnimationFrame(frame);
+  }
+  const loop = existing;
+  loop.listeners.add(onChange);
+  return () => {
+    orbitLoops.get(clock)?.listeners.delete(onChange);
+  };
+}
+
+/** Per-frame sky time for the designated canvas layers: story head while
+ *  playing, story head + paused-wall-drift otherwise. */
+export function useOrbitTime(): number {
+  const { clock } = usePlayer();
+  // Stable identities: a fresh arrow here would resubscribe (and, before the
+  // no-teardown rule, tear down the loop) around every commit.
+  const subscribe = useCallback((onChange: () => void) => orbitSubscribe(clock, onChange), [clock]);
+  const getSnapshot = useCallback(() => orbitSnapshot(clock), [clock]);
+  return useSyncExternalStore(subscribe, getSnapshot, () => 0);
 }
 
 /** Playback rate — re-renders only when the speed actually changes

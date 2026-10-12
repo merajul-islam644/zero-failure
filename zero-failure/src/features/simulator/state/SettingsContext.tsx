@@ -138,3 +138,23 @@ export function useSettings(): SettingsContextValue {
   if (!ctx) throw new Error("useSettings must be used inside <SettingsProvider>");
   return ctx;
 }
+
+/** True when the viewer prefers reduced motion — either explicitly, or via
+ *  the OS while on "system". JS-driven animation (orbit positions) freezes
+ *  off this; CSS animation keeps keying on the html[data-motion] attribute. */
+export function useMotionReduced(): boolean {
+  const { motion } = useSettings();
+  const [mediaReduce, setMediaReduce] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+
+  useEffect(() => {
+    if (motion !== "system") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => setMediaReduce(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [motion]);
+
+  return motion === "reduce" || (motion === "system" && mediaReduce);
+}

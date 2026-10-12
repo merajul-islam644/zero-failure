@@ -1,12 +1,14 @@
-// In-flight packets riding the edges — per-frame subscriber (designated).
-// Pure math positions from the same curve the static edges use, so pause /
-// seek / scrub show the packet exactly where it should be.
+// In-flight packets riding orbit-hugging curves — per-frame subscriber
+// (designated). Pure math positions from the same curve the highlighted
+// edge draws, so pause / seek / scrub show the packet exactly where it
+// should be, and moving planets carry their packets along.
 
-import { CAST_BY_ID } from "../../script/cast";
-import { usePlaybackTime } from "../../state/PlayerContext";
+import { useOrbitTime, usePlaybackTime } from "../../state/PlayerContext";
+import { useMotionReduced } from "../../state/SettingsContext";
 import type { MessageStatus } from "../../engine/types";
 import type { Timeline } from "../../engine/timeline";
-import { quadPath, quadPointAt } from "./geometry";
+import { cubicPointAt } from "./geometry";
+import { orbitPath, orbitPosition } from "./orbits";
 
 const STATUS_COLOR: Record<MessageStatus, string> = {
   "in-flight": "hsl(var(--sim-accent))",
@@ -18,22 +20,24 @@ const STATUS_COLOR: Record<MessageStatus, string> = {
 };
 
 export function PacketLayer({ timeline }: { timeline: Timeline }) {
+  // Progress and phase windows ride the story head; the curve geometry
+  // rides sky time so packets stay glued to planets that drift through
+  // dialogue pauses (reduced motion freezes the geometry at base layout).
   const t = usePlaybackTime();
+  const tOrbit = useOrbitTime();
+  const tSky = useMotionReduced() ? 0 : tOrbit;
 
   const active = [];
   for (const window of timeline.messageWindows) {
     if (t < window.dispatchMs || t >= window.resolveMs + 400) continue;
-    const from = CAST_BY_ID[window.message.sourcePlatform];
-    const to = CAST_BY_ID[window.message.targetPlatform];
-    if (!from || !to) continue;
 
+    const path = orbitPath(window.message.sourcePlatform, window.message.targetPlatform, tSky);
     if (t < window.arriveMs) {
       const progress = (t - window.dispatchMs) / Math.max(1, window.arriveMs - window.dispatchMs);
-      const point = quadPointAt(from, to, progress);
+      const point = cubicPointAt(path.start, path.c1, path.c2, path.end, progress);
       active.push({
         key: window.message.requestId,
-        from,
-        to,
+        path,
         point,
         color: STATUS_COLOR["in-flight"],
         label: window.message.operation,
@@ -41,13 +45,12 @@ export function PacketLayer({ timeline }: { timeline: Timeline }) {
         phase: "travel" as const
       });
     } else {
-      // Processing at the receiver: dot pulses on the target node.
+      // Processing at the receiver: dot pulses on the (moving) target node.
       const remaining = (window.resolveMs - t) / Math.max(1, window.resolveMs - window.arriveMs);
       active.push({
         key: window.message.requestId,
-        from,
-        to,
-        point: { x: to.x, y: to.y },
+        path,
+        point: orbitPosition(window.message.targetPlatform, tSky),
         color: STATUS_COLOR[window.message.status],
         label: window.message.operation,
         attempt: window.message.attempt,
@@ -61,8 +64,8 @@ export function PacketLayer({ timeline }: { timeline: Timeline }) {
     <g className="sim-packets" aria-hidden>
       {active.map((p) => (
         <g key={p.key} className={`sim-packet sim-packet-${p.phase}`}>
-          {/* highlighted edge while this message is in flight */}
-          <path className="sim-edge-active" d={quadPath(p.from, p.to)} stroke={p.color} />
+          {/* highlighted curve while this message is in flight */}
+          <path className="sim-edge-active" d={p.path.d} stroke={p.color} />
           {p.phase === "processing" && (
             <circle
               className="sim-packet-ring"

@@ -1,6 +1,6 @@
-// The ten platform characters — roles, personalities, canvas geometry.
-// Positions live in the 1600x900 command-center viewBox:
-// OS top-center, senior platforms row two, specialists row three, services row four.
+// The ten platform characters — roles and personalities. Canvas geometry
+// lives in components/canvas/orbits.ts: OS is the sun at the center, the
+// other nine revolve on elliptical orbit rings.
 
 import type { CharacterDef, PlatformId } from "../engine/types";
 
@@ -11,9 +11,7 @@ export const CAST: CharacterDef[] = [
     role: "Team Leader",
     personality: "Calm, organized",
     hue: "222 89% 60%",
-    glyph: "RadioTower",
-    x: 800,
-    y: 120
+    glyph: "RadioTower"
   },
   {
     id: "iam",
@@ -21,9 +19,7 @@ export const CAST: CharacterDef[] = [
     role: "Security Officer",
     personality: "Strict, careful",
     hue: "0 72% 58%",
-    glyph: "ShieldCheck",
-    x: 300,
-    y: 310
+    glyph: "ShieldCheck"
   },
   {
     id: "data-gateway",
@@ -31,9 +27,7 @@ export const CAST: CharacterDef[] = [
     role: "Data Manager",
     personality: "Precise, logical",
     hue: "190 85% 50%",
-    glyph: "Database",
-    x: 633,
-    y: 310
+    glyph: "Database"
   },
   {
     id: "logic",
@@ -41,9 +35,7 @@ export const CAST: CharacterDef[] = [
     role: "Workflow Coordinator",
     personality: "Systematic",
     hue: "262 83% 66%",
-    glyph: "Workflow",
-    x: 966,
-    y: 310
+    glyph: "Workflow"
   },
   {
     id: "release",
@@ -51,9 +43,7 @@ export const CAST: CharacterDef[] = [
     role: "Deployment Engineer",
     personality: "Practical",
     hue: "27 95% 58%",
-    glyph: "Rocket",
-    x: 300,
-    y: 500
+    glyph: "Rocket"
   },
   {
     id: "monitor",
@@ -61,9 +51,7 @@ export const CAST: CharacterDef[] = [
     role: "Observability Engineer",
     personality: "Analytical",
     hue: "152 76% 44%",
-    glyph: "Activity",
-    x: 633,
-    y: 500
+    glyph: "Activity"
   },
   {
     id: "ai-agent",
@@ -71,9 +59,7 @@ export const CAST: CharacterDef[] = [
     role: "Intelligent Investigator",
     personality: "Curious, analytical",
     hue: "42 96% 55%",
-    glyph: "Brain",
-    x: 966,
-    y: 500
+    glyph: "Brain"
   },
   {
     id: "utilities",
@@ -81,9 +67,7 @@ export const CAST: CharacterDef[] = [
     role: "Notification Officer",
     personality: "Helpful",
     hue: "199 89% 56%",
-    glyph: "Bell",
-    x: 467,
-    y: 700
+    glyph: "Bell"
   },
   {
     id: "localization",
@@ -91,9 +75,7 @@ export const CAST: CharacterDef[] = [
     role: "Language Specialist",
     personality: "Detail-oriented",
     hue: "316 78% 62%",
-    glyph: "Languages",
-    x: 800,
-    y: 700
+    glyph: "Languages"
   },
   {
     id: "storage",
@@ -101,9 +83,7 @@ export const CAST: CharacterDef[] = [
     role: "Evidence Manager",
     personality: "Reliable",
     hue: "172 66% 45%",
-    glyph: "HardDrive",
-    x: 1133,
-    y: 700
+    glyph: "HardDrive"
   }
 ];
 

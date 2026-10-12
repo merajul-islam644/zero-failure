@@ -43,7 +43,7 @@ export const scene01: SceneDefinition = {
       speaker: "logic",
       text: "I’ll organize the execution sequence. Each step will wait for its required dependency, capture the result, and decide whether the next step can continue."
     },
-    { type: "note", text: "Connections between characters become visible." },
+    { type: "note", text: "The command constellation forms — OS at the center, platforms settling into orbit." },
     {
       type: "dialogue",
       speaker: "os",
