@@ -7,6 +7,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
+import { Minimize2 } from "lucide-react";
 import { SCENES } from "../script/scenes";
 import { buildTimeline } from "../engine/timeline";
 import type { Timeline } from "../engine/timeline";
@@ -62,7 +63,12 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
   const { clock } = usePlayer();
   const { mode } = useRun();
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const box = useMeetBox(stageRef);
+  const zoomRef = useRef<HTMLDivElement | null>(null);
+  // Zoom moves the canvas out of the stage band into a fixed full-display
+  // layer. Playback never notices: clock and snapshot live in the providers,
+  // and the canvas is a pure subscriber that simply re-parents.
+  const [zoomed, setZoomed] = useState(false);
+  const box = useMeetBox(zoomed ? zoomRef : stageRef);
   // Broadcast owns the room (poll + publish); actions wraps every transport
   // call so local moves reach the shared head. Off, they are plain clock
   // calls — zero behavior change.
@@ -126,11 +132,17 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
           e.preventDefault();
           actions.restart();
           break;
+        case "Escape":
+          if (zoomed) {
+            e.preventDefault();
+            setZoomed(false);
+          }
+          break;
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions, clock, timeline]);
+  }, [actions, clock, timeline, zoomed]);
 
   return (
     <div className="simulator-root">
@@ -149,15 +161,42 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
               scene heading and stage note live in that strip — flow content,
               never floating over the constellation. */}
           <div className="sim-canvas-area" ref={stageRef}>
-            <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-              <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
-            </div>
+            {/* One canvas instance, two possible homes: the stage band, or —
+                while zoomed — the fixed full-display overlay below. The swap
+                is a re-parent, not a duplicate: gradients and ids stay
+                unique, and only one subscriber renders per frame. */}
+            {!zoomed && (
+              <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
+                <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
+              </div>
+            )}
           </div>
         </main>
         <PanelDeck timeline={timeline} liveEvents={liveEvents} actions={actions} />
       </div>
       <SubtitleBar timeline={timeline} />
-      <TransportBar timeline={timeline} actions={actions} />
+      <TransportBar
+        timeline={timeline}
+        actions={actions}
+        zoomed={zoomed}
+        onToggleZoom={() => setZoomed((z) => !z)}
+      />
+      {zoomed && (
+        <div className="sim-zoom-overlay" ref={zoomRef}>
+          <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
+            <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
+          </div>
+          <button
+            type="button"
+            className="sim-btn sim-zoom-exit"
+            onClick={() => setZoomed(false)}
+            aria-label="Exit full-display zoom"
+            title="Exit zoom (Esc)"
+          >
+            <Minimize2 size={18} aria-hidden />
+          </button>
+        </div>
+      )}
       {/* Narration's audiobook pauses/resumes publish too: the presenter's
           speech rhythm is the room's rhythm, and a follower's own narration
           pause is never overridden by a stale "playing" doc mid-line. */}

@@ -6,7 +6,7 @@
 // published to the shared head.
 
 import { useRef, useState } from "react";
-import { Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight, Volume2, VolumeX } from "lucide-react";
+import { Maximize2, Minimize2, Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight, Volume2, VolumeX } from "lucide-react";
 import { usePlaybackRate, usePlaybackTime, usePlayer } from "../../state/PlayerContext";
 import { useSettings } from "../../state/SettingsContext";
 import { NARRATION_MAX_RATE } from "../../state/audio";
@@ -19,7 +19,17 @@ import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions"
 export const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
 const SKIP_MS = 10000;
 
-export function TransportBar({ timeline, actions }: { timeline: Timeline; actions: BroadcastActions }) {
+export function TransportBar({
+  timeline,
+  actions,
+  zoomed,
+  onToggleZoom
+}: {
+  timeline: Timeline;
+  actions: BroadcastActions;
+  zoomed: boolean;
+  onToggleZoom: () => void;
+}) {
   const { clock, playing } = usePlayer();
   const { narration, setNarration } = useSettings();
   const rate = usePlaybackRate();
@@ -86,6 +96,16 @@ export function TransportBar({ timeline, actions }: { timeline: Timeline; action
             {narration ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
           </button>
           <SceneNav timeline={timeline} seek={actions.seek} />
+          <button
+            type="button"
+            className="sim-btn"
+            onClick={onToggleZoom}
+            aria-pressed={zoomed}
+            aria-label={zoomed ? "Exit full-display zoom" : "Zoom — show the solar system across the display"}
+            title={zoomed ? "Exit zoom (Esc)" : "Zoom to full display"}
+          >
+            {zoomed ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
+          </button>
         </div>
         <label className="sim-speed">
           <span>Speed</span>

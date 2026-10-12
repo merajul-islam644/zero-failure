@@ -5,9 +5,8 @@
 // useSimSnapshot subscription keeps everything discrete off the 60fps path.
 
 import { useMemo } from "react";
-import { SCENES } from "../../script/scenes";
+import { CAST } from "../../script/cast";
 import { useSimSnapshot } from "../../state/PlayerContext";
-import type { PlatformId } from "../../engine/types";
 import type { Timeline } from "../../engine/timeline";
 import type { LiveActivityEvent } from "../../live/activity";
 import { ORBIT_CENTER, ORBIT_RINGS } from "./orbits";
@@ -15,8 +14,6 @@ import { GalaxyLayer } from "./GalaxyLayer";
 import { SolarNodeLayer } from "./SolarNodeLayer";
 import { PacketLayer } from "./PacketLayer";
 import { LivePulseLayer } from "./LivePulseLayer";
-
-const sceneCastMap = new Map<number, PlatformId[]>(SCENES.map((s) => [s.index, s.cast]));
 
 interface CommandCanvasProps {
   timeline: Timeline;
@@ -26,11 +23,10 @@ interface CommandCanvasProps {
 export function CommandCanvas({ timeline, liveEvents }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
 
-  const visibleCast = useMemo(() => {
-    const scene = snapshot.scene;
-    if (!scene) return [];
-    return sceneCastMap.get(scene.index) ?? [];
-  }, [snapshot.scene]);
+  // The solar system is the full cast: every platform stays fully visible
+  // in every scene. Scene-based dimming left the early story nearly empty —
+  // only the sun was lit until each platform's scene arrived.
+  const visibleCast = useMemo(() => CAST.map((c) => c.id), []);
 
   return (
     <svg
