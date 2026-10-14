@@ -18,6 +18,8 @@ import { useBroadcastActions } from "../live/broadcast/useBroadcastActions";
 import { PlayerProvider, usePlayer } from "../state/PlayerContext";
 import { RunProvider, useRun } from "../run/RunContext";
 import { SettingsProvider } from "../state/SettingsContext";
+import type { OpenPlanetMenu, PlatformMenuItem } from "../script/platformMenus";
+import { PLATFORM_MENUS } from "../script/platformMenus";
 import { CommandCanvas } from "./canvas/CommandCanvas";
 import { SceneOverlay } from "./canvas/SceneOverlay";
 import { AccountBar } from "./AccountBar";
@@ -76,6 +78,81 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
   // calls — zero behavior change.
   const broadcast = useBroadcast();
   const actions = useBroadcastActions(broadcast);
+
+  // The fanned-open planet menu. Lives at the stage level — not inside the
+  // canvas — so the canvas and the left-rail showcase share one selection.
+  // Click-away and Escape close it: document-level pointerdown, and
+  // "inside" means a clickable planet or any mini-planet of the fan, every
+  // layer of it, at any nesting depth.
+  const [openMenu, setOpenMenu] = useState<OpenPlanetMenu | null>(null);
+  // The rail showcase, by contrast, is a sticky mirror of the LAST
+  // selection: click-away, Escape and even a full reload leave it standing
+  // (localStorage) — only picking another planet or menu planet moves it.
+  const [showcase, setShowcase] = useState<OpenPlanetMenu | null>(readShowcase);
+  useEffect(() => {
+    try {
+      if (showcase) localStorage.setItem(SHOWCASE_KEY, JSON.stringify(showcase));
+      else localStorage.removeItem(SHOWCASE_KEY);
+    } catch {
+      // storage unavailable (private mode etc.) — the showcase just won't
+      // survive reloads; nothing else is affected
+    }
+  }, [showcase]);
+  useEffect(() => {
+    if (!openMenu) return;
+    const onAway = (event: PointerEvent) => {
+      const target = event.target;
+      // The showcase's dial band counts as inside too: twisting the rail
+      // ring must never fold the canvas fan it mirrors.
+      if (target instanceof Element && !target.closest("g[data-clickable], .sim-menu-node, .sim-menu-band")) {
+        setOpenMenu(null);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenu(null);
+    };
+    document.addEventListener("pointerdown", onAway);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onAway);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openMenu]);
+
+  function togglePlanet(id: OpenPlanetMenu["planet"]) {
+    // Same planet folds the fan; a different planet is a new pick — the
+    // showcase moves to it either way, and stays there when the fan folds.
+    const switching = !(openMenu && openMenu.planet === id);
+    setOpenMenu(switching ? { planet: id, path: [] } : null);
+    if (switching) setShowcase({ planet: id, path: [] });
+  }
+
+  function selectMenuItem(label: string, depth: number) {
+    if (!openMenu) return;
+    // Walk to the clicked level.
+    let level = rootItemsFor(openMenu.planet);
+    for (let i = 0; i < depth; i++) {
+      const next = level.find((item) => item.label === openMenu.path[i])?.children;
+      if (!next) return;
+      level = next;
+    }
+    const item = level.find((entry) => entry.label === label);
+    if (!item) return;
+    const nextPath = [...openMenu.path.slice(0, depth), label];
+    if (item.children) {
+      // A branch: fold it if already open, else extend the trail — either
+      // way the showcase settles on that level of the fan.
+      const folded = openMenu.path[depth] === label;
+      const path = folded ? openMenu.path.slice(0, depth) : nextPath;
+      setOpenMenu({ ...openMenu, path });
+      setShowcase({ planet: openMenu.planet, path });
+    } else {
+      // A leaf folds the canvas fan (its pages don't exist yet), but the
+      // showcase keeps the pick: the leaf itself becomes the center.
+      setOpenMenu(null);
+      setShowcase({ planet: openMenu.planet, path: nextPath });
+    }
+  }
 
   // Full playback map. Ignored while typing in form fields and never with
   // modifier keys (no hijacking browser shortcuts).
@@ -158,7 +235,7 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
       </div>
       <div className="sim-main">
         <main className="sim-stage">
-          <SceneOverlay timeline={timeline} />
+          <SceneOverlay timeline={timeline} showcase={showcase} />
           {/* Exactly 16:9, centered in the area below the header strip. The
               scene heading and stage note live in that strip — flow content,
               never floating over the constellation. */}
@@ -169,7 +246,13 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
                 unique, and only one subscriber renders per frame. */}
             {!zoomed && (
               <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-                <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
+                <CommandCanvas
+                  timeline={timeline}
+                  liveEvents={liveEvents}
+                  menu={openMenu}
+                  onPlanetToggle={togglePlanet}
+                  onMenuItemSelect={selectMenuItem}
+                />
               </div>
             )}
           </div>
@@ -189,6 +272,9 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
               timeline={timeline}
               liveEvents={liveEvents}
               aspect={zoomArea.h > 0 ? zoomArea.w / zoomArea.h : undefined}
+              menu={openMenu}
+              onPlanetToggle={togglePlanet}
+              onMenuItemSelect={selectMenuItem}
             />
           </div>
           <button
@@ -274,6 +360,35 @@ function useAreaSize(ref: RefObject<HTMLElement | null> | null): { w: number; h:
     return () => observer.disconnect();
   }, [ref]);
   return size;
+}
+
+/** localStorage key for the sticky rail showcase; the shape mirrors
+ *  OpenPlanetMenu so MenuShowcase can walk it unchanged. */
+const SHOWCASE_KEY = "zero-failure.menu-showcase";
+
+function readShowcase(): OpenPlanetMenu | null {
+  try {
+    const raw = localStorage.getItem(SHOWCASE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof (parsed as { planet?: unknown }).planet === "string" &&
+      Array.isArray((parsed as { path?: unknown }).path)
+    ) {
+      const { planet, path } = parsed as { planet: string; path: unknown[] };
+      return { planet: planet as OpenPlanetMenu["planet"], path: path.filter((s): s is string => typeof s === "string") };
+    }
+  } catch {
+    // broken JSON or blocked storage — fall through to "no showcase yet"
+  }
+  return null;
+}
+
+/** A platform's top-level menu items — empty until its menus are authored. */
+function rootItemsFor(planet: OpenPlanetMenu["planet"]): PlatformMenuItem[] {
+  return PLATFORM_MENUS[planet] ?? [];
 }
 
 /** Next/previous scene start; "previous" returns to this scene's start first. */

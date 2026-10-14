@@ -11,7 +11,9 @@ const COLLAPSED_KEY = "blocks-app:sidebar-collapsed";
 const MOBILE_QUERY = "(max-width: 880px)";
 
 function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia(MOBILE_QUERY).matches,
+  );
 
   useEffect(() => {
     const mql = window.matchMedia(MOBILE_QUERY);
@@ -23,9 +25,19 @@ function useIsMobile(): boolean {
   return isMobile;
 }
 
-export function AppShell({ activePath, children, onNavigate }: { activePath: string; children: ReactNode; onNavigate: (path: string) => void }) {
+export function AppShell({
+  activePath,
+  children,
+  onNavigate,
+}: {
+  activePath: string;
+  children: ReactNode;
+  onNavigate: (path: string) => void;
+}) {
   const isMobile = useIsMobile();
-  const [collapsedPref, setCollapsedPref] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "true");
+  const [collapsedPref, setCollapsedPref] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === "true",
+  );
   const { t } = useT();
   // On narrow screens the sidebar is always the icon-only rail below --
   // no separate hamburger/drawer/scrim needed, and no dead-end state where
@@ -42,15 +54,28 @@ export function AppShell({ activePath, children, onNavigate }: { activePath: str
       <aside className={collapsed ? "collapsed" : ""}>
         <div className="sidebar-header">
           {collapsed ? null : (
-            <a className="brand" href="/" onClick={(event) => { event.preventDefault(); onNavigate("/"); }}>
-              <span className="brand-mark"><Activity size={16} /></span>
+            <a
+              className="brand"
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate("/");
+              }}
+            >
+              <span className="brand-mark">
+                <Activity size={16} />
+              </span>
               <span>Blocks App</span>
             </a>
           )}
           {/* Hidden on mobile by CSS (nothing to toggle -- the rail is always
              collapsed there); on desktop it's the only control that can
              re-expand the sidebar, so it must never be the thing collapsing hides. */}
-          <button className="icon-button sidebar-collapse-toggle" onClick={() => setCollapsedPref((value) => !value)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <button
+            className="icon-button sidebar-collapse-toggle"
+            onClick={() => setCollapsedPref((value) => !value)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
             <PanelLeft size={16} />
           </button>
         </div>

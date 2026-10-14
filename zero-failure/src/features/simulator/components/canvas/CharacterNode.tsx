@@ -182,12 +182,8 @@ export const CharacterNode = memo(function CharacterNode({
       <g className="sim-node-glyph" transform={isSun ? "translate(-20 -20)" : "translate(-14 -14)"}>
         <Glyph size={isSun ? 40 : 28} strokeWidth={1.8} aria-hidden />
       </g>
-      <text className="sim-node-name" y={isSun ? 104 : 74} textAnchor="middle">
-        {character.name}
-      </text>
-      <text className="sim-node-role" y={isSun ? 122 : 92} dx={16} textAnchor="middle">
-        {character.role}
-      </text>
+      {/* name/role labels deliberately live elsewhere: they ride the
+          topmost NodeLabelLayer, so an overlapping body can never hide them */}
     </g>
   );
 });

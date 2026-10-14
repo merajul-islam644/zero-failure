@@ -4,12 +4,22 @@
 // collide with a node or label at some window size; flow placement above
 // the frame makes overlap with the constellation impossible by
 // construction. Discrete: re-renders only when the visible scene/note
-// changes.
+// changes. In the wide rail layout the strip's leftover space below the
+// heading hosts the menu showcase — the open fan, mirrored for show.
 
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
+import type { OpenPlanetMenu } from "../../script/platformMenus";
+import { MenuShowcase } from "./MenuShowcase";
 
-export function SceneOverlay({ timeline }: { timeline: Timeline }) {
+interface SceneOverlayProps {
+  timeline: Timeline;
+  /** The sticky showcase selection — the last planet or menu planet the
+   *  viewer picked, surviving reloads until another pick replaces it. */
+  showcase: OpenPlanetMenu | null;
+}
+
+export function SceneOverlay({ timeline, showcase }: SceneOverlayProps) {
   const snapshot = useSimSnapshot(timeline.events);
   const scene = snapshot.scene;
   const sceneCount = timeline.scenes.length;
@@ -40,6 +50,14 @@ export function SceneOverlay({ timeline }: { timeline: Timeline }) {
           {snapshot.note}
         </p>
       )}
+      {/* the sticky showcase below the rail's heading — the last pick,
+          display only, surviving reloads until another pick replaces it.
+          Keyed by the pick so each new selection re-arms its dial at the
+          canonical top-spread instead of inheriting the old twist. */}
+      <MenuShowcase
+        key={showcase ? `${showcase.planet}>${showcase.path.join(">")}` : "none"}
+        menu={showcase}
+      />
     </div>
   );
 }

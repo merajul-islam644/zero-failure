@@ -6,15 +6,18 @@
 
 import { useMemo } from "react";
 import { CAST } from "../../script/cast";
+import type { OpenPlanetMenu } from "../../script/platformMenus";
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
 import type { LiveActivityEvent } from "../../live/activity";
 import { ORBIT_CENTER, ORBIT_RINGS } from "./orbits";
 import { GalaxyLayer } from "./GalaxyLayer";
 import { SolarNodeLayer } from "./SolarNodeLayer";
+import { NodeLabelLayer } from "./NodeLabelLayer";
 import { SpeechBubbleLayer } from "./SpeechBubbleLayer";
 import { PacketLayer } from "./PacketLayer";
 import { LivePulseLayer } from "./LivePulseLayer";
+import { PlanetMenuLayer } from "./PlanetMenuLayer";
 
 interface CommandCanvasProps {
   timeline: Timeline;
@@ -23,9 +26,23 @@ interface CommandCanvasProps {
    *  design frame — centered on the sun — until it matches, so a wide or
    *  tall window fills edge to edge instead of letterboxing. */
   aspect?: number;
+  /** The open planet menu — owned by SimulatorStage so the left-rail
+   *  showcase can mirror it. */
+  menu: OpenPlanetMenu | null;
+  /** A planet body was clicked — open, close or switch its menu. */
+  onPlanetToggle: (id: OpenPlanetMenu["planet"]) => void;
+  /** A mini planet in the fan was clicked — walk, fold or close. */
+  onMenuItemSelect: (label: string, depth: number) => void;
 }
 
-export function CommandCanvas({ timeline, liveEvents, aspect }: CommandCanvasProps) {
+export function CommandCanvas({
+  timeline,
+  liveEvents,
+  aspect,
+  menu,
+  onPlanetToggle,
+  onMenuItemSelect
+}: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
 
   // Stretch the sky, never the story: grow one axis into the padded sky
@@ -101,11 +118,23 @@ export function CommandCanvas({ timeline, liveEvents, aspect }: CommandCanvasPro
         ))}
       </g>
 
-      <SolarNodeLayer states={snapshot.states} visibleCast={visibleCast} />
+      <SolarNodeLayer
+        states={snapshot.states}
+        visibleCast={visibleCast}
+        selectedId={menu?.planet ?? null}
+        onPlanetToggle={onPlanetToggle}
+      />
       <PacketLayer timeline={timeline} />
       {liveEvents && liveEvents.length > 0 && <LivePulseLayer events={liveEvents} />}
-      {/* the speaker's bubble paints above everything — neighbors and
-          packets can never cover the words */}
+      {/* every body's name/role floats above all the scene traffic — an
+          overlapping planet can no longer hide a label */}
+      <NodeLabelLayer states={snapshot.states} visibleCast={visibleCast} />
+      {/* the open planet menu floats above the scene chrome — labels and
+          all — though the speaking bubble still outranks it below */}
+      <PlanetMenuLayer menu={menu} onSelect={onMenuItemSelect} />
+      {/* …and the speaker's bubble outranks everything, the menu fan
+          included: the words must never be covered (the bubble is
+          pointer-events: none, so minis under it stay clickable) */}
       <SpeechBubbleLayer dialogue={snapshot.dialogue} states={snapshot.states} />
     </svg>
   );
