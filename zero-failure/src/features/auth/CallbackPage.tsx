@@ -38,5 +38,5 @@ export function CallbackPage({ onNavigate }: { onNavigate: (path: string) => voi
     );
   }
 
-  return <LoadingScreen />;
+  return <LoadingScreen label="AUTH LINK" />;
 }

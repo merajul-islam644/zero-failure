@@ -113,6 +113,8 @@ export interface StarSpec {
   twinkle: boolean;
   delaySecs: number;
   durationSecs: number;
+  /** Real stars span colors: cool white default, warm giants, blue hot. */
+  tint: "" | "warm" | "blue";
 }
 
 export interface CometSpec {
@@ -200,16 +202,20 @@ export function buildGalaxyField(): GalaxyField {
     placed.push({ x: g.x, hw, y });
   }
 
-  const stars: StarSpec[] = Array.from({ length: STAR_COUNT }, (_, i) => ({
-    id: `star-${i}`,
-    x: SKY_BOUNDS.x + 12 + rnd() * (SKY_BOUNDS.w - 24),
-    y: SKY_BOUNDS.y + 12 + rnd() * (SKY_BOUNDS.h - 24),
-    r: 0.7 + rnd() * 0.9,
-    alpha: 0.22 + rnd() * 0.5,
-    twinkle: rnd() < 0.4,
-    delaySecs: rnd() * 4,
-    durationSecs: 2.8 + rnd() * 2.4
-  }));
+  const stars: StarSpec[] = Array.from({ length: STAR_COUNT }, (_, i) => {
+    const tintRoll = rnd();
+    return {
+      id: `star-${i}`,
+      x: SKY_BOUNDS.x + 12 + rnd() * (SKY_BOUNDS.w - 24),
+      y: SKY_BOUNDS.y + 12 + rnd() * (SKY_BOUNDS.h - 24),
+      r: 0.7 + rnd() * 0.9,
+      alpha: 0.22 + rnd() * 0.5,
+      twinkle: rnd() < 0.4,
+      delaySecs: rnd() * 4,
+      durationSecs: 2.8 + rnd() * 2.4,
+      tint: tintRoll < 0.14 ? "warm" : tintRoll < 0.26 ? "blue" : ""
+    };
+  });
 
   // Comet passes — occasional visitors. A fresh seeded stream, so the star
   // field above is untouched. Each pass is a straight chord picked by its
@@ -376,25 +382,61 @@ export function GalaxyLayer() {
           <stop offset="0%" stopColor="#eef5ff" stopOpacity={0.8} />
           <stop offset="100%" stopColor="#eef5ff" stopOpacity={0} />
         </linearGradient>
+        {/* nebula haze: three vast, barely-there drifts of dust that give
+            the deep sky photographic depth behind the star field */}
+        <radialGradient id="sim-nebula-teal" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#3fd2c7" stopOpacity={0.1} />
+          <stop offset="100%" stopColor="#3fd2c7" stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id="sim-nebula-violet" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#8f7bff" stopOpacity={0.09} />
+          <stop offset="100%" stopColor="#8f7bff" stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id="sim-nebula-warm" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffb26b" stopOpacity={0.05} />
+          <stop offset="100%" stopColor="#ffb26b" stopOpacity={0} />
+        </radialGradient>
       </defs>
 
-      {FIELD.stars.map((s) => (
-        <circle
-          key={s.id}
-          className="sim-star"
-          cx={s.x}
-          cy={s.y}
-          r={s.r}
-          data-twinkle={s.twinkle || undefined}
-          style={
-            {
-              "--star-alpha": s.alpha,
-              "--tw-delay": `${s.delaySecs}s`,
-              "--tw-dur": `${s.durationSecs}s`
-            } as React.CSSProperties
-          }
-        />
-      ))}
+      {/* the dust drifts sit behind everything on the sky */}
+      <g className="sim-nebula" aria-hidden>
+        <ellipse cx={400} cy={640} rx={520} ry={210} fill="url(#sim-nebula-teal)" transform="rotate(-14 400 640)" />
+        <ellipse cx={1230} cy={220} rx={470} ry={190} fill="url(#sim-nebula-violet)" transform="rotate(9 1230 220)" />
+        <ellipse cx={820} cy={480} rx={700} ry={330} fill="url(#sim-nebula-warm)" />
+      </g>
+
+      {FIELD.stars.map((s) => {
+        const vars = {
+          "--star-alpha": s.alpha,
+          "--tw-delay": `${s.delaySecs}s`,
+          "--tw-dur": `${s.durationSecs}s`
+        } as React.CSSProperties;
+        // The brightest few carry diffraction spikes — the cross flare a
+        // long-exposure astrophoto shows on its hottest points.
+        if (s.r >= 1.5) {
+          return (
+            <g key={s.id} className="sim-star" data-twinkle={s.twinkle || undefined} style={vars}>
+              <path
+                className="sim-star-spike"
+                d={`M${s.x - 4.5} ${s.y}H${s.x + 4.5}M${s.x} ${s.y - 4.5}V${s.y + 4.5}`}
+              />
+              <circle cx={s.x} cy={s.y} r={s.r} />
+            </g>
+          );
+        }
+        return (
+          <circle
+            key={s.id}
+            className="sim-star"
+            cx={s.x}
+            cy={s.y}
+            r={s.r}
+            data-twinkle={s.twinkle || undefined}
+            data-tint={s.tint || undefined}
+            style={vars}
+          />
+        );
+      })}
 
       {/* comets stream in front of the far sky but behind every neighbor */}
       {FIELD.comets.map((c) => (

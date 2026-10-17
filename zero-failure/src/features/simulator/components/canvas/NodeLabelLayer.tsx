@@ -1,11 +1,13 @@
-// Per-frame layer: every body's name and role, floating above all the
-// scene traffic. Labels sit here — above planets, packets and pulses —
-// so an orbiting body can never cover them; speech bubbles and the menu
-// fan stay above even this, as the deliberate chrome. Same y-sort as the
-// bodies, so a label stack reads in the same order as its planets.
+// The bodies' names and roles, painted beneath the body layer: each label
+// sits below its own planet like always, and when two planets drift
+// close, the one in front (lower on screen, painted later) naturally
+// covers the one behind's name — sky depth, not floating chrome. Same
+// y-sort as the bodies, so a label stack reads in the same order as its
+// planets. Pure chrome: never catches the pointer.
 
 import { CAST } from "../../script/cast";
 import type { CharacterState, PlatformId } from "../../engine/types";
+import { PLATFORM_MENUS } from "../../script/platformMenus";
 import { useOrbitTime } from "../../state/PlayerContext";
 import { useMotionReduced } from "../../state/SettingsContext";
 import { orbitPosition } from "./orbits";
@@ -25,10 +27,19 @@ export function NodeLabelLayer({ states, visibleCast }: NodeLabelLayerProps) {
     (a, b) => a.point.y - b.point.y
   );
 
+  // Plates must be stable per body — indexed by cast order, never by the
+  // y-sort below, or a planet's number would reshuffle as it drifts.
+  const castIndex = new Map(CAST.map((c, i) => [c.id, i]));
+
   return (
     <g className="sim-labels">
       {members.map(({ character, point }) => {
         const isSun = character.id === "os";
+        // Catalog designation: cast order, zero-padded — the same numbers
+        // the deck's registry prints, so chart and console agree.
+        const plate = `PLT-${String((castIndex.get(character.id) ?? 0) + 1).padStart(2, "0")}`;
+        // census: how many menu planets this body carries
+        const menuCount = PLATFORM_MENUS[character.id]?.length ?? 0;
         return (
           <g
             key={character.id}
@@ -39,12 +50,20 @@ export function NodeLabelLayer({ states, visibleCast }: NodeLabelLayerProps) {
             style={{ "--node-hue": character.hue } as React.CSSProperties}
             transform={`translate(${point.x} ${point.y})`}
           >
-            <text className="sim-node-name" y={isSun ? 104 : 74} textAnchor="middle">
+            {/* observatory leader: a hairline drops from the body to its plate */}
+            <line className="sim-node-tick" y1={isSun ? 84 : 54} y2={isSun ? 96 : 66} />
+            <text className="sim-node-name" y={isSun ? 110 : 80} dx={1.5} textAnchor="middle">
               {character.name}
             </text>
-            <text className="sim-node-role" y={isSun ? 122 : 92} dx={16} textAnchor="middle">
-              {character.role}
+            <text className="sim-node-role" y={isSun ? 124 : 94} dx={1} textAnchor="middle">
+              {plate} · {character.role}
             </text>
+            {/* census line — a body with no authored menus stays quiet */}
+            {menuCount > 0 && (
+              <text className="sim-node-count" y={isSun ? 138 : 108} dx={1} textAnchor="middle">
+                {menuCount} {menuCount === 1 ? "menu" : "menus"}
+              </text>
+            )}
           </g>
         );
       })}

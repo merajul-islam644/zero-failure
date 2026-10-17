@@ -62,10 +62,19 @@ test("sign in through the login gate", async ({ page }) => {
     if (await backHome()) break;
   }
 
-  // Through /login/callback, the gate returns us to the simulator. IAM's
-  // staged pipeline ("Authenticating…" -> code -> redirect) has been seen
-  // running past 20s — give the whole handoff room.
+  // Through /login/callback, the gate returns us to the dashboard (the
+  // sign-in landing screen). IAM's staged pipeline ("Authenticating…" ->
+  // code -> redirect) has been seen running past 20s — give the whole
+  // handoff room.
   await expect(page).toHaveURL(/\/(\?|$)/, { timeout: 60_000 });
+  // The dashboard is the loaded signal: its hero card renders under the
+  // shell as soon as the SPA has mounted behind the gate.
+  await expect(page.locator(".dash-hero")).toBeVisible({ timeout: 30_000 });
+
+  // Tests target the simulator: walk in through its sidebar entry and
+  // unfold the story rail so the scene title is on screen.
+  await page.goto("/simulator");
+  await page.locator('[aria-label="Toggle the story rail"]').click();
   await expect(page.locator(".sim-scene-title").first()).toBeVisible();
 
   await page.context().storageState({ path: STATE_PATH });

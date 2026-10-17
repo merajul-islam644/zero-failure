@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import { defineConfig, loadEnv } from "vite";
+import { playwrightRunPlugin } from "./scripts/vite-plugin-playwright-run";
 
 // VITE_BLOCKS_DEV_HOST: set this in .env to your project's real domain
 // (from Project/Gets -> applications[].domain) to test OIDC login locally
@@ -19,7 +20,15 @@ export default defineConfig(({ mode }) => {
     : undefined;
 
   return {
-    plugins: [react()],
+    // playwrightRunPlugin: the dev server's run desk — the playwright
+    // sector's play button runs its forged walks through the repo's own
+    // harness, streams the harness's own lines back live and narrates
+    // which file, line, block and step is on stage, hunts this
+    // machine for the repo's home, climbs from a deep folder up to the
+    // config, refuses repos without playwright installed, and answers
+    // a Stop press by killing the harness (dev only; see the plugin's
+    // own note)
+    plugins: [react(), playwrightRunPlugin()],
     server: {
       // Vite blocks unrecognized Host headers by default (DNS-rebinding
       // protection) -- without this, a custom domain 404s with "Blocked

@@ -17,6 +17,9 @@ import {
   Workflow
 } from "lucide-react";
 import type { CharacterDef, CharacterState } from "../../engine/types";
+import { useMotionReduced } from "../../state/SettingsContext";
+import { planetTextures, sunTexture } from "./planetTexture";
+import { worldFor } from "./worlds";
 
 const GLYPHS = {
   RadioTower,
@@ -31,22 +34,16 @@ const GLYPHS = {
   HardDrive
 } as const;
 
-/** Flare streaks around the sun: static in bearing — a real star doesn't
- *  wheel its flares around like a pinwheel — with varied lengths and a
- *  slow per-ray shimmer only. */
-const SUN_RAYS = [
-  { angle: 0, len: 168, w: 4.5, secs: 4.2, delay: 0 },
-  { angle: 30, len: 138, w: 3.4, secs: 5.1, delay: -1.3 },
-  { angle: 60, len: 158, w: 4.1, secs: 4.7, delay: -2.6 },
-  { angle: 90, len: 132, w: 3.2, secs: 5.6, delay: -0.7 },
-  { angle: 120, len: 162, w: 4.3, secs: 4.4, delay: -3.1 },
-  { angle: 150, len: 136, w: 3.5, secs: 5.3, delay: -1.9 },
-  { angle: 180, len: 172, w: 4.6, secs: 4.9, delay: -2.2 },
-  { angle: 210, len: 140, w: 3.6, secs: 4.1, delay: -0.4 },
-  { angle: 240, len: 156, w: 4, secs: 5.8, delay: -2.9 },
-  { angle: 270, len: 134, w: 3.3, secs: 4.6, delay: -1.6 },
-  { angle: 300, len: 164, w: 4.4, secs: 5.2, delay: -3.4 },
-  { angle: 330, len: 142, w: 3.7, secs: 4.3, delay: -2.4 }
+/** Prominences: plasma blooms riding the limb at fixed bearings — a
+ *  star doesn't wheel them around like a pinwheel. Static and
+ *  deterministic, half-spilled past the disk edge. */
+const SUN_PROMS = [
+  { angle: 18, r: 9 },
+  { angle: 74, r: 6 },
+  { angle: 131, r: 11 },
+  { angle: 203, r: 7 },
+  { angle: 259, r: 10 },
+  { angle: 316, r: 5.5 }
 ];
 
 /** Latitude circles project squashed, like the orbit rings (ry/rx = 1/1.6):
@@ -116,6 +113,17 @@ export const CharacterNode = memo(function CharacterNode({
 }: CharacterNodeProps) {
   const Glyph = GLYPHS[character.glyph as keyof typeof GLYPHS];
   const isSun = character.id === "os";
+  // The world's own surface — noise terrain and a drifting cloud deck,
+  // baked once from its id. Motion-reduced skies becalm the deck and
+  // freeze the moon on its rail.
+  const world = isSun ? null : worldFor(character.id);
+  // --node-hue is "H S%" — the generator wants the hue number alone. A hue
+  // of 0 is legitimate (IAM's crimson): only NaN falls back, never 0.
+  const parsedHue = parseInt(String(character.hue), 10);
+  const textures = isSun ? null : planetTextures(character.id, Number.isNaN(parsedHue) ? 200 : parsedHue);
+  // the star bakes its own mottled photosphere once
+  const photosphere = isSun ? sunTexture() : null;
+  const motionReduced = useMotionReduced();
   return (
     <g
       className="sim-node"
@@ -126,24 +134,55 @@ export const CharacterNode = memo(function CharacterNode({
       aria-label={`${character.name} — ${character.role} (${state})`}
       role="img"
     >
-      {/* radiation glow + flare streaks — sun only, painted behind the body */}
+      {/* radiation glow + outer bloom — sun only, painted behind the body */}
+      {isSun && <circle className="sim-sun-bloom" r={205} fill="url(#sim-sun-bloom)" />}
       {isSun && <circle className="sim-sun-glow" r={140} fill="url(#sim-sun-glow)" />}
-      {isSun && (
-        <g className="sim-sun-rays" fill="url(#sim-sun-rays)">
-          {SUN_RAYS.map((ray) => (
-            <path
-              key={ray.angle}
-              className="sim-sun-ray"
-              d={`M${-ray.w / 2} -74 L${ray.w / 2} -74 L${ray.w} ${-ray.len} L${-ray.w} ${-ray.len} Z`}
-              transform={`rotate(${ray.angle})`}
-              style={{ "--flick": `${ray.secs}s`, "--fdelay": `${ray.delay}s` } as React.CSSProperties}
-            />
-          ))}
-        </g>
-      )}
-      {/* halo ring — state-colored by CSS */}
+      {/* the belt — hidden at idle, lit by state CSS only when the body
+          speaks or a signal runs through it */}
       <circle className="sim-node-halo" r={isSun ? 84 : 52} />
       <circle className="sim-node-body" r={isSun ? 74 : 44} />
+      {/* the star's baked photosphere: granulation cells and burnt lanes
+          with a white-hot core, under a thin bright chromosphere rim */}
+      {photosphere && (
+        <image
+          className="sim-sun-photosphere"
+          href={photosphere}
+          x={-74}
+          y={-74}
+          width={148}
+          height={148}
+          clipPath="url(#sim-sun-disk-clip)"
+          preserveAspectRatio="xMidYMid slice"
+        />
+      )}
+      {isSun && <circle className="sim-sun-rim" r={74} />}
+      {/* the baked world: noise terrain in the body's own hue, then the
+          cloud deck shuttling over it. Clipped to the disk; the night-side
+          shade and limb darkening painted by the positioning layer round
+          it into a sphere. */}
+      {textures && (
+        <g className="sim-node-surface" clipPath="url(#sim-planet-disk-clip)">
+          <image
+            className="sim-node-terrain"
+            href={textures.surface}
+            x={-44}
+            y={-44}
+            width={88}
+            height={88}
+            preserveAspectRatio="xMidYMid slice"
+          />
+          <image
+            className="sim-node-clouds"
+            href={textures.clouds}
+            x={-53}
+            y={-44}
+            width={106}
+            height={88}
+            preserveAspectRatio="xMidYMid slice"
+            style={{ "--drift-dur": `${world?.cloudDur ?? 50}s` } as React.CSSProperties}
+          />
+        </g>
+      )}
       {/* the turning photosphere — granules and sunspots ride the sphere's
           rotation, clipped to the disk so they vanish around the limb */}
       {isSun && (
@@ -177,11 +216,46 @@ export const CharacterNode = memo(function CharacterNode({
           )}
         </g>
       )}
+      {/* prominences: blurred plasma blooms half-spilled over the limb */}
+      {isSun && (
+        <g className="sim-sun-proms">
+          {SUN_PROMS.map((prom) => (
+            <circle key={prom.angle} cx={74} r={prom.r} transform={`rotate(${prom.angle})`} />
+          ))}
+        </g>
+      )}
       {/* processing sweep ring */}
       {state === "processing" && <circle className="sim-node-sweep" r={isSun ? 84 : 52} />}
-      <g className="sim-node-glyph" transform={isSun ? "translate(-20 -20)" : "translate(-14 -14)"}>
-        <Glyph size={isSun ? 40 : 28} strokeWidth={1.8} aria-hidden />
-      </g>
+      {/* the sigil rides its own dark disc, so the platform mark reads
+          clearly over whatever the surface is doing beneath it. The sun
+          wears no sigil — OS is the star itself, not a marked world. */}
+      {!isSun && <circle className="sim-node-glyph-disc" r={19} />}
+      {!isSun && (
+        <g className="sim-node-glyph" transform="translate(-15 -15)">
+          <Glyph size={30} strokeWidth={1.9} aria-hidden />
+        </g>
+      )}
+      {/* a small moon on a squashed rail — the scene looks down on the
+          orbital plane, so the orbit renders as an ellipse; SMIL turns the
+          arm about the body's local origin (CSS can't: the origin must be
+          this node's own frame, which moves with every drift) */}
+      {world?.moon && (
+        <g transform="rotate(-14) scale(1 0.42)">
+          <g className="sim-moon-arm">
+            <circle className="sim-moon" cx={57} r={4.4} transform="scale(1 2.38)" />
+            {!motionReduced && (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0"
+                to="360"
+                dur="26s"
+                repeatCount="indefinite"
+              />
+            )}
+          </g>
+        </g>
+      )}
       {/* name/role labels deliberately live elsewhere: they ride the
           topmost NodeLabelLayer, so an overlapping body can never hide them */}
     </g>

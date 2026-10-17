@@ -17,7 +17,6 @@ import { NodeLabelLayer } from "./NodeLabelLayer";
 import { SpeechBubbleLayer } from "./SpeechBubbleLayer";
 import { PacketLayer } from "./PacketLayer";
 import { LivePulseLayer } from "./LivePulseLayer";
-import { PlanetMenuLayer } from "./PlanetMenuLayer";
 
 interface CommandCanvasProps {
   timeline: Timeline;
@@ -27,12 +26,10 @@ interface CommandCanvasProps {
    *  tall window fills edge to edge instead of letterboxing. */
   aspect?: number;
   /** The open planet menu — owned by SimulatorStage so the left-rail
-   *  showcase can mirror it. */
+   *  showcase can mirror it. The picked body reads highlighted. */
   menu: OpenPlanetMenu | null;
-  /** A planet body was clicked — open, close or switch its menu. */
+  /** A planet body was clicked — open, close or switch its menu modal. */
   onPlanetToggle: (id: OpenPlanetMenu["planet"]) => void;
-  /** A mini planet in the fan was clicked — walk, fold or close. */
-  onMenuItemSelect: (label: string, depth: number) => void;
 }
 
 export function CommandCanvas({
@@ -40,8 +37,7 @@ export function CommandCanvas({
   liveEvents,
   aspect,
   menu,
-  onPlanetToggle,
-  onMenuItemSelect
+  onPlanetToggle
 }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
 
@@ -71,30 +67,61 @@ export function CommandCanvas({
             white-hot at the core and — limb darkening — falls off through
             yellow to burnt orange at the rim in every theme. */}
         <radialGradient id="sim-sun-fill" cx="50%" cy="42%" r="62%">
-          <stop offset="0%" stopColor="#fffef5" />
-          <stop offset="28%" stopColor="#fff3a1" />
-          <stop offset="52%" stopColor="#ffc23d" />
-          <stop offset="76%" stopColor="#ff8c1f" />
-          <stop offset="100%" stopColor="#e04e0e" />
+          <stop offset="0%" stopColor="#fffef2" />
+          <stop offset="22%" stopColor="#fff6c4" />
+          <stop offset="45%" stopColor="#ffd66e" />
+          <stop offset="68%" stopColor="#ffab35" />
+          <stop offset="86%" stopColor="#ff8420" />
+          <stop offset="100%" stopColor="#f26512" />
         </radialGradient>
-        {/* soft radiation spreading off the limb in every direction */}
+        {/* radiation hugging the limb, breathing slowly */}
         <radialGradient id="sim-sun-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffb75e" stopOpacity={0.6} />
-          <stop offset="40%" stopColor="#ff9433" stopOpacity={0.3} />
+          <stop offset="0%" stopColor="#fff6d8" stopOpacity={0.55} />
+          <stop offset="30%" stopColor="#ffd27a" stopOpacity={0.38} />
+          <stop offset="62%" stopColor="#ff9433" stopOpacity={0.16} />
           <stop offset="100%" stopColor="#ff8c1f" stopOpacity={0} />
         </radialGradient>
-        {/* ray streaks: fades from the limb (r≈74) out to the tips (r=170);
-            userSpaceOnUse so every wedge shares the sun-centered falloff */}
-        <radialGradient id="sim-sun-rays" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="170">
-          <stop offset="0%" stopColor="#ffd27a" stopOpacity={0} />
-          <stop offset="0.44" stopColor="#ffc46a" stopOpacity={0.5} />
-          <stop offset="100%" stopColor="#ffb14e" stopOpacity={0} />
+        {/* the wide faint haze a star carries for hundreds of pixels */}
+        <radialGradient id="sim-sun-bloom" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffb75e" stopOpacity={0.2} />
+          <stop offset="55%" stopColor="#ff8c1f" stopOpacity={0.07} />
+          <stop offset="100%" stopColor="#ff8c1f" stopOpacity={0} />
         </radialGradient>
         {/* the turning photosphere is clipped to just inside the limb, so
             drifting cells and spots disappear around the edge of the disk */}
         <clipPath id="sim-sun-surface-clip">
           <circle r={70} />
         </clipPath>
+        {/* the baked photosphere's disk clip — same trick as the planets:
+            userSpaceOnUse resolves in the sun node's own space */}
+        <clipPath id="sim-sun-disk-clip">
+          <circle r={74} />
+        </clipPath>
+        {/* one shared planet disk clip: userSpaceOnUse resolves in each
+            referencing element's own node space, where every body's disk
+            is r44 at the local origin — so all nine planets share it */}
+        <clipPath id="sim-planet-disk-clip">
+          <circle r={44} />
+        </clipPath>
+        {/* day/night shading for the planets: highlight pools on the
+            sun-facing limb, the terminator crosses soft, and the far limb
+            falls fully to night. The overlay circle rotates to the sun's
+            bearing as the orbit carries it. */}
+        <radialGradient id="sim-planet-shade" cx="0.3" cy="0.5" r="0.78">
+          <stop offset="0%" stopColor="#010208" stopOpacity={0} />
+          <stop offset="34%" stopColor="#010208" stopOpacity={0} />
+          <stop offset="50%" stopColor="#010208" stopOpacity={0.16} />
+          <stop offset="68%" stopColor="#010208" stopOpacity={0.42} />
+          <stop offset="85%" stopColor="#010208" stopOpacity={0.7} />
+          <stop offset="100%" stopColor="#010208" stopOpacity={0.92} />
+        </radialGradient>
+        {/* limb darkening: unbiased, all the way around — real spheres
+            dim at every edge, lit or not */}
+        <radialGradient id="sim-planet-limb">
+          <stop offset="68%" stopColor="#010208" stopOpacity={0} />
+          <stop offset="92%" stopColor="#010208" stopOpacity={0.26} />
+          <stop offset="100%" stopColor="#010208" stopOpacity={0.5} />
+        </radialGradient>
       </defs>
       {/* The room glow now lives on the surrounding band (.sim-canvas-area /
           .sim-zoom-overlay in simulator.css): one gradient continues under
@@ -118,6 +145,12 @@ export function CommandCanvas({
         ))}
       </g>
 
+      {/* Names and roles paint beneath the bodies: each label sits below
+          its own planet, and when two planets drift close the one in
+          front (painted later) covers the one behind's name — sky depth.
+          A label never meets its own body, so nothing hides its own
+          name. */}
+      <NodeLabelLayer states={snapshot.states} visibleCast={visibleCast} />
       <SolarNodeLayer
         states={snapshot.states}
         visibleCast={visibleCast}
@@ -126,15 +159,9 @@ export function CommandCanvas({
       />
       <PacketLayer timeline={timeline} />
       {liveEvents && liveEvents.length > 0 && <LivePulseLayer events={liveEvents} />}
-      {/* every body's name/role floats above all the scene traffic — an
-          overlapping planet can no longer hide a label */}
-      <NodeLabelLayer states={snapshot.states} visibleCast={visibleCast} />
-      {/* the open planet menu floats above the scene chrome — labels and
-          all — though the speaking bubble still outranks it below */}
-      <PlanetMenuLayer menu={menu} onSelect={onMenuItemSelect} />
-      {/* …and the speaker's bubble outranks everything, the menu fan
-          included: the words must never be covered (the bubble is
-          pointer-events: none, so minis under it stay clickable) */}
+      {/* Menus live in the stage-level modal now (PlanetMenuModal) — a
+          pick opens the panel instead of fanning rings over the sky. The
+          speaking bubble still outranks every body here. */}
       <SpeechBubbleLayer dialogue={snapshot.dialogue} states={snapshot.states} />
     </svg>
   );

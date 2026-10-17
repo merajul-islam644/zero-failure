@@ -1,11 +1,11 @@
-// Scene heading (left) + the current animation-action note (right), in a
-// header strip ABOVE the canvas. The cast fills the whole 1600x900 viewBox
-// (OS's halo reaches y 68), so any block floating inside the canvas can
-// collide with a node or label at some window size; flow placement above
-// the frame makes overlap with the constellation impossible by
-// construction. Discrete: re-renders only when the visible scene/note
-// changes. In the wide rail layout the strip's leftover space below the
-// heading hosts the menu showcase — the open fan, mirrored for show.
+// The story rail's content: scene heading, the current animation-action
+// note, and the sticky menu showcase. Rendered inside the shared drawer
+// (SimDrawer) — opened from the command rail's orbit icon — so it overlays
+// the stage like every other sheet and never reshapes the canvas. The cast
+// fills the whole 1600x900 viewBox (OS's halo reaches y 68), so floating
+// this over the constellation would eventually collide with a node; the
+// drawer sits beside the sky instead. Discrete: re-renders only when the
+// visible scene/note changes.
 
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
@@ -25,7 +25,7 @@ export function SceneOverlay({ timeline, showcase }: SceneOverlayProps) {
   const sceneCount = timeline.scenes.length;
 
   return (
-    <div className="sim-stage-header">
+    <div className="sim-story">
       <div className="sim-scene-heading">
         {scene ? (
           <>

@@ -11,6 +11,7 @@ import type { CharacterState, PlatformId } from "../../engine/types";
 import { useOrbitTime } from "../../state/PlayerContext";
 import { useMotionReduced } from "../../state/SettingsContext";
 import { ORBIT_CENTER, orbitPosition } from "./orbits";
+import { lightsFor } from "./worlds";
 import { CharacterNode } from "./CharacterNode";
 
 interface SolarNodeLayerProps {
@@ -25,7 +26,12 @@ interface SolarNodeLayerProps {
   selectedId?: PlatformId | null;
 }
 
-export function SolarNodeLayer({ states, visibleCast, onPlanetToggle, selectedId }: SolarNodeLayerProps) {
+export function SolarNodeLayer({
+  states,
+  visibleCast,
+  onPlanetToggle,
+  selectedId
+}: SolarNodeLayerProps) {
   // Sky time, not story time: orbits keep drifting through dialogue pauses.
   const t = useOrbitTime();
   // Reduced motion freezes the sky at the designed base-angle layout no
@@ -60,20 +66,44 @@ export function SolarNodeLayer({ states, visibleCast, onPlanetToggle, selectedId
       >
         <CharacterNode character={CAST_BY_ID.os} state={states.os} dimmed={!visibleCast.includes("os")} />
       </g>
-      {ordered.map(({ character, point }) => (
-        <g
-          key={character.id}
-          transform={`translate(${point.x} ${point.y})`}
-          data-clickable=""
-          onClick={() => onPlanetToggle(character.id)}
-        >
-          <CharacterNode
-            character={character}
-            state={states[character.id]}
-            dimmed={!visibleCast.includes(character.id)}
-          />
-        </g>
-      ))}
+      {ordered.map(({ character, point }) => {
+        // Day side faces the star: the bearing from body to sun, recomputed
+        // out here each frame so the memo'd node never re-renders. The lit
+        // zone lives on the overlay's local -x, hence the half-turn offset.
+        const sunBearing =
+          (Math.atan2(ORBIT_CENTER.y - point.y, ORBIT_CENTER.x - point.x) * 180) / Math.PI;
+        return (
+          <g
+            key={character.id}
+            transform={`translate(${point.x} ${point.y})`}
+            data-clickable=""
+            onClick={() => onPlanetToggle(character.id)}
+          >
+            <CharacterNode
+              character={character}
+              state={states[character.id]}
+              dimmed={!visibleCast.includes(character.id)}
+            />
+            {/* the night side, rotated to always face away from the star:
+                the day/night shade and the settlements' lights glowing on
+                the dark hemisphere */}
+            <g className="sim-node-night" transform={`rotate(${sunBearing - 180})`}>
+              <circle className="sim-node-shade" r={44} fill="url(#sim-planet-shade)" />
+              <g className="sim-node-lights">
+                {lightsFor(character.id).map((light, i) => (
+                  <circle key={i} cx={light.x} cy={light.y} r={light.r} />
+                ))}
+              </g>
+            </g>
+            {/* limb darkening — every sphere dims toward its own edge, day
+                side and night alike; this is what turns a disc into a ball */}
+            <circle className="sim-node-limb" r={44} fill="url(#sim-planet-limb)" />
+            {/* the atmosphere: a soft hue ring hugging the limb, brightest
+                where the day side begins */}
+            <circle className="sim-node-atmo" r={47} />
+          </g>
+        );
+      })}
     </g>
   );
 }

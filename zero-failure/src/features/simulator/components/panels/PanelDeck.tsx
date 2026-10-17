@@ -1,10 +1,13 @@
 // Side-panel deck: Inspector (connectors + live message log), Results
 // (progressive dashboard + verdict), Evidence (grouped history), Config
-// (scenario + settings) — plus the full-report takeover. Below 1024 px the
-// deck becomes an overlay drawer toggled by a floating button.
+// (scenario + settings) — plus the full-report takeover. The deck starts
+// folded and the command rail's gear toggles it, so open/onClose are owned
+// one level up and the rail and the deck's own ✕ share one state. The
+// sheet itself is the shared drawer (SimDrawer) — same overlay, slide-in
+// and close as every other drawer in the app; only the content differs.
 
 import { useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { Timeline } from "../../engine/timeline";
 import type { LiveActivityEvent } from "../../live/activity";
 import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
@@ -13,6 +16,7 @@ import { ResultsDashboard } from "./ResultsDashboard";
 import { EvidencePanel } from "./EvidencePanel";
 import { ConfigPanel } from "./ConfigPanel";
 import { ReportView } from "./ReportView";
+import { SimDrawer } from "../SimDrawer";
 
 type Tab = "inspector" | "results" | "evidence" | "config";
 
@@ -26,39 +30,23 @@ const TABS: { id: Tab; label: string }[] = [
 export function PanelDeck({
   timeline,
   liveEvents,
-  actions
+  actions,
+  open,
+  onClose
 }: {
   timeline: Timeline;
   liveEvents: LiveActivityEvent[];
   actions: BroadcastActions;
+  /** Folded at start; the command rail's gear (or the ✕) moves it. */
+  open: boolean;
+  onClose: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("inspector");
   const [reportOpen, setReportOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const pickTab = (next: Tab) => {
-    setTab(next);
-    setDrawerOpen(true); // on mobile, choosing a tab opens the drawer
-  };
 
   return (
-    <>
-      <button
-        type="button"
-        className="sim-drawer-btn"
-        aria-expanded={drawerOpen}
-        aria-controls="sim-panel-deck"
-        onClick={() => setDrawerOpen((open) => !open)}
-      >
-        <SlidersHorizontal size={18} aria-hidden />
-        Panels
-      </button>
-
-      <aside
-        id="sim-panel-deck"
-        className={`sim-aside${drawerOpen ? " sim-aside-open" : ""}`}
-        aria-label="Run panels"
-      >
+    <SimDrawer open={open} label="Run panels" width="min(21rem, 92vw)" onClose={onClose}>
+      <div className="sim-aside">
         <div className="sim-aside-top">
           <div className="sim-tabs" role="tablist" aria-label="Panel tabs">
             {TABS.map((t) => (
@@ -78,7 +66,7 @@ export function PanelDeck({
             type="button"
             className="sim-drawer-close"
             aria-label="Close panels"
-            onClick={() => setDrawerOpen(false)}
+            onClick={onClose}
           >
             <X size={16} aria-hidden />
           </button>
@@ -92,7 +80,7 @@ export function PanelDeck({
         {tab === "config" && <ConfigPanel actions={actions} />}
 
         {reportOpen && <ReportView timeline={timeline} onClose={() => setReportOpen(false)} />}
-      </aside>
-    </>
+      </div>
+    </SimDrawer>
   );
 }

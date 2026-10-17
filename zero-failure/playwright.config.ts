@@ -45,10 +45,10 @@ export default defineConfig({
   use: {
     // Full-Chromium new headless: the dedicated headless shell is still
     // downloading, and this build ships in chromium-1248 already.
-    // Headed, deliberately: the IAM IdP's SPA renders blank under headless
-    // Chromium, which would strand the setup project's sign-in.
+    // Headless from now on (user directive): no browser windows during
+    // runs — watch the setup project if the IdP ever misbehaves here.
     channel: "chromium",
-    headless: false,
+    headless: true,
     baseURL: "https://dfcdyp.slsblx.com:5173",
     ignoreHTTPSErrors: true,
     screenshot: "only-on-failure",

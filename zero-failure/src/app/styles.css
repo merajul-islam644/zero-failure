@@ -2,56 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Blocks design tokens (HSL channels, matches @seliseblocks/blocks-kit) */
+/* Blocks design tokens (HSL channels, matches @seliseblocks/blocks-kit).
+   Dark is the product's default — no OS-dependent flipping. */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --popover: 0 0% 100%;
-  --primary: 218 78% 32%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --popover: 222.2 84% 4.9%;
+  --primary: 218 75% 45%;
+  --primary-foreground: 0 0% 96%;
+  --secondary: 217.2 32.6% 17.5%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --high-emphasis: 0 0% 15%;
-  --low-emphasis: 0 0% 45%;
-  --success-bg: 146 63% 92%;
-  --success-fg: 146 64% 27%;
-  --warning-bg: 45 100% 92%;
-  --warning-fg: 33 92% 34%;
+  --border: 217.2 32.6% 17.5%;
+  --high-emphasis: 0 0% 96%;
+  --low-emphasis: 0 0% 62%;
+  --success-bg: 146 40% 16%;
+  --success-fg: 146 60% 75%;
+  --warning-bg: 40 50% 18%;
+  --warning-fg: 43 90% 70%;
   --avatar-surface: #c0c9d1;
   --avatar-text: #262626;
   --radius: 0.5rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --popover: 222.2 84% 4.9%;
-    --primary: 218 75% 45%;
-    --primary-foreground: 0 0% 96%;
-    --secondary: 217.2 32.6% 17.5%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --high-emphasis: 0 0% 96%;
-    --low-emphasis: 0 0% 62%;
-    --success-bg: 146 40% 16%;
-    --success-fg: 146 60% 75%;
-    --warning-bg: 40 50% 18%;
-    --warning-fg: 43 90% 70%;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -126,6 +102,2215 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .next-steps strong { color: hsl(var(--foreground)); }
 .next-steps code { background: hsl(var(--secondary)); border-radius: 4px; color: hsl(var(--foreground)); padding: 1px 5px; }
 
+/* ---- dashboard (the "/" landing screen): a mission-control deck in the
+   simulator's own visual language — deep stage sky, tiled starfield, HUD
+   panels with corner brackets, flanked by the same chamfered rails the
+   simulator uses (DashboardRails reuses .sim-rail). The --sim-* tokens
+   live on :root in simulator.css, so the deck follows the app theme like
+   the stage does. Like the simulator, the page owns the whole viewport:
+   no shell, the sky reaches every edge and the rails carry navigation. ---- */
+.dash-space {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  /* Every panel in the deck shares this chamfer; the glowing edges are
+     painted by ring pseudos using the same shape. */
+  --chamfer: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+  background-color: hsl(var(--sim-stage));
+  background-image:
+    radial-gradient(1px 1px at 22% 31%, hsl(var(--sim-text) / 0.7), transparent 55%),
+    radial-gradient(1px 1px at 68% 71%, hsl(var(--sim-text) / 0.45), transparent 55%),
+    radial-gradient(1.4px 1.4px at 45% 12%, hsl(var(--sim-accent) / 0.6), transparent 55%),
+    radial-gradient(1px 1px at 86% 44%, hsl(var(--sim-text) / 0.55), transparent 55%),
+    radial-gradient(1px 1px at 12% 78%, hsl(var(--sim-accent) / 0.4), transparent 55%),
+    radial-gradient(1.2px 1.2px at 74% 24%, hsl(var(--sim-text) / 0.5), transparent 55%),
+    /* Deep-space color: accent glow up top, a faint warm nebula low right. */
+    radial-gradient(80% 55% at 50% 0%, hsl(var(--sim-accent) / 0.16), transparent),
+    radial-gradient(46% 34% at 88% 96%, hsl(var(--sim-timeout) / 0.07), transparent),
+    radial-gradient(60% 40% at 50% 115%, hsl(var(--sim-accent) / 0.08), transparent);
+  background-size:
+    240px 240px, 320px 320px, 420px 420px, 380px 380px, 460px 460px, 520px 520px,
+    100% 100%, 100% 100%, 100% 100%;
+  color: hsl(var(--sim-text));
+}
+
+/* The solar system itself, ghosted behind the deck: a sun dot with four
+   orbit rings, hanging off-center over the briefing banner — the same
+   composition the simulator's stage uses. */
+.dash-space::before {
+  background:
+    radial-gradient(circle at 78% 320px, hsl(var(--sim-accent) / 0.7) 0 3px, hsl(var(--sim-accent) / 0.18) 8px, transparent 14px),
+    radial-gradient(circle at 78% 320px, transparent 118px, hsl(var(--sim-accent) / 0.16) 119px, transparent 121px),
+    radial-gradient(circle at 78% 320px, transparent 199px, hsl(var(--sim-accent) / 0.11) 200px, transparent 202px),
+    radial-gradient(circle at 78% 320px, transparent 318px, hsl(var(--sim-accent) / 0.08) 319px, transparent 321px),
+    radial-gradient(circle at 78% 320px, transparent 478px, hsl(var(--sim-accent) / 0.06) 479px, transparent 483px);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+/* The deck between the rails: every panel lives in this column. The
+   scaffold centers bare sections at 1100px (section rule above), which
+   squeezed the hero and cards while the div-sized rows stayed full — so
+   the deck opts out and runs its own measure: one centered column, capped
+   so panels keep laptop-scale proportions on big displays. The sky, the
+   orbits and the rails stay full-bleed. */
+.dash-space section { margin: 0; max-width: none; }
+.dash-deck {
+  flex: 1;
+  margin-inline: auto;
+  max-width: 1480px;
+  min-width: 0;
+  padding: 40px 32px 32px;
+  position: relative;
+  z-index: 1;
+}
+.dash-deck::after {
+  animation: dash-scan 10s linear infinite;
+  background: linear-gradient(180deg, transparent, hsl(var(--sim-accent) / 0.05) 78%, hsl(var(--sim-accent) / 0.14));
+  content: "";
+  height: 160px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: -160px;
+}
+@keyframes dash-scan {
+  to { top: 100%; }
+}
+/* The glassy scan is the empty deck's waiting pulse: pages that always
+   carry content — or a forged sky — stand it down. Nothing sweeps over
+   the stars or the cards. */
+.dash-scan-off .dash-deck::after {
+  content: none;
+}
+
+/* The rails stay pinned while the deck scrolls past, like the simulator's
+   always-visible chrome. */
+.dash-space .sim-rail { height: 100dvh; position: sticky; top: 0; z-index: 5; }
+
+/* "You are here": the lit accent face needs a dark icon to read — the
+   simulator lights buttons only while a panel is open; the dashboard's
+   rail lights whichever of its four sectors is on screen. */
+.dash-space .sim-rail-btn-on .sim-rail-btn-face { color: hsl(var(--sim-accent)); }
+
+/* The briefing banner: chamfered HUD panel whose glowing edge is painted
+   by a ring span (mask-composite cuts a 1px perimeter out of the gradient,
+   so the line follows the sheared corners), a breathing accent rail along
+   the top, corner brackets, and a whisper of scanlines on the face. */
+.dash-hero {
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  margin-bottom: 12px;
+  overflow: hidden;
+  padding: 36px;
+  position: relative;
+}
+.dash-hero-edge {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(155deg, hsl(var(--sim-accent) / 0.8), hsl(var(--sim-accent) / 0.15) 45%, hsl(var(--sim-accent) / 0.55) 90%);
+  clip-path: var(--chamfer);
+  filter: drop-shadow(0 0 8px hsl(var(--sim-accent) / 0.35));
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-hero::before {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  content: "";
+  height: 2px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-hero::after {
+  --tick: hsl(var(--sim-accent) / 0.75);
+  background:
+    repeating-linear-gradient(0deg, hsl(var(--sim-text) / 0.025) 0 1px, transparent 1px 4px),
+    linear-gradient(var(--tick), var(--tick)) top left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) top right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 20px;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  content: "";
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+@keyframes dash-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.dash-kicker { align-items: center; color: hsl(var(--sim-accent)); display: flex; font-size: 12px; gap: 12px; letter-spacing: 0.22em; margin: 0 0 10px; text-shadow: 0 0 12px hsl(var(--sim-accent) / 0.5); text-transform: uppercase; }
+.dash-kicker::before, .dash-kicker::after { background: hsl(var(--sim-accent) / 0.55); box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.4); content: ""; height: 1px; width: 26px; }
+.dash-hero h2 { font-size: clamp(30px, 4.2vw, 44px); letter-spacing: -0.01em; margin: 0 0 12px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35), 0 0 90px hsl(var(--sim-accent) / 0.16); }
+.dash-hero-body { color: hsl(var(--sim-text-dim)); margin: 0; max-width: 62ch; }
+/* The reserved sectors (presentation, playwright): one quiet chamfered
+   panel in the hero's own chrome — glyph chip, kicker, and a line of
+   what will move in — until their real content lands. */
+.dash-soon {
+  align-items: center;
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 26px;
+  min-height: 340px;
+  overflow: hidden;
+  padding: 40px 32px;
+  position: relative;
+  text-align: center;
+}
+.dash-soon::before {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  content: "";
+  height: 2px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-soon::after {
+  --tick: hsl(var(--sim-accent) / 0.75);
+  background:
+    repeating-linear-gradient(0deg, hsl(var(--sim-text) / 0.025) 0 1px, transparent 1px 4px),
+    linear-gradient(var(--tick), var(--tick)) top left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) top right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 20px;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  content: "";
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-soon .dash-kicker { margin-bottom: 0; }
+.dash-soon-glyph {
+  align-items: center;
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  color: hsl(var(--sim-accent));
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  margin-bottom: 8px;
+  width: 58px;
+}
+.dash-soon h2 { letter-spacing: -0.01em; margin: 0 0 8px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35); }
+.dash-soon p:not(.dash-kicker) { color: hsl(var(--sim-text-dim)); margin: 0; max-width: 52ch; }
+/* The authoring fork: the switch opens the two build paths side by side —
+   the deck's chamfered panel chrome, a glowing ring on hover. */
+.dash-forge-choices {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 26px;
+  width: min(560px, 100%);
+}
+.dash-forge-choice {
+  align-items: center;
+  background: linear-gradient(180deg, hsl(var(--sim-accent) / 0.1), hsl(var(--sim-accent) / 0.03));
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  color: hsl(var(--sim-text));
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  gap: 12px;
+  justify-content: center;
+  letter-spacing: 0.14em;
+  min-height: 132px;
+  padding: 20px 16px;
+  position: relative;
+  text-transform: uppercase;
+  transition: color 180ms ease;
+}
+.dash-forge-choice::before {
+  background: linear-gradient(120deg, hsl(var(--sim-accent) / 0.85), hsl(var(--sim-accent) / 0.3) 55%, hsl(var(--sim-accent) / 0.65));
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+  transition: filter 180ms ease;
+}
+.dash-forge-choice:hover { color: hsl(var(--sim-accent)); }
+.dash-forge-choice:hover::before { filter: drop-shadow(0 0 8px hsl(var(--sim-accent) / 0.45)); }
+@media (max-width: 640px) {
+  .dash-forge-choices { grid-template-columns: 1fr; }
+}
+/* The create sector's fork modal: the deck's own dialog — dark scrim,
+   a chamfered panel wearing the hero's breathing rail and scanlines.
+   Escape, the ✕ or the scrim put it away. */
+.dash-modal {
+  /* A tall panel (a four-body forge with labels and sub-menus) must
+     scroll, not clip — margin:auto on the panel centers it when it
+     fits and top-aligns it safely when it doesn't. */
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  overflow-y: auto;
+  padding: 28px 24px;
+  position: fixed;
+  z-index: 60;
+}
+.dash-modal-backdrop {
+  background: hsl(var(--sim-bg) / 0.72);
+  border: 0;
+  cursor: default;
+  inset: 0;
+  position: fixed;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.dash-modal-panel {
+  animation: dash-modal-in 220ms ease;
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.92);
+  clip-path: var(--chamfer);
+  margin: auto;
+  outline: none;
+  padding: 34px 36px 36px;
+  position: relative;
+  text-align: center;
+  width: min(620px, calc(100vw - 48px));
+}
+.dash-modal-panel::before {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  content: "";
+  height: 2px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-modal-panel::after {
+  --tick: hsl(var(--sim-accent) / 0.75);
+  background:
+    repeating-linear-gradient(0deg, hsl(var(--sim-text) / 0.025) 0 1px, transparent 1px 4px),
+    linear-gradient(var(--tick), var(--tick)) top left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) top right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 20px;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  content: "";
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-modal-panel > * { position: relative; }
+.dash-modal-panel h3 { letter-spacing: -0.01em; margin: 0 0 6px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35); }
+.dash-modal-close {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.25);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  transition: border-color 160ms ease, color 160ms ease;
+  width: 32px;
+  z-index: 1;
+}
+.dash-modal-close:hover { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+@keyframes dash-modal-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-modal-panel { animation: none; }
+}
+/* The forge form: mono caps labels over dark inputs, the ring's rows
+   with their remove chips, and the fork's Back + Forge footer. */
+.dash-form { text-align: left; }
+.dash-form .dash-kicker { margin-bottom: 4px; }
+.dash-form h3 { letter-spacing: -0.01em; margin: 0 0 22px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35); }
+.dash-field { border: 0; display: block; margin: 0 0 16px; padding: 0; }
+.dash-field > span {
+  color: hsl(var(--sim-text-dim));
+  display: block;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.dash-field > span em { color: hsl(var(--sim-text) / 0.45); font-style: normal; letter-spacing: 0.1em; text-transform: none; }
+.dash-field input {
+  background: hsl(var(--sim-bg) / 0.55);
+  border: 1px solid hsl(var(--sim-text) / 0.22);
+  border-radius: 0;
+  color: hsl(var(--sim-text));
+  display: block;
+  font-size: 14px;
+  padding: 11px 13px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  width: 100%;
+}
+.dash-field input::placeholder { color: hsl(var(--sim-text) / 0.35); }
+.dash-field input:focus {
+  border-color: hsl(var(--sim-accent) / 0.75);
+  box-shadow: 0 0 0 1px hsl(var(--sim-accent) / 0.35), 0 0 14px hsl(var(--sim-accent) / 0.18);
+  outline: none;
+}
+.dash-form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.dash-form-row input { flex: 1; min-width: 0; }
+.dash-form-row-remove {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.22);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 160ms ease, color 160ms ease;
+  width: 40px;
+}
+.dash-form-row-remove:hover:not(:disabled) { border-color: hsl(6 95% 62% / 0.8); color: hsl(6 95% 68%); }
+.dash-form-row-remove:disabled { cursor: not-allowed; opacity: 0.35; }
+/* One first-ring body: the name row and — app base — the required
+   label input tucked under it, joined by an accent rail. */
+.dash-form-body { border-left: 2px solid hsl(var(--sim-accent) / 0.35); margin-bottom: 10px; padding-left: 12px; }
+.dash-field .dash-form-row-label { font-size: 13px; margin-top: 8px; }
+/* The logo chip: the body's current glyph, and the door to the shelf. */
+.dash-form-icon {
+  align-items: center;
+  background: hsl(var(--sim-accent) / 0.08);
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 160ms ease, border-color 160ms ease;
+  width: 40px;
+}
+.dash-form-icon:hover { background: hsl(var(--sim-accent) / 0.18); border-color: hsl(var(--sim-accent) / 0.8); }
+.dash-form-icon-img { height: 18px; object-fit: contain; width: 18px; }
+/* The upload hatch: any image on this laptop becomes the logo — dashed
+   like the form's add-row, with the in-use custom logo riding along. */
+.dash-icon-upload {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed hsl(var(--sim-accent) / 0.5);
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  gap: 8px;
+  justify-content: center;
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease;
+  width: 100%;
+}
+.dash-icon-upload:hover { background: hsl(var(--sim-accent) / 0.09); }
+.dash-icon-current { height: 18px; margin-left: 4px; object-fit: contain; width: 18px; }
+/* The shelf itself: raised a step above the forge modal, search on top,
+   the glyphs in a scrolling grid. */
+.dash-icon-modal { z-index: 70; }
+.dash-icon-panel { width: min(460px, calc(100vw - 48px)); }
+.dash-icon-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  max-height: 252px;
+  overflow-y: auto;
+  padding: 0;
+}
+.dash-icon-cell {
+  align-items: center;
+  aspect-ratio: 1;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.14);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+  width: 100%;
+}
+.dash-icon-cell:hover { border-color: hsl(var(--sim-accent) / 0.6); color: hsl(var(--sim-accent)); }
+.dash-icon-cell.on {
+  background: hsl(var(--sim-accent) / 0.12);
+  border-color: hsl(var(--sim-accent));
+  color: hsl(var(--sim-accent));
+}
+@media (max-width: 640px) {
+  .dash-icon-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+.dash-form-add {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed hsl(var(--sim-accent) / 0.5);
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  gap: 8px;
+  letter-spacing: 0.18em;
+  padding: 9px 14px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease;
+}
+.dash-form-add:hover { background: hsl(var(--sim-accent) / 0.09); }
+/* The sub-menu editor under a menu row: indented under its menu, the
+   same row anatomy one step smaller, and a quiet add button. */
+.dash-form-submenu { display: grid; gap: 6px; margin: 4px 0 0 28px; }
+.dash-form-subrow input { font-size: 12.5px; }
+/* the app base's tree: one app's menus group together, and each
+   menu's sub-menus indent one step deeper — app → menu → sub-menu */
+.dash-form-menu { display: grid; gap: 6px; }
+.dash-form-submenu-nested { margin-left: 28px; }
+.dash-form-submenu-add {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed hsl(var(--sim-accent) / 0.35);
+  color: hsl(var(--sim-accent) / 0.85);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  gap: 6px;
+  justify-self: start;
+  letter-spacing: 0.16em;
+  padding: 5px 10px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease;
+}
+.dash-form-submenu-add:hover { background: hsl(var(--sim-accent) / 0.09); }
+.dash-form-error { color: hsl(6 95% 68%); font-size: 13px; margin: 14px 0 0; }
+.dash-form-actions { align-items: center; display: flex; gap: 14px; justify-content: space-between; margin-top: 26px; }
+.dash-form-back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  gap: 8px;
+  letter-spacing: 0.18em;
+  padding: 6px 2px;
+  text-transform: uppercase;
+  transition: color 160ms ease;
+}
+.dash-form-back:hover { color: hsl(var(--sim-accent)); }
+.dash-form .dash-form-submit { margin-top: 0; }
+/* The forged systems deck: with a system on the board the briefing
+   steps aside — the switch rides the topbar's right end and each forged
+   system shows as its own card, a mini sky under its facts. All rules
+   stay .dash-scoped; the simulator's .sim-* chrome is never touched. */
+.dash-topbar .dash-open { margin-top: 0; }
+.dash-systems {
+  display: grid;
+  gap: 18px;
+  /* three forged systems to a row on laptop-and-up decks; narrow
+     panels step the row down to two, then one */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 26px;
+}
+@media (max-width: 900px) {
+  .dash-systems { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .dash-systems { grid-template-columns: 1fr; }
+}
+/* The shelf's shared frame: a filter bar and two labeled parts — the
+   app base's worlds above the menu base's — everywhere the forged
+   systems show as cards. */
+/* The command line: a mono tag with the live dot, a chamfered scope
+   wearing the masked gradient edge the deck's frames wear — it lights
+   on focus and stays lit while a query holds — and a mono census
+   readout that turns accent when the deck is narrowed. */
+.dash-shelf-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 4px;
+}
+.dash-shelf-tag {
+  align-items: center;
+  color: hsl(var(--sim-text-dim));
+  display: inline-flex;
+  flex: none;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  gap: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.dash-shelf-scope {
+  align-items: center;
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.08), hsl(var(--sim-accent) / 0.02)),
+    hsl(var(--sim-bg) / 0.5);
+  clip-path: polygon(
+    9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px),
+    calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px
+  );
+  display: flex;
+  flex: 1 1 240px;
+  gap: 9px;
+  max-width: 480px;
+  min-width: 0;
+  padding: 0 12px;
+  position: relative;
+}
+.dash-shelf-scope::before {
+  background: linear-gradient(
+    120deg,
+    hsl(var(--sim-accent) / 0.55),
+    hsl(var(--sim-accent) / 0.14) 55%,
+    hsl(var(--sim-accent) / 0.4)
+  );
+  clip-path: polygon(
+    9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px),
+    calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px
+  );
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.7;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+.dash-shelf-scope:focus-within::before {
+  filter: drop-shadow(0 0 10px hsl(var(--sim-accent) / 0.55));
+  opacity: 1;
+}
+.dash-shelf-scope.is-hot::before { opacity: 1; }
+.dash-shelf-scope-icon { color: hsl(var(--sim-accent) / 0.7); flex: none; }
+.dash-shelf-scope:focus-within .dash-shelf-scope-icon {
+  color: hsl(var(--sim-accent));
+  filter: drop-shadow(0 0 6px hsl(var(--sim-accent) / 0.7));
+}
+.dash-shelf-input {
+  background: transparent;
+  border: 0;
+  color: hsl(var(--sim-text));
+  flex: 1;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  min-width: 0;
+  outline: none;
+  padding: 11px 0;
+}
+.dash-shelf-input::placeholder {
+  color: hsl(var(--sim-text) / 0.35);
+  letter-spacing: 0.14em;
+}
+.dash-shelf-clear {
+  align-items: center;
+  background: hsl(var(--sim-accent) / 0.12);
+  border: 0;
+  clip-path: polygon(
+    4px 0, 100% 0, 100% calc(100% - 4px),
+    calc(100% - 4px) 100%, 0 100%, 0 4px
+  );
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  height: 22px;
+  justify-content: center;
+  transition: background-color 140ms ease;
+  width: 22px;
+}
+.dash-shelf-clear:hover { background: hsl(var(--sim-accent) / 0.28); }
+.dash-shelf-readout {
+  color: hsl(var(--sim-text-dim));
+  flex: none;
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+/* While a query holds, the count reads in the accent — the deck is
+   narrowed and the number says so. */
+.dash-shelf-readout.is-narrowed {
+  color: hsl(var(--sim-accent));
+  text-shadow: 0 0 10px hsl(var(--sim-accent) / 0.5);
+}
+.dash-shelf-section { margin-top: 24px; }
+/* The second part keeps its distance: the cards' corner brackets reach
+   a few pixels past their frames, so the menu base's header takes an
+   extra breath — the two parts must never read as one block. */
+.dash-shelf-section + .dash-shelf-section { margin-top: 52px; }
+.dash-shelf-head { align-items: baseline; display: flex; gap: 12px; }
+.dash-shelf-head::after {
+  align-self: center;
+  background: linear-gradient(90deg, hsl(var(--sim-text) / 0.22), transparent);
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+.dash-shelf-title {
+  color: hsl(var(--sim-accent));
+  font-size: 13px;
+  letter-spacing: 0.24em;
+  margin: 0;
+  text-shadow: 0 0 12px hsl(var(--sim-accent) / 0.5);
+  text-transform: uppercase;
+}
+.dash-shelf-count {
+  color: hsl(var(--sim-text-dim));
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.dash-shelf-section .dash-systems { margin-top: 16px; }
+.dash-shelf-empty { color: hsl(var(--sim-text-dim)); font-size: 13px; margin: 14px 0 0; }
+.dash-system-card {
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 14px 20px 8px;
+  position: relative;
+  transition: translate 0.25s ease, filter 0.25s ease;
+}
+.dash-system-card:hover {
+  filter: drop-shadow(0 16px 34px hsl(0 0% 0% / 0.5));
+  translate: 0 -3px;
+}
+.dash-system-card:focus-visible {
+  outline: 2px solid hsl(var(--sim-accent) / 0.85);
+  outline-offset: 3px;
+}
+.dash-system-card::before {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  content: "";
+  height: 2px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-system-card::after {
+  --tick: hsl(var(--sim-accent) / 0.75);
+  background:
+    repeating-linear-gradient(0deg, hsl(var(--sim-text) / 0.025) 0 1px, transparent 1px 4px),
+    linear-gradient(var(--tick), var(--tick)) top left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) top right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 20px;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  content: "";
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-system-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  position: relative;
+}
+.dash-system-head .dash-kicker { margin-bottom: 6px; }
+.dash-system-head h3 { font-size: 22px; letter-spacing: -0.01em; margin: 0; text-shadow: 0 0 24px hsl(var(--sim-accent) / 0.3); }
+.dash-system-card .dash-system-note { color: hsl(var(--sim-text-dim)); font-size: 13px; margin: 4px 0 0; max-width: 46%; text-align: right; }
+/* the card's header floats over the sky's top band — the starfield is
+   its backdrop, so the card's height is the sky alone and the shape
+   stays wide. Clicks pass through to the card; the pencil and trash
+   stay clickable. The note lives in the modal and the edit form. */
+.dash-system-card .dash-system-head {
+  align-items: flex-start;
+  gap: 14px;
+  inset: 14px 20px auto;
+  margin: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+.dash-system-card .dash-system-head .dash-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  margin: 0 0 3px;
+  white-space: nowrap;
+}
+.dash-system-card .dash-system-head > div {
+  /* the name block yields first — a long line must ellipsize, never
+     shove the pencil and trash off the card */
+  min-width: 0;
+}
+.dash-system-card .dash-system-head h3 {
+  font-size: 17px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-system-card .dash-system-edit { align-self: flex-start; pointer-events: auto; }
+/* pencil and trash cluster at the card's corner: the first button's
+   auto margin eats the head's free space, so the pair sits together at
+   the right edge instead of space-between spreading it mid-card */
+.dash-system-card .dash-system-edit:first-of-type { margin-left: auto; }
+.dash-system-card .dash-system-note { display: none; }
+/* the card's pencil: a quiet ghost that warms on hover — the one spot
+   that edits instead of opening the view */
+.dash-system-edit {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: grid;
+  flex: 0 0 auto;
+  height: 28px;
+  place-items: center;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  width: 28px;
+}
+.dash-system-edit:hover {
+  border-color: hsl(var(--sim-accent) / 0.7);
+  color: hsl(var(--sim-accent));
+}
+/* the trash pairs with the pencil, pulled tight against it, and burns
+   red — armed, it widens into the confirm word and a second press takes
+   the system down */
+.dash-system-edit + .dash-system-delete { margin-left: -10px; }
+.dash-system-delete:hover {
+  border-color: hsl(6 95% 62% / 0.7);
+  color: hsl(6 95% 68%);
+}
+.dash-system-delete.armed {
+  border-color: hsl(6 95% 62% / 0.85);
+  color: hsl(6 95% 68%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  padding: 0 9px;
+  width: auto;
+}
+.dash-system-delete-word { white-space: nowrap; }
+.dash-system-sky { display: block; position: relative; width: 100%; aspect-ratio: 1088 / 759; }
+.dash-system-orbit { fill: none; stroke: hsl(var(--sim-text) / 0.2); stroke-dasharray: 3 6; stroke-width: 1; }
+.dash-system-sun-name {
+  fill: hsl(var(--sim-accent));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+/* ---- forged worlds: the simulator's planets, mirrored for the forge.
+   Paint values copied from simulator.css / CommandCanvas defs so a
+   forged body reads as the real thing — every class dash-scoped, the
+   simulator's own rules untouched. Bodies draw at the simulator's
+   design units (planet r44, star r74); the SVGs scale the nodes. No
+   belt: the simulator's halo only lights for speech and signals, and
+   a forged sky runs idle. */
+
+.dash-body-ball {
+  fill: color-mix(in oklab, hsl(var(--node-hue)) 30%, hsl(var(--sim-bg-raised)));
+  stroke: hsl(var(--node-hue) / 0.5);
+  stroke-width: 1.5;
+}
+.dash-body-clouds {
+  animation: dash-cloud-drift var(--drift-dur, 50s) ease-in-out infinite alternate;
+}
+@keyframes dash-cloud-drift {
+  from { transform: translateX(0px); }
+  to { transform: translateX(-9px); }
+}
+.dash-body-lights circle { fill: #ffd98a; }
+.dash-body-atmo {
+  fill: none;
+  stroke: hsl(var(--node-hue) / 0.14);
+  stroke-width: 3;
+  filter: blur(2.5px);
+}
+.dash-body-sigil-disc {
+  fill: hsl(var(--sim-bg-raised) / 0.55);
+  stroke: hsl(var(--node-hue) / 0.35);
+  stroke-width: 1.2;
+}
+.dash-body-sigil { color: hsl(var(--node-hue)); }
+.dash-body-sigil svg { display: block; width: 30px; height: 30px; }
+.dash-body-moon { fill: #c9d4e4; }
+
+/* the forged star: the canvas sun's own fire */
+.dash-star-ball { stroke: #ff7a1a; stroke-width: 2.5; }
+.dash-star-glow { animation: dash-sun-breathe 5.5s ease-in-out infinite; }
+.dash-star-bloom { animation: dash-sun-breathe 7.5s ease-in-out infinite reverse; }
+@keyframes dash-sun-breathe {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+.dash-star-rim {
+  fill: none;
+  stroke: #ffd97a;
+  stroke-width: 2.4;
+  filter: blur(2.2px);
+  opacity: 0.85;
+}
+.dash-view-stars circle { fill: #dfe8ff; }
+@media (prefers-reduced-motion: reduce) {
+  .dash-body-clouds,
+  .dash-star-glow,
+  .dash-star-bloom { animation: none; }
+}
+.dash-system-planet-name {
+  fill: hsl(var(--sim-text));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+.dash-system-planet-label { fill: hsl(var(--sim-text) / 0.55); font-size: 10px; text-anchor: middle; }
+/* The card's live sky speaks the simulator's own 1060-wide design
+   frame, so its type scales up to design units — rendered size stays
+   card-scale, and SystemView's smaller frame keeps its sizes. */
+.dash-system-card .dash-system-sun-name { font-size: 32px; }
+.dash-system-card .dash-system-planet-name { font-size: 24px; }
+.dash-system-card .dash-system-planet-label { font-size: 20px; }
+/* Galaxy name plates are full-scale observatory type — at the card's
+   ~0.4x frame they'd be 4px noise, so the cards show the neighborhood
+   itself and leave the names to the deck. */
+.dash-system-card .sim-galaxy-name { display: none; }
+/* The sim's hairline rings vanish at the card's ~0.45x frame — the
+   cards draw them a touch heavier and warmer so all four read. The
+   rule is card-scoped; the simulator page keeps its own stroke. */
+.dash-system-card .sim-orbit {
+  stroke: hsl(var(--sim-accent) / 0.42);
+  stroke-width: 3;
+}
+/* the card is a static portrait — the sweep is pinned at t = 0 in the
+   component, so the ambient sky holds still too; a comet frozen
+   mid-chord would read as an artifact, so the cards decline them.
+   The live sweep and the living sky run in the view a click opens. */
+.dash-system-card .sim-star,
+.dash-system-card .sim-galaxy-spin,
+.dash-system-card .sim-sun-granule,
+.dash-system-card .sim-sun-spot,
+.dash-system-card .sim-sun-proms circle,
+.dash-system-card .sim-sun-glow,
+.dash-system-card .sim-sun-bloom {
+  animation: none;
+}
+.dash-system-card .sim-comet { display: none; }
+/* The full solar-system view a card opens — the modal scaffolding
+   reused, the panel stretched to a sky. */
+.dash-view {
+  display: grid;
+  inset: 0;
+  place-items: center;
+  position: fixed;
+  z-index: 60;
+}
+.dash-view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: min(780px, calc(100vh - 72px));
+  max-width: none;
+  width: min(1200px, calc(100vw - 56px));
+}
+.dash-view-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding-right: 40px;
+  position: relative;
+}
+.dash-view-head h3 { font-size: 26px; letter-spacing: -0.01em; margin: 0; text-shadow: 0 0 24px hsl(var(--sim-accent) / 0.3); }
+.dash-view-sky { flex: 1 1 auto; min-height: 0; position: relative; width: 100%; }
+/* The live forged deck (presentation, playwright): the modal view's
+   chrome standing as a panel in the deck column — the sky fills what
+   the head leaves, and the viewBox letterboxes any shape of screen. */
+.dash-live-panel {
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: min(760px, calc(100dvh - 176px));
+  margin-top: 26px;
+  min-height: 380px;
+  overflow: hidden;
+  padding: 28px 32px 16px;
+  position: relative;
+}
+.dash-live-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+.dash-live-head h2 { font-size: 24px; letter-spacing: -0.01em; margin: 0; text-shadow: 0 0 24px hsl(var(--sim-accent) / 0.3); }
+.dash-live-sky { flex: 1 1 auto; min-height: 0; width: 100%; }
+/* The deck header's right group: the zoom control immediately left of
+   the note, riding as one pair. */
+.dash-live-side { align-items: center; display: flex; gap: 12px; }
+.dash-zoom-btn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: 28px;
+  justify-content: center;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  width: 28px;
+}
+.dash-zoom-btn:hover { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+/* The full-display zoom: the live panel re-homes into a fixed overlay
+   stretched to the whole window — the sky's viewBox grows with the
+   frame, so nothing crops and nothing distorts. The corner button (or
+   Esc) walks it back. */
+.dash-zoom-overlay {
+  background: hsl(var(--sim-bg));
+  display: flex;
+  inset: 0;
+  padding: 14px 16px;
+  position: fixed;
+  z-index: 80;
+}
+.dash-zoom-overlay .dash-live-panel { flex: 1 1 auto; height: auto; margin: 0; max-height: none; min-height: 0; }
+/* On the deck pages the transport rides above the zoom overlay too — the
+   show keeps its controls at full display (the simulator's own z order
+   is untouched). */
+.dash-space .sim-transport { z-index: 85; }
+/* The playwright sector's body consoles: worlds and the star in the
+   live deck are buttons — a generous invisible target rides each one,
+   the atmosphere (or the star's rim) brightens on hover, and focus
+   lights the sigil disc. */
+.dash-live-hint { color: hsl(var(--sim-text-dim)); font-size: 12px; letter-spacing: 0.04em; margin: 6px 0 0; }
+.dash-deck-planet,
+.dash-deck-sun { cursor: pointer; outline: none; }
+.dash-sky-hit { fill: transparent; }
+.dash-deck-planet:hover .dash-body-atmo,
+.dash-deck-planet:focus-visible .dash-body-atmo { stroke: hsl(var(--sim-accent) / 0.55); }
+.dash-deck-planet:focus-visible .dash-body-sigil-disc { stroke: hsl(var(--sim-accent) / 0.9); }
+.dash-deck-sun:hover .dash-star-rim,
+.dash-deck-sun:focus-visible .dash-star-rim { stroke: hsl(var(--sim-accent)); }
+/* The body console reuses the simulator's planet-menu modal chrome as
+   is — play and close both ride the sim's own header layout, no
+   overrides needed. */
+/* The presentation show's voices: a bubble riding above the speaking
+   world, topmost in the sky. The wrap anchors the text to the bubble's
+   bottom edge whatever its length, the tail meets it there, and the
+   whole thing takes no pointer — a voice never blocks its planet. */
+.dash-speech { pointer-events: none; }
+.dash-speech-wrap {
+  align-items: flex-end;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  pointer-events: none;
+}
+/* The balloon: a card now — the level's cartoon face beside its words,
+   the name kicking off the body. Clips before it outgrows its sky. */
+.dash-speech-card {
+  align-items: center;
+  background: hsl(var(--sim-bg) / 0.94);
+  border: 1px solid hsl(var(--node-hue) / 0.55);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px hsl(var(--sim-bg) / 0.55);
+  color: hsl(var(--sim-text));
+  display: flex;
+  gap: 10px;
+  max-height: 112px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 8px 12px;
+}
+.dash-speech-avatar { flex: none; width: 44px; height: 44px; }
+.dash-speech-body { min-width: 0; }
+.dash-speech-name {
+  color: hsl(var(--node-hue));
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+.dash-speech-balloon {
+  font-size: 11.5px;
+  line-height: 1.35;
+  margin: 0;
+}
+.dash-speech-tail {
+  fill: hsl(var(--sim-bg) / 0.94);
+  stroke: hsl(var(--node-hue) / 0.55);
+  stroke-width: 1;
+}
+/* The narration console: the same simulator chrome with one writing
+   surface — the words go in plain, the close rides where the sim's play
+   button would sit, and the foot counts what's left of the bubble. */
+.dash-speech-input {
+  background: hsl(var(--sim-bg) / 0.55);
+  border: 1px solid hsl(var(--node-hue) / 0.35);
+  border-radius: 8px;
+  color: hsl(var(--sim-text));
+  display: block;
+  font: inherit;
+  line-height: 1.5;
+  margin-top: 10px;
+  max-width: 100%;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+}
+.dash-speech-input::placeholder { color: hsl(var(--sim-text-dim)); }
+.dash-speech-input:focus-visible {
+  border-color: hsl(var(--node-hue) / 0.8);
+  outline: none;
+}
+.dash-speech-foot { align-items: center; display: flex; gap: 10px; margin-top: 12px; }
+.dash-speech-count {
+  color: hsl(var(--sim-text-dim));
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  margin-right: auto;
+}
+/* The level's face and voice: the cast strip (plain-bubble None first,
+   then every cartoon), the browser voice and the pitch — one row each,
+   every pick landing the moment it is made. */
+.sim-avatar-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.sim-avatar-chip {
+  align-items: center;
+  background: hsl(var(--sim-bg) / 0.4);
+  border: 1px solid hsl(var(--sim-border) / 0.5);
+  border-radius: 50%;
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: 42px;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 42px;
+}
+.sim-avatar-chip svg { border-radius: 50%; height: 36px; width: 36px; }
+.sim-avatar-chip:hover { border-color: hsl(var(--node-hue) / 0.7); }
+.sim-avatar-chip.is-picked {
+  border-color: hsl(var(--node-hue) / 0.95);
+  box-shadow: 0 0 0 2px hsl(var(--node-hue) / 0.35);
+}
+.sim-voice-row { align-items: center; display: flex; gap: 10px; margin-top: 10px; }
+.sim-voice-label {
+  color: hsl(var(--sim-text-dim));
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 44px;
+}
+.sim-voice-select {
+  background: hsl(var(--sim-bg) / 0.55);
+  border: 1px solid hsl(var(--node-hue) / 0.35);
+  border-radius: 8px;
+  color: hsl(var(--sim-text));
+  flex: 1;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+  padding: 7px 10px;
+}
+.sim-voice-select:focus-visible { border-color: hsl(var(--node-hue) / 0.8); outline: none; }
+.sim-voice-pitch { accent-color: hsl(var(--node-hue)); flex: 1; min-width: 0; }
+.sim-voice-value {
+  color: hsl(var(--sim-text-dim));
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  width: 30px;
+}
+/* The show soundtrack's console rows: the link field walks in the
+   voice row's rhythm (a text input wearing the select's chrome), the
+   file picker hides its native input behind a quiet button, and the
+   session file's name reads beside it. */
+.sim-music-link {
+  background: hsl(var(--sim-bg) / 0.55);
+  border: 1px solid hsl(var(--node-hue) / 0.35);
+  border-radius: 8px;
+  color: hsl(var(--sim-text));
+  flex: 1;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+  padding: 7px 10px;
+}
+.sim-music-link:focus-visible { border-color: hsl(var(--node-hue) / 0.8); outline: none; }
+.sim-music-file-btn {
+  align-items: center;
+  background: hsl(var(--sim-bg) / 0.55);
+  border: 1px solid hsl(var(--node-hue) / 0.35);
+  border-radius: 8px;
+  color: hsl(var(--sim-text));
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font-size: 12px;
+  gap: 6px;
+  padding: 7px 10px;
+  transition: border-color 140ms ease;
+}
+.sim-music-file-btn:hover { border-color: hsl(var(--node-hue) / 0.8); }
+.sim-music-file-input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+.sim-music-file-name {
+  color: hsl(var(--sim-text-dim));
+  flex: 1;
+  font-size: 11px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The presentation console writes more than the sim's drawer ever did —
+   narration, face and voice — so the panel itself takes the scroll and
+   the menu grid keeps its natural height. Scoped to this modal: the sim
+   and playwright panels keep the sim's own squeeze-the-grid contract. */
+.dash-speech-modal .sim-menu-modal-panel { overflow-y: auto; }
+.dash-speech-modal .sim-menu-modal-grid {
+  flex: none;
+  overflow-y: visible;
+}
+/* The forge's confirmation line: a HUD strip rising over the bottom
+   edge, above every panel, gone again in moments. */
+.dash-toast {
+  align-items: center;
+  animation: dash-toast-in 0.28s ease;
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.12), transparent 70%),
+    hsl(var(--sim-panel) / 0.94);
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  bottom: 26px;
+  box-shadow: 0 14px 40px hsl(0 0% 0% / 0.5);
+  clip-path: var(--chamfer);
+  color: hsl(var(--sim-text));
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  gap: 10px;
+  left: 50%;
+  letter-spacing: 0.06em;
+  padding: 13px 22px;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 90;
+}
+@keyframes dash-toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-toast { animation: none; }
+}
+/* The way in: an activation switch, not a web button — glass face, a
+   chamfered glowing ring (the panels' mask trick at 9px), mono caps, and
+   a solid accent takeover on hover. */
+.dash-open {
+  align-items: center;
+  background: linear-gradient(180deg, hsl(var(--sim-accent) / 0.1), hsl(var(--sim-accent) / 0.03));
+  border-radius: 0;
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12px;
+  gap: 10px;
+  letter-spacing: 0.26em;
+  margin-top: 26px;
+  padding: 14px 26px;
+  position: relative;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.dash-open::before {
+  background: linear-gradient(120deg, hsl(var(--sim-accent) / 0.85), hsl(var(--sim-accent) / 0.3) 55%, hsl(var(--sim-accent) / 0.65));
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+  transition: filter 180ms ease;
+}
+.dash-open:focus-visible { outline: 2px solid hsl(var(--sim-accent) / 0.7); outline-offset: 3px; }
+.dash-open:hover { background-color: hsl(var(--sim-accent) / 0.85); color: hsl(var(--sim-stage)); }
+.dash-open:hover::before { filter: drop-shadow(0 0 10px hsl(var(--sim-accent) / 0.6)); }
+
+/* The assertion matrix: one chamfered tick per scripted assertion, a
+   shimmer passing down the line in play order. */
+.dash-matrix { display: flex; gap: 3px; margin-bottom: 12px; }
+.dash-matrix i {
+  animation: dash-shimmer 2.8s ease-in-out infinite;
+  background: hsl(var(--sim-accent) / 0.75);
+  box-shadow: 0 0 6px hsl(var(--sim-accent) / 0.35);
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  flex: 1;
+  height: 7px;
+}
+@keyframes dash-shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* HUD readouts: catalog-sized mono numbers, a breathing accent rail, and
+   the same chamfered glowing edge as every other panel. */
+.dash-stats { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 12px; }
+.dash-stat { background: linear-gradient(180deg, hsl(var(--sim-accent) / 0.06), transparent 60%), hsl(var(--sim-panel) / 0.6); clip-path: var(--chamfer); overflow: hidden; padding: 18px 20px 16px 24px; position: relative; }
+.dash-stat::before { animation: dash-breathe 4.2s ease-in-out infinite; background: hsl(var(--sim-accent)); box-shadow: 0 0 12px hsl(var(--sim-accent) / 0.6); content: ""; inset: 12px auto 12px 0; pointer-events: none; position: absolute; width: 2px; }
+.dash-stat::after {
+  background: linear-gradient(155deg, hsl(var(--sim-accent) / 0.65), hsl(var(--sim-accent) / 0.12) 45%, hsl(var(--sim-accent) / 0.45) 90%);
+  clip-path: var(--chamfer);
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-stat strong { display: block; font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace; font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1.1; text-shadow: 0 0 22px hsl(var(--sim-accent) / 0.4); }
+.dash-stat span { color: hsl(var(--sim-text-dim)); display: block; font-size: 11px; letter-spacing: 0.16em; margin-top: 6px; text-transform: uppercase; }
+
+/* Console panels: chamfered frames with a glowing ring edge that blooms
+   on hover, corner brackets inside, and a header tick with a trailing
+   energy line. */
+.dash-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+.dash-card { background: hsl(var(--sim-panel) / 0.6); clip-path: var(--chamfer); min-width: 0; overflow: hidden; padding: 20px 22px; position: relative; }
+.dash-card::before {
+  background: linear-gradient(155deg, hsl(var(--sim-accent) / 0.6), hsl(var(--sim-accent) / 0.1) 45%, hsl(var(--sim-accent) / 0.4) 90%);
+  clip-path: var(--chamfer);
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+  transition: filter 160ms ease;
+}
+.dash-card:hover::before { filter: drop-shadow(0 0 9px hsl(var(--sim-accent) / 0.55)); }
+.dash-card::after {
+  --tick: hsl(var(--sim-accent) / 0.4);
+  background:
+    linear-gradient(var(--tick), var(--tick)) top left / 14px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) top right / 14px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 14px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 14px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 14px;
+  background-repeat: no-repeat;
+  content: "";
+  inset: 7px;
+  pointer-events: none;
+  position: absolute;
+}
+.dash-card h3 { align-items: center; border-bottom: 1px solid hsl(var(--sim-border) / 0.5); color: hsl(var(--sim-accent)); display: flex; font-size: 13px; gap: 10px; letter-spacing: 0.18em; margin: 0; padding-bottom: 10px; text-transform: uppercase; }
+.dash-card h3::before { background: hsl(var(--sim-accent)); box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.5); clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); content: ""; flex-shrink: 0; height: 9px; width: 9px; }
+.dash-card h3::after { background: linear-gradient(90deg, hsl(var(--sim-accent) / 0.4), transparent); content: ""; flex: 1; height: 1px; }
+.dash-card-hint { color: hsl(var(--sim-text-dim)); font-size: 13px; margin: 10px 0; }
+.dash-card-wide { grid-column: 1 / -1; }
+.dash-table-scroll { overflow-x: auto; }
+.dash-card table { border-collapse: collapse; width: 100%; }
+.dash-card th { border-bottom: 1px solid hsl(var(--sim-border) / 0.6); color: hsl(var(--sim-text-dim)); font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace; font-size: 11px; letter-spacing: 0.14em; padding: 8px 12px 8px 0; text-align: left; text-transform: uppercase; }
+.dash-card td { border-bottom: 1px solid hsl(var(--sim-border) / 0.35); padding: 10px 12px 10px 0; transition: background-color 120ms ease; vertical-align: top; }
+.dash-card tbody tr:hover td { background: hsl(var(--sim-accent) / 0.045); }
+.dash-card tbody tr:last-child td { border-bottom: 0; }
+.dash-cell-title { font-weight: 600; white-space: nowrap; }
+.dash-cell-desc { color: hsl(var(--sim-text-dim)); font-size: 13px; }
+.dash-list { list-style: none; margin: 0; padding: 0; }
+.dash-list-row { align-items: center; border-bottom: 1px solid hsl(var(--sim-border) / 0.35); display: flex; gap: 12px; padding: 9px 0; }
+.dash-list-row:last-child { border-bottom: 0; }
+/* Scene numbers sit in glowing HUD chips — the storyline as a timeline. */
+.dash-list-index { align-items: center; border: 1px solid hsl(var(--sim-accent) / 0.55); border-radius: 4px; box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.2), inset 0 0 8px hsl(var(--sim-accent) / 0.12); color: hsl(var(--sim-accent)); display: flex; flex-shrink: 0; font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace; font-size: 11px; font-variant-numeric: tabular-nums; height: 24px; justify-content: center; width: 24px; }
+/* Cast dots are little planets: lit from the top-left, glowing in their
+   own hue (the same "H S% L%" string the canvas paints them with). */
+.dash-dot { align-self: center; background: radial-gradient(circle at 32% 30%, hsl(var(--dash-hue)), hsl(var(--dash-hue) / 0.5) 62%, hsl(var(--dash-hue) / 0.2)); border-radius: 50%; box-shadow: 0 0 10px hsl(var(--dash-hue) / 0.55); flex-shrink: 0; height: 13px; width: 13px; }
+.dash-list-name { font-size: 14px; font-weight: 600; }
+.dash-list-meta { color: hsl(var(--sim-text-dim)); font-size: 12px; margin-left: auto; text-align: right; }
+@media (prefers-reduced-motion: reduce) {
+  .dash-hero::before, .dash-stat::before, .dash-hero-edge, .dash-matrix i, .dash-deck::after { animation: none; }
+}
+@media (max-width: 1100px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .dash-deck { padding: 24px 16px 16px; }
+  .dash-brand { right: 16px; top: 4px; padding: 3px 6px; }
+  .dash-brand img { height: 20px; }
+  .dash-hero { padding: 24px 20px; }
+  .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* --- The deck, second pass: real instrumentation ------------------------
+   Typefaces land from index.html (Chakra Petch display, Share Tech Mono
+   readouts). Panels turn to glass so the starfield breathes through, the
+   deck boots in top-down like a console powering on, and the hero carries
+   a live radar dial sweeping the scene count. */
+
+.dash-hero {
+  align-items: center;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 236px;
+}
+.dash-hero-main { min-width: 0; }
+.dash-hero h2 { font-family: "Chakra Petch", sans-serif; text-transform: uppercase; }
+.dash-kicker,
+.dash-stat strong,
+.dash-stat span,
+.dash-card h3,
+.dash-list-index,
+.dash-card th {
+  font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+}
+.dash-stat strong { font-weight: 400; }
+
+/* Glass: the panels sit on the sky instead of blocking it. */
+.dash-hero { background: linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%), hsl(var(--sim-panel) / 0.42); }
+.dash-card { background: hsl(var(--sim-panel) / 0.42); }
+.dash-hero,
+.dash-stat,
+.dash-card {
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+  backdrop-filter: blur(10px) saturate(1.25);
+}
+
+/* Boot-up: banner, matrix, tiles, consoles — each staggers in after the
+   one above it. `backwards` (not `both`) so hover transforms keep working
+   after the entrance finishes. */
+@keyframes dash-in {
+  from { opacity: 0; transform: translateY(16px); }
+}
+.dash-hero { animation: dash-in 560ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.dash-matrix { animation: dash-in 560ms 160ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.dash-stat { animation: dash-in 560ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.dash-card { animation: dash-in 620ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.dash-grid .dash-card:nth-child(1) { animation-delay: 380ms; }
+.dash-grid .dash-card:nth-child(2) { animation-delay: 480ms; }
+.dash-grid .dash-card:nth-child(3) { animation-delay: 580ms; }
+
+/* Console headers number themselves: 01 catalog, 02 storyline, 03 cast. */
+.dash-h3-no { color: hsl(var(--sim-accent) / 0.8); }
+
+/* The stage dial: ring set, one tick per scene, a radar sweep that never
+   sleeps, the scene count glowing dead center. */
+.dash-radar {
+  background:
+    radial-gradient(circle, transparent 0 61px, hsl(var(--sim-accent) / 0.4) 61px 62px, transparent 62.5px),
+    radial-gradient(circle, transparent 0 101px, hsl(var(--sim-accent) / 0.28) 101px 102px, transparent 102.5px),
+    radial-gradient(circle, transparent 0 116px, hsl(var(--sim-accent) / 0.55) 116px 117.5px, transparent 118px),
+    radial-gradient(circle, hsl(var(--sim-accent) / 0.07) 0 52%, transparent 53%);
+  border-radius: 50%;
+  height: 236px;
+  isolation: isolate;
+  justify-self: center;
+  overflow: hidden;
+  position: relative;
+  width: 236px;
+}
+.dash-radar-sweep {
+  animation: dash-rotate 4.5s linear infinite;
+  background: conic-gradient(from 0deg, hsl(var(--sim-accent) / 0.45), hsl(var(--sim-accent) / 0.06) 75deg, transparent 110deg);
+  border-radius: 50%;
+  inset: 0;
+  mix-blend-mode: screen;
+  position: absolute;
+}
+.dash-radar-ticks {
+  background: repeating-conic-gradient(from -0.4deg, hsl(var(--sim-accent) / 0.6) 0deg 0.8deg, transparent 0.8deg 36deg);
+  inset: 0;
+  -webkit-mask: radial-gradient(circle, transparent 0 104px, #000 104px 113px, transparent 113px);
+  mask: radial-gradient(circle, transparent 0 104px, #000 104px 113px, transparent 113px);
+  position: absolute;
+}
+.dash-radar-cross {
+  background:
+    linear-gradient(hsl(var(--sim-text) / 0.12), hsl(var(--sim-text) / 0.12)) 50% 50% / 100% 1px no-repeat,
+    linear-gradient(hsl(var(--sim-text) / 0.12), hsl(var(--sim-text) / 0.12)) 50% 50% / 1px 100% no-repeat;
+  inset: 0;
+  position: absolute;
+}
+.dash-radar-readout {
+  color: hsl(var(--sim-accent));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 44px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  text-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  top: 36%;
+}
+.dash-radar-label {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  left: 0;
+  letter-spacing: 0.34em;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  text-transform: uppercase;
+  top: calc(36% + 52px);
+}
+@keyframes dash-rotate {
+  to { transform: rotate(1turn); }
+}
+
+/* Console hover lifts the panel a hair; the ring edge already blooms. */
+.dash-card { transition: transform 220ms ease; }
+.dash-card:hover { transform: translateY(-3px); }
+
+.dash-space ::selection { background: hsl(var(--sim-accent) / 0.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-hero, .dash-matrix, .dash-stat, .dash-card { animation: none; }
+  .dash-card { transition: none; }
+  .dash-radar-sweep { animation: none; }
+}
+@media (max-width: 1100px) {
+  .dash-hero { grid-template-columns: 1fr; }
+  .dash-radar { margin-top: 6px; }
+}
+
+/* --- Third pass: the deck becomes a live console ------------------------
+   A canvas starfield drifting behind everything, a blueprint grid and
+   vignette over it, a power-on self-check that types the real catalog
+   counts once per session, real UTC + time-on-page clocks in a sticky header strip, and console cards
+   that behave like instruments: signal bars on the cast roster, a pulse
+   running the storyline spine, numbered catalog rows. */
+
+.dash-stars { inset: 0; pointer-events: none; position: fixed; z-index: 0; }
+
+/* The screen itself: hairline blueprint grid + vignette, over the stars,
+   under the deck (::after paints after the canvas, both under z-1 deck). */
+.dash-space::after {
+  background:
+    repeating-linear-gradient(0deg, hsl(var(--sim-text) / 0.02) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, hsl(var(--sim-text) / 0.02) 0 1px, transparent 1px 64px),
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, hsl(var(--sim-stage) / 0.55));
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+/* Power-on: the catalog self-check, typed out once per browser session.
+   It's a full-screen button — clicking anywhere skips the intro. */
+.dash-boot {
+  background: hsl(var(--sim-stage) / 0.97);
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  inset: 0;
+  place-items: center;
+  position: fixed;
+  z-index: 100;
+}
+.dash-boot:focus-visible { outline: 2px solid hsl(var(--sim-accent) / 0.7); outline-offset: -10px; }
+.dash-boot-box { display: flex; flex-direction: column; font-family: "Share Tech Mono", ui-monospace, monospace; gap: 9px; width: min(430px, 86vw); }
+.dash-boot-title { color: hsl(var(--sim-text)); font-size: 13px; letter-spacing: 0.42em; margin-bottom: 12px; text-shadow: 0 0 18px hsl(var(--sim-accent) / 0.5); }
+.dash-boot-line {
+  animation: dash-type 300ms steps(28, end) forwards;
+  color: hsl(var(--sim-text-dim));
+  display: flex;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+}
+.dash-boot-line::after { border-bottom: 1px dotted hsl(var(--sim-text) / 0.22); content: ""; margin: 0 0 3px 10px; order: 1; flex: 1; }
+.dash-boot-line b { color: hsl(var(--sim-accent)); font-weight: 400; margin-left: 10px; order: 2; }
+.dash-boot-ready { color: hsl(var(--sim-accent)); margin-top: 8px; text-shadow: 0 0 14px hsl(var(--sim-accent) / 0.6); }
+.dash-boot-ready::after { visibility: hidden; }
+@keyframes dash-type { to { width: 100%; } }
+
+/* The official logo in the deck's top-right corner: the provided artwork
+   on a soft light chip (the sticky ops strip slides over it on scroll). */
+.dash-brand {
+  background: hsl(210 40% 96%);
+  border-radius: 6px;
+  box-shadow: 0 0 14px hsl(213 92% 58% / 0.16);
+  display: inline-block;
+  overflow: hidden;
+  padding: 4px 8px;
+  position: absolute;
+  right: 32px;
+  top: 8px;
+  z-index: 31;
+}
+.dash-brand img {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+
+/* The sticky header strip: ops tag with a live dot, and the two real
+   clocks — UTC wall time + time-on-page (T+). */
+.dash-topbar {
+  align-items: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: hsl(var(--sim-stage) / 0.55);
+  border-bottom: 1px solid hsl(var(--sim-border) / 0.45);
+  color: hsl(var(--sim-text-dim));
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  justify-content: space-between;
+  letter-spacing: 0.3em;
+  margin-bottom: 16px;
+  padding: 10px 2px;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 30;
+}
+.dash-topbar-tag { align-items: center; color: hsl(var(--sim-accent)); display: flex; gap: 10px; text-shadow: 0 0 12px hsl(var(--sim-accent) / 0.45); }
+.dash-topbar-side { align-items: center; display: flex; gap: 12px; }
+/* the show's video export: the Download press records one full lap of
+   the deck as a WebM — while the lap runs the same button wears the
+   recording's face (accent border, a blinking red dot, a progress fill
+   creeping left to right), then a green Saved until the badge fades */
+.dash-download-btn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  gap: 7px;
+  height: 28px;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  padding: 0 14px;
+  position: relative;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.dash-download-btn > :not(.dash-download-fill) { position: relative; }
+.dash-download-btn:hover:not(:disabled) { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+.dash-download-btn:disabled { cursor: default; opacity: 0.45; }
+.dash-download-btn.is-live { border-color: hsl(var(--sim-accent) / 0.6); color: hsl(var(--sim-accent)); }
+.dash-download-btn.is-saved { border-color: hsl(145 65% 45% / 0.65); color: hsl(145 65% 55%); cursor: default; }
+.dash-download-fill {
+  background: hsl(var(--sim-accent) / 0.18);
+  inset: 0;
+  position: absolute;
+  transform-origin: left center;
+  transition: transform 0.3s linear;
+}
+.dash-download-dot {
+  animation: dash-download-blink 1.1s steps(2, start) infinite;
+  background: hsl(0 90% 60%);
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+@keyframes dash-download-blink { to { visibility: hidden; } }
+/* the playwright console's in-tree chooser: a level picks its folder or
+   files from inside its parent's connected folder — full-width rows
+   over the sim modal's own styling, a quiet road back */
+.pw-planet-modal .pw-tree-open { margin-top: 8px; }
+.pw-planet-modal .pw-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+.pw-planet-modal .pw-tree-row {
+  align-items: center;
+  background: hsl(var(--sim-text) / 0.05);
+  border: 1px solid hsl(var(--sim-text) / 0.14);
+  border-radius: 0.5rem;
+  color: hsl(var(--sim-text));
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  justify-content: flex-start;
+  padding: 0.32rem 0.45rem 0.32rem 0.7rem;
+  text-align: left;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.pw-planet-modal .pw-tree-row:hover:not(:disabled) {
+  background: hsl(var(--sim-accent) / 0.12);
+  border-color: hsl(var(--sim-accent) / 0.5);
+}
+.pw-planet-modal .pw-tree-row:disabled { cursor: default; opacity: 0.6; }
+/* the row's two halves: the name steps inside, the chip connects */
+.pw-planet-modal .pw-tree-enter {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  font: inherit;
+  gap: 0.45rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 0.18rem 0;
+  text-align: left;
+}
+.pw-planet-modal .pw-tree-enter:disabled { cursor: default; opacity: 0.6; }
+.pw-planet-modal .pw-tree-pick {
+  background: hsl(var(--sim-text) / 0.06);
+  border: 1px solid hsl(var(--sim-text) / 0.22);
+  border-radius: 0.35rem;
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  flex: none;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.28rem 0.6rem;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.pw-planet-modal .pw-tree-pick:hover:not(:disabled) {
+  border-color: hsl(var(--sim-accent) / 0.6);
+  color: hsl(var(--sim-accent));
+}
+.pw-planet-modal .pw-tree-pick:disabled { cursor: default; opacity: 0.6; }
+.pw-planet-modal .pw-tree-back {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.75rem;
+  gap: 0.35rem;
+  margin-top: 4px;
+  padding: 4px 2px;
+}
+.pw-planet-modal .pw-tree-back:hover { color: hsl(var(--sim-accent)); }
+/* the play press — the run's progress and verdict, dressed like the
+   console's own chrome */
+.pw-planet-modal .pw-run {
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+.pw-planet-modal .pw-run-head {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.pw-planet-modal .pw-run-tag {
+  align-items: center;
+  color: hsl(var(--sim-accent));
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.7rem;
+  gap: 5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pw-planet-modal .pw-run-meta {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+.pw-planet-modal .pw-run.is-bad .pw-run-meta { color: #ff7d7d; }
+.pw-planet-modal .pw-run-error {
+  color: #ff7d7d;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+.pw-planet-modal .pw-run-tests {
+  list-style: none;
+  margin: 8px 0 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0;
+}
+.pw-planet-modal .pw-run-tests li {
+  align-items: flex-start;
+  border-top: 1px solid hsl(var(--sim-text) / 0.1);
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+}
+.pw-planet-modal .pw-run-verdict {
+  flex-shrink: 0;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  margin-top: 2px;
+  padding: 2px 6px;
+}
+.pw-planet-modal .pw-run-tests li.is-ok .pw-run-verdict { color: #6fe3a5; }
+.pw-planet-modal .pw-run-tests li.is-bad .pw-run-verdict { color: #ff7d7d; }
+.pw-planet-modal .pw-run-log {
+  background: hsl(var(--sim-text) / 0.04);
+  border: 1px solid hsl(var(--sim-text) / 0.12);
+  color: hsl(var(--sim-text) / 0.85);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pw-planet-modal .pw-run-log-line.is-err { color: #ff9d9d; }
+.pw-planet-modal .pw-now {
+  align-items: baseline;
+  background: hsl(var(--sim-accent) / 0.07);
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.68rem;
+  gap: 4px 14px;
+  letter-spacing: 0.05em;
+  margin-top: 10px;
+  padding: 9px 12px;
+}
+.pw-planet-modal .pw-now-kicker { color: hsl(var(--sim-accent)); text-transform: uppercase; }
+.pw-planet-modal .pw-now-file { color: hsl(var(--sim-text)); text-transform: uppercase; }
+.pw-planet-modal .pw-now-block { color: hsl(var(--sim-text-dim)); }
+.pw-planet-modal .pw-now-step { color: hsl(var(--sim-accent)); width: 100%; }
+.pw-planet-modal .pw-now-step.is-bad { color: #ff9d9d; }
+.pw-planet-modal .pw-run-body { min-width: 0; }
+.pw-planet-modal .pw-run-side {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+.pw-planet-modal .pw-run-stop {
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.25);
+  border-radius: 0.35rem;
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  flex: none;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.28rem 0.6rem;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.pw-planet-modal .pw-run-stop:hover {
+  border-color: #ff7d7d;
+  color: #ff7d7d;
+}
+.pw-planet-modal .pw-run-root {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.pw-planet-modal .pw-run-ask-copy {
+  color: hsl(var(--sim-text-dim));
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.pw-planet-modal .pw-run-ask {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pw-planet-modal .pw-run-input {
+  background: hsl(var(--sim-text) / 0.05);
+  border: 1px solid hsl(var(--sim-text) / 0.2);
+  color: hsl(var(--sim-text));
+  flex: 1;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.75rem;
+  min-width: 0;
+  padding: 7px 9px;
+}
+.pw-planet-modal .pw-run-input:focus {
+  border-color: hsl(var(--sim-accent) / 0.7);
+  outline: none;
+}
+.pw-planet-modal .pw-run-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.pw-planet-modal .pw-run-choice {
+  background: hsl(var(--sim-text) / 0.05);
+  border: 1px solid hsl(var(--sim-text) / 0.2);
+  color: hsl(var(--sim-text));
+  cursor: pointer;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+  padding: 7px 9px;
+  text-align: left;
+}
+.pw-planet-modal .pw-run-choice:hover {
+  background: hsl(var(--sim-text) / 0.09);
+  border-color: hsl(var(--sim-accent) / 0.7);
+}
+.pw-planet-modal .pw-run-title {
+  color: hsl(var(--sim-text));
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pw-planet-modal .pw-run-message {
+  background: hsl(var(--sim-text) / 0.05);
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  margin: 5px 0 0;
+  max-height: 130px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 7px 9px;
+  white-space: pre-wrap;
+}
+/* the back arrow: a system view's road home to the card shelf */
+.dash-back {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-text) / 0.16);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  width: 28px;
+}
+.dash-back:hover {
+  border-color: hsl(var(--sim-accent) / 0.7);
+  color: hsl(var(--sim-accent));
+}
+.dash-live-dot { animation: dash-ping 1.6s ease-in-out infinite; background: hsl(var(--sim-accent)); border-radius: 50%; box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.8); flex-shrink: 0; height: 6px; width: 6px; }
+@keyframes dash-ping {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.dash-clocks { font-variant-numeric: tabular-nums; }
+
+/* Console headers announce their register: REGISTRY / PLAY ORDER / ROSTER,
+   each with its real entry count chip. */
+.dash-h3-tag { color: hsl(var(--sim-text-dim)); flex-shrink: 0; font-size: 9px; letter-spacing: 0.3em; }
+.dash-h3-count {
+  border-left: 1px solid hsl(var(--sim-border) / 0.6);
+  color: hsl(var(--sim-text-dim));
+  flex-shrink: 0;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  padding-left: 10px;
+}
+
+/* Catalog rows: an accent bar lights the hovered row's edge. */
+.dash-card td { position: relative; }
+.dash-card td:first-child, .dash-card th:first-child { padding-left: 12px; }
+.dash-card td:first-child::before {
+  background: transparent;
+  content: "";
+  inset: 0 auto 0 0;
+  pointer-events: none;
+  position: absolute;
+  transition: background 140ms ease, box-shadow 140ms ease;
+  width: 2px;
+}
+.dash-card tbody tr:hover td:first-child::before {
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.6);
+}
+
+/* The catalog's console footer: real entry count + where it's used. */
+.dash-card-foot {
+  align-items: center;
+  border-top: 1px solid hsl(var(--sim-border) / 0.45);
+  color: hsl(var(--sim-text-dim));
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9px;
+  justify-content: space-between;
+  letter-spacing: 0.24em;
+  margin-top: 14px;
+  padding-top: 10px;
+  text-transform: uppercase;
+}
+.dash-card-foot b { color: hsl(var(--sim-accent)); font-weight: 400; }
+
+/* Catalog rows number themselves — the registry reads like a manifest. */
+.dash-row-no { color: hsl(var(--sim-accent) / 0.75); font-family: "Share Tech Mono", ui-monospace, monospace; font-size: 11px; margin-right: 10px; }
+
+/* Cast rows are live: three equalizer bars of signal + an ON STAGE chip
+   (the cast hint says every platform is visible in every scene). */
+.dash-sig { align-items: flex-end; display: flex; flex-shrink: 0; gap: 2px; height: 12px; margin-left: auto; }
+.dash-sig i { animation: dash-sig 1.1s ease-in-out infinite alternate; background: hsl(var(--sim-accent) / 0.8); box-shadow: 0 0 6px hsl(var(--sim-accent) / 0.4); height: 30%; width: 3px; }
+.dash-sig i:nth-child(2) { animation-delay: 0.25s; }
+.dash-sig i:nth-child(3) { animation-delay: 0.5s; }
+@keyframes dash-sig {
+  from { height: 20%; }
+  to { height: 100%; }
+}
+.dash-onstage {
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  color: hsl(var(--sim-accent) / 0.9);
+  flex-shrink: 0;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  padding: 3px 6px;
+}
+.dash-list-row:has(.dash-sig) .dash-list-meta { margin-left: 0; }
+
+/* Storyline spine: the index chips sit on a rail, and a pulse travels it
+   in play order — the script running under the list. */
+.dash-card-scenes .dash-list { position: relative; }
+.dash-card-scenes .dash-list::before { background: hsl(var(--sim-accent) / 0.22); content: ""; inset: 10px auto 10px 12px; pointer-events: none; position: absolute; width: 1px; }
+.dash-card-scenes .dash-list::after {
+  animation: dash-run 5.5s linear infinite;
+  background: linear-gradient(180deg, transparent, hsl(var(--sim-accent)), transparent);
+  border-radius: 1px;
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.7);
+  content: "";
+  height: 18px;
+  left: 11.5px;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 2px;
+}
+@keyframes dash-run {
+  from { top: 0; }
+  to { top: calc(100% - 18px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-live-dot, .dash-sig i, .dash-card-scenes .dash-list::after { animation: none; }
+}
+@media (max-width: 760px) {
+  .dash-sig, .dash-onstage { display: none; }
+}
+
+/* --- The sector jump: the transition between pages ----------------------
+   Every route change renders this overlay in the same commit as the new
+   page, opaque from frame one — the swap hides inside the jump. Star
+   lines rush past while the console names the destination, then a
+   shutter wipes up to reveal it. (Var fallbacks cover auth pages that
+   never import the simulator sheet.) */
+
+.sim-jump {
+  animation: sim-jump-shutter 1.05s cubic-bezier(0.7, 0, 0.3, 1) both;
+  background:
+    radial-gradient(70% 50% at 50% 50%, hsl(var(--sim-accent, 199 95% 58%) / 0.08), transparent 70%),
+    hsl(var(--sim-stage, 222 38% 4%));
+  display: grid;
+  inset: 0;
+  overflow: hidden;
+  place-items: center;
+  position: fixed;
+  z-index: 120;
+}
+@keyframes sim-jump-shutter {
+  0%, 42% { clip-path: inset(0); }
+  100% { clip-path: inset(0 0 100% 0); }
+}
+
+.sim-jump-streaks {
+  animation: sim-jump-rush 420ms linear infinite;
+  background:
+    repeating-linear-gradient(90deg, hsl(var(--sim-accent, 199 95% 58%) / 0.13) 0 1px, transparent 1px 84px),
+    repeating-linear-gradient(90deg, hsl(var(--sim-text, 218 30% 92%) / 0.05) 0 1px, transparent 1px 34px);
+  inset: 0;
+  position: absolute;
+}
+@keyframes sim-jump-rush {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 168px 0, 68px 0; }
+}
+
+.sim-jump-flash {
+  animation: sim-jump-flare 1.05s ease-out both;
+  background: radial-gradient(38% 26% at 50% 50%, hsl(var(--sim-accent, 199 95% 58%) / 0.22), transparent 70%);
+  inset: 0;
+  position: absolute;
+}
+@keyframes sim-jump-flare {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  60% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+.sim-jump-box { display: grid; gap: 10px; justify-items: center; position: relative; }
+.sim-jump-kicker {
+  color: hsl(var(--sim-text-dim, 218 14% 62%));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+}
+.sim-jump-target {
+  color: hsl(var(--sim-text, 218 30% 92%));
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 26px hsl(var(--sim-accent, 199 95% 58%) / 0.5);
+  text-transform: uppercase;
+}
+.sim-jump-bar { background: hsl(var(--sim-border, 222 20% 22%)); height: 2px; overflow: hidden; width: 220px; }
+.sim-jump-bar i {
+  animation: sim-jump-fill 520ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  background: hsl(var(--sim-accent, 199 95% 58%));
+  box-shadow: 0 0 12px hsl(var(--sim-accent, 199 95% 58%) / 0.8);
+  display: block;
+  height: 100%;
+  transform-origin: left;
+}
+@keyframes sim-jump-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sim-jump-streaks, .sim-jump-flash, .sim-jump-bar i { animation: none; }
+}
+
+/* The same console, holding: the loader behind auth checks and token
+   callbacks. No shutter — it fades in and the bar scans on a loop until
+   the real page takes over. */
+.sim-jump-hold { animation: sim-jump-hold-in 260ms ease-out both; }
+@keyframes sim-jump-hold-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sim-jump-hold .sim-jump-bar i { animation: sim-jump-scan 1.3s cubic-bezier(0.45, 0, 0.4, 1) infinite; }
+@keyframes sim-jump-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
 .profile-card { align-items: center; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); display: flex; gap: 18px; margin-bottom: 16px; padding: 20px; }
 .profile-heading { display: grid; gap: 6px; }
 .profile-heading h3 { font-size: 22px; margin: 0; overflow-wrap: anywhere; }
@@ -161,13 +2346,266 @@ pre { background: hsl(var(--foreground)); border-radius: var(--radius); color: h
 
 @keyframes blocks-menu-in { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-/* Auth screens: login + callback */
-.auth-screen { align-items: center; background: linear-gradient(160deg, hsl(var(--secondary)), hsl(var(--background))); display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
-.auth-card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 16px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.1); display: grid; gap: 14px; max-width: 380px; padding: 32px; width: 100%; }
-.auth-brand { align-items: center; display: flex; font-weight: 700; gap: 10px; }
-.auth-card h2 { font-size: 22px; margin: 0; }
-.auth-card > p { color: hsl(var(--muted-foreground)); margin: 0; }
-.auth-submit { justify-content: center; width: 100%; }
+/* Auth screens: the login terminal + the callback failure card. The
+   pre-auth pages are always the observatory at night — deep space,
+   drifting stars, nebula haze, and a console panel under HUD corners —
+   regardless of app theme, because there is no app chrome around them. */
+.auth-screen {
+  align-items: center;
+  background:
+    radial-gradient(90% 60% at 75% 12%, hsl(262 55% 16% / 0.5), transparent 62%),
+    radial-gradient(80% 60% at 16% 85%, hsl(199 80% 12% / 0.55), transparent 65%),
+    hsl(222 38% 4%);
+  color: hsl(218 30% 92%);
+  display: flex;
+  gap: clamp(28px, 3.4vw, 52px);
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 24px;
+  position: relative;
+}
+
+.auth-stars {
+  animation: auth-drift 240s linear infinite;
+  background-image:
+    radial-gradient(1px 1px at 22px 34px, hsl(0 0% 100% / 0.9), transparent 1.5px),
+    radial-gradient(1px 1px at 118px 86px, hsl(213 60% 88% / 0.7), transparent 1.5px),
+    radial-gradient(1.5px 1.5px at 64px 168px, hsl(38 80% 85% / 0.8), transparent 2px),
+    radial-gradient(1px 1px at 176px 130px, hsl(0 0% 100% / 0.55), transparent 1.5px),
+    radial-gradient(1px 1px at 142px 12px, hsl(199 80% 90% / 0.65), transparent 1.5px);
+  background-size: 210px 210px;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+.auth-stars-far {
+  animation: auth-drift-far 420s linear infinite reverse;
+  background-image:
+    radial-gradient(1px 1px at 47px 91px, hsl(0 0% 100% / 0.5), transparent 1.5px),
+    radial-gradient(1px 1px at 133px 27px, hsl(213 50% 85% / 0.4), transparent 1.5px),
+    radial-gradient(1px 1px at 89px 155px, hsl(0 0% 100% / 0.35), transparent 1.5px);
+  background-size: 170px 170px;
+  opacity: 0.8;
+}
+@keyframes auth-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 210px 420px, 210px 420px, 210px 420px, 210px 420px, 210px 420px; }
+}
+@keyframes auth-drift-far {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 170px 340px, 170px 340px, 170px 340px; }
+}
+
+.auth-nebula {
+  background:
+    radial-gradient(42% 30% at 68% 28%, hsl(172 70% 45% / 0.08), transparent 70%),
+    radial-gradient(50% 36% at 22% 68%, hsl(288 70% 55% / 0.07), transparent 72%),
+    radial-gradient(36% 26% at 50% 52%, hsl(199 90% 55% / 0.05), transparent 70%);
+  filter: blur(2px);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.auth-card {
+  backdrop-filter: blur(8px);
+  background: linear-gradient(168deg, hsl(222 30% 10% / 0.9), hsl(224 36% 5% / 0.94));
+  border: 1px solid hsl(199 95% 58% / 0.3);
+  border-radius: 6px;
+  box-shadow:
+    0 0 44px hsl(199 95% 58% / 0.1),
+    0 30px 70px hsl(222 70% 1% / 0.85),
+    inset 0 0 70px hsl(199 95% 58% / 0.045);
+  max-width: 400px;
+  position: relative;
+  width: min(100%, 400px);
+}
+
+/* the console face: clips the scan sweep; brackets live on the card outside it */
+.auth-panel {
+  border-radius: 5px;
+  display: grid;
+  gap: 14px;
+  overflow: hidden;
+  padding: 34px 32px 26px;
+  position: relative;
+}
+
+/* HUD corner brackets */
+.auth-corner { border: 2px solid hsl(199 95% 58% / 0.8); height: 15px; pointer-events: none; position: absolute; width: 15px; }
+.auth-corner.tl { border-bottom: 0; border-right: 0; left: -6px; top: -6px; }
+.auth-corner.tr { border-bottom: 0; border-left: 0; right: -6px; top: -6px; }
+.auth-corner.bl { border-right: 0; border-top: 0; bottom: -6px; left: -6px; }
+.auth-corner.br { border-left: 0; border-top: 0; bottom: -6px; right: -6px; }
+
+/* the instrument sweep that crawls down the console face */
+.auth-scan {
+  animation: auth-scan 5.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  background: linear-gradient(180deg, transparent, hsl(199 95% 58% / 0.07) 45%, hsl(199 95% 58% / 0.15) 50%, hsl(199 95% 58% / 0.07) 55%, transparent);
+  height: 110px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+@keyframes auth-scan {
+  0% { opacity: 0; transform: translateY(-120px); }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(430px); }
+}
+
+.auth-brand {
+  align-items: center;
+  color: hsl(218 30% 92%);
+  display: flex;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.auth-card .brand-mark {
+  background: hsl(199 95% 58% / 0.14);
+  border: 1px solid hsl(199 95% 58% / 0.55);
+  border-radius: 8px;
+  box-shadow: 0 0 16px hsl(199 95% 58% / 0.28);
+  color: hsl(199 95% 65%);
+}
+.auth-kicker {
+  color: hsl(199 95% 58% / 0.9);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+}
+.auth-card h2 {
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 24px;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-shadow: 0 0 26px hsl(199 95% 58% / 0.4);
+  text-transform: uppercase;
+}
+.auth-panel > p {
+  color: hsl(218 14% 66%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.auth-submit {
+  background: hsl(199 95% 58% / 0.13);
+  border: 1px solid hsl(199 95% 58% / 0.6);
+  box-shadow: 0 0 20px hsl(199 95% 58% / 0.16), inset 0 0 14px hsl(199 95% 58% / 0.07);
+  color: hsl(199 95% 74%);
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 600;
+  justify-content: center;
+  letter-spacing: 0.16em;
+  min-height: 46px;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+.auth-submit:hover:not(:disabled) {
+  background: hsl(199 95% 58% / 0.24);
+  box-shadow: 0 0 30px hsl(199 95% 58% / 0.38), inset 0 0 18px hsl(199 95% 58% / 0.12);
+}
+.auth-submit:disabled { cursor: not-allowed; opacity: 0.55; }
+
+/* the app's alert tones, re-inked for the dark console */
+.auth-card .alert { border: 1px solid transparent; font-family: "Share Tech Mono", ui-monospace, monospace; }
+.auth-card .alert-warn { background: hsl(38 96% 55% / 0.1); border-color: hsl(38 96% 55% / 0.45); color: hsl(43 96% 70%); }
+.auth-card .alert-error { background: hsl(0 84% 60% / 0.12); border-color: hsl(0 84% 60% / 0.5); color: hsl(4 100% 74%); }
+.auth-card .alert code { background: hsl(0 0% 100% / 0.09); }
+
+/* the mission brief: why the app is, standing beside the terminal —
+   large display type on the left, the sign-in console on the right */
+.auth-brief {
+  border-left: 2px solid hsl(199 95% 58% / 0.5);
+  display: grid;
+  gap: 16px;
+  margin: 0; /* the bare-section rule above centers with auto margins — a flex item must not */
+  max-width: 480px;
+  padding-left: 22px;
+  position: relative;
+}
+/* the official logo crowning the briefing: the full provided artwork
+   (blue cube + dark wordmark) sits on a soft light chip — the original's
+   white plate, trimmed — so it reads cleanly on the night sky */
+.auth-brief-brand {
+  border-radius: 8px;
+  box-shadow: 0 0 18px hsl(213 92% 58% / 0.18);
+  display: inline-block;
+  justify-self: start;
+  overflow: hidden;
+  padding: 7px 12px;
+}
+.auth-brief-brand img {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+.auth-brief-kicker {
+  color: hsl(199 95% 58% / 0.85);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+}
+.auth-brief-title {
+  font-family: "Chakra Petch", sans-serif;
+  font-size: clamp(32px, 3.4vw, 48px);
+  letter-spacing: 0.06em;
+  line-height: 1.06;
+  margin: 0;
+  text-shadow: 0 0 34px hsl(199 95% 58% / 0.45);
+  text-transform: uppercase;
+}
+.auth-brief-sub {
+  color: hsl(199 95% 70%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.auth-brief-body {
+  color: hsl(218 14% 70%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0;
+  max-width: 46ch;
+}
+
+@media (max-width: 940px) {
+  .auth-screen { flex-direction: column; gap: 40px; }
+  .auth-brief { border-left: 0; border-top: 2px solid hsl(199 95% 58% / 0.5); max-width: 440px; padding-left: 0; padding-top: 18px; text-align: center; }
+  .auth-brief-body { margin-inline: auto; }
+}
+
+.auth-foot {
+  border-top: 1px solid hsl(199 95% 58% / 0.16);
+  color: hsl(218 14% 50%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.3em;
+  margin-top: 4px;
+  padding-top: 12px;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .auth-panel { padding: 28px 22px 22px; }
+  .auth-card h2 { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-scan, .auth-stars { animation: none; }
+}
 
 /* Alerts */
 .alert { border-radius: 8px; font-size: 13px; line-height: 1.5; padding: 12px 14px; }

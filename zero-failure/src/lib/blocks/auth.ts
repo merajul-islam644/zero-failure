@@ -165,12 +165,14 @@ export async function startLogin(returnTo?: string): Promise<void> {
     throw new Error("Login is not configured. Set VITE_BLOCKS_OIDC_CLIENT_ID in .env.");
   }
 
-  sessionStorage.setItem(RETURN_KEY, returnTo || "/");
+  // A plain sign-in lands on the dashboard; only a gated deep link
+  // (RequireAuth's returnTo) sends the viewer back where they started.
+  sessionStorage.setItem(RETURN_KEY, returnTo || "/dashboard");
   await blocksClient.auth.idp.redirectToProvider();
 }
 
 export async function completeLogin(callbackUrl: string): Promise<CallbackResult> {
-  const returnTo = sessionStorage.getItem(RETURN_KEY) || "/";
+  const returnTo = sessionStorage.getItem(RETURN_KEY) || "/dashboard";
 
   sessionStorage.removeItem(RETURN_KEY);
 

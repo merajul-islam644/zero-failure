@@ -21,7 +21,7 @@ export function AccountBar() {
 
   if (status !== "authenticated") {
     return (
-      <a className="sim-account" href="/login?returnTo=/">
+      <a className="sim-account" href="/login?returnTo=/simulator">
         <LogIn size={14} aria-hidden />
         <span>{t("nav.signIn")}</span>
       </a>

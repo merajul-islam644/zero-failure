@@ -13,13 +13,23 @@ const TIMER = '[role="timer"][aria-label="Playback time"]';
 const PLAY_BUTTON = '.sim-btn[aria-label="Play"], .sim-btn[aria-label="Pause"]';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await expect(page.locator(".sim-scene-title").first()).toBeVisible();
+  // The dashboard is "/" now — the simulator lives at /simulator.
+  await page.goto("/simulator");
+  // The command rail starts with both flanking panels folded — unfold the
+  // run-panel deck the way a viewer would before any panel-bound assertion.
+  // (The story rail is a drawer now; the tests that need its heading fold
+  // the deck first and unfold it themselves.)
+  await page.locator('[aria-label="Toggle the run panels"]').click();
+  await expect(page.locator(".sim-tabs")).toBeVisible();
 });
 
-/** Focus off the scenario <select>, whose keydown guard swallows End/Space. */
+/** Blur whatever holds focus (e.g. the scenario <select>, whose keydown
+ *  guard swallows End/Space). A drawer's backdrop owns every click while
+ *  open, so this never clicks — playback keys land on window regardless. */
 async function focusStage(page: Page): Promise<void> {
-  await page.locator(".sim-stage").click({ position: { x: 10, y: 10 } });
+  await page.evaluate(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+  });
 }
 
 async function openTab(page: Page, name: string): Promise<void> {
@@ -87,10 +97,9 @@ test.describe("verdict matrix", () => {
     ).toHaveCount(0);
   });
 
-  test("simulation badge and static live capability rows are visible", async ({
+  test("static live capability rows are visible in the inspector", async ({
     page,
   }) => {
-    await expect(page.getByText(/SIMULATION ONLY/i).first()).toBeVisible();
     await openTab(page, "Inspector");
     // Static capability truth — independent of tenant state or probe timing
     // (the SDK-backed rows render live probe results, which vary by tenant).
@@ -120,19 +129,24 @@ test.describe("playback", () => {
   test("16x playthrough smoke: story reaches its final verdict by playing", async ({
     page,
   }) => {
+    // The transport sits under the drawer's backdrop and hides until the
+    // pointer comes down to it — fold the deck and wake the bar first.
+    await page.keyboard.press("Escape");
+    await page.mouse.move(960, 885);
+    await page.locator(".sim-speed select").selectOption("16");
     await focusStage(page);
     if (
       (await page.locator(PLAY_BUTTON).getAttribute("aria-label")) === "Play"
     ) {
       await page.keyboard.press("Space");
     }
+    await page.locator('[aria-label="Toggle the run panels"]').click();
     await openTab(page, "Results");
-    await page.locator(".sim-speed select").selectOption("16");
-    await focusStage(page);
-    // 571.5 s at 16x ≈ 36 s real; generous headroom for CI.
+    // 571.5 s at 16x ≈ 36 s real; the first (cold) attempt renders a full-
+    // display canvas, so leave real headroom for CI.
     await expect(page.locator(`${VERDICT} .sim-verdict-count`)).toHaveText(
       /49\/49 assertions evaluated/,
-      { timeout: 90_000 },
+      { timeout: 150_000 },
     );
     await expect(page.locator(VERDICT)).toHaveAttribute(
       "data-verdict",
@@ -163,7 +177,11 @@ test.describe("playback", () => {
     await page.keyboard.press("ArrowRight");
     await expect(page.locator(TIMER)).toHaveText("0:10");
 
-    // PageDown jumps to the next scene's start.
+    // PageDown jumps to the next scene's start — the scene heading lives
+    // in the story-rail drawer now, so fold the deck and unfold the rail.
+    await page.keyboard.press("Escape");
+    await page.locator('[aria-label="Toggle the story rail"]').click();
+    await expect(page.locator(".sim-scene-title").first()).toBeVisible();
     const before = await page.locator(".sim-scene-title").first().textContent();
     await page.keyboard.press("PageDown");
     await page.keyboard.press("PageDown");

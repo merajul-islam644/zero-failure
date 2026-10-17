@@ -10,7 +10,7 @@ export const CAST: CharacterDef[] = [
     name: "OS",
     role: "Team Leader",
     personality: "Calm, organized",
-    hue: "222 89% 60%",
+    hue: "232 89% 62%",
     glyph: "RadioTower"
   },
   {
@@ -26,7 +26,7 @@ export const CAST: CharacterDef[] = [
     name: "Data Gateway",
     role: "Data Manager",
     personality: "Precise, logical",
-    hue: "190 85% 50%",
+    hue: "187 85% 50%",
     glyph: "Database"
   },
   {
@@ -34,7 +34,7 @@ export const CAST: CharacterDef[] = [
     name: "Logic",
     role: "Workflow Coordinator",
     personality: "Systematic",
-    hue: "262 83% 66%",
+    hue: "268 83% 66%",
     glyph: "Workflow"
   },
   {
@@ -50,7 +50,7 @@ export const CAST: CharacterDef[] = [
     name: "Monitor",
     role: "Observability Engineer",
     personality: "Analytical",
-    hue: "152 76% 44%",
+    hue: "115 76% 46%",
     glyph: "Activity"
   },
   {
@@ -58,7 +58,7 @@ export const CAST: CharacterDef[] = [
     name: "AI Agent",
     role: "Intelligent Investigator",
     personality: "Curious, analytical",
-    hue: "42 96% 55%",
+    hue: "52 96% 55%",
     glyph: "Brain"
   },
   {
@@ -66,7 +66,7 @@ export const CAST: CharacterDef[] = [
     name: "Utilities",
     role: "Notification Officer",
     personality: "Helpful",
-    hue: "199 89% 56%",
+    hue: "210 89% 58%",
     glyph: "Bell"
   },
   {
@@ -82,7 +82,7 @@ export const CAST: CharacterDef[] = [
     name: "Studio",
     role: "Studio Manager",
     personality: "Reliable",
-    hue: "172 66% 45%",
+    hue: "165 66% 45%",
     glyph: "HardDrive"
   }
 ];

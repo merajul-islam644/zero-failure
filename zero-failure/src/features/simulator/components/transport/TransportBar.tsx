@@ -5,7 +5,7 @@
 // with Broadcast off those are plain clock calls, with it on each action is
 // published to the shared head.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Pause, Play, RotateCcw, ChevronsLeft, ChevronsRight, Volume2, VolumeX } from "lucide-react";
 import { usePlaybackRate, usePlaybackTime, usePlayer } from "../../state/PlayerContext";
 import { useSettings } from "../../state/SettingsContext";
@@ -34,6 +34,29 @@ export function TransportBar({
   const { narration, setNarration } = useSettings();
   const rate = usePlaybackRate();
   const duration = timeline.totalMs;
+  // The bar hides until the pointer comes down to it: hovering the window's
+  // bottom band — or the bar itself — slides it in, moving away slides it
+  // out. Keyboard focus inside it keeps it up too (Tab lands on a hidden
+  // button and lights the bar around it). No timers: the rule is purely
+  // where the pointer is, so it can never flicker or dangle open. Playback
+  // keys are window-level, so a hidden bar never blocks the story.
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    const inZone = (clientY: number) => clientY >= window.innerHeight - 84;
+    const inBar = (target: EventTarget | null) =>
+      target instanceof Node && barRef.current?.contains(target) === true;
+    const onMove = (event: PointerEvent) =>
+      setRevealed(inZone(event.clientY) || inBar(event.target));
+    const onDown = (event: PointerEvent) =>
+      setRevealed(inZone(event.clientY) || inBar(event.target));
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDown);
+    };
+  }, []);
   // Narration auto-mutes above 2× (speech cannot keep up); say so on the
   // button instead of leaving the silence unexplained.
   const mutedByRate = narration && rate > NARRATION_MAX_RATE;
@@ -44,7 +67,17 @@ export function TransportBar({
       : "Narration on — the story pauses while each line is spoken";
 
   return (
-    <div className="sim-transport">
+    <div
+      ref={barRef}
+      className="sim-transport"
+      data-revealed={revealed ? "" : undefined}
+      onFocusCapture={() => setRevealed(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setRevealed(false);
+        }
+      }}
+    >
       <TimelineStrip timeline={timeline} seek={actions.seek} />
       <Scrubber duration={duration} actions={actions} />
       <div className="sim-transport-row">
@@ -145,6 +178,9 @@ function Scrubber({ duration, actions }: { duration: number; actions: BroadcastA
         max={duration}
         step={100}
         value={dragTime ?? time}
+        // the track paints its elapsed fill from this var — the input is
+        // the one per-frame element, so the gradient tracks the playhead
+        style={{ "--progress": `${Math.min(100, ((dragTime ?? time) / (duration || 1)) * 100)}%` } as React.CSSProperties}
         onChange={(e) => {
           const next = Number(e.target.value);
           actions.seek(next);

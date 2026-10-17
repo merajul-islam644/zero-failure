@@ -1,6 +1,7 @@
 /* Operation Zero Failure — simulator look and feel.
-   Tokens on :root, dark by default, light via prefers-color-scheme.
-   Node states key off [data-state]; reduced motion strips travel/pulse. */
+   Tokens on :root — dark is the default; light only via the manual
+   data-theme="light" override. Node states key off [data-state]; reduced
+   motion strips travel/pulse. */
 
 :root {
   --sim-bg: 222 34% 6%;
@@ -17,21 +18,8 @@
   --sim-stage: 222 38% 4%;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --sim-bg: 220 30% 96%;
-    --sim-bg-raised: 0 0% 100%;
-    --sim-panel: 0 0% 100%;
-    --sim-border: 220 18% 84%;
-    --sim-text: 222 30% 12%;
-    --sim-text-dim: 222 12% 40%;
-    --sim-accent: 201 90% 40%;
-    --sim-stage: 220 26% 92%;
-  }
-}
-
 /* Manual theme overrides (SettingsContext sets data-theme on <html>;
-  "system" removes the attribute so the media query above governs). */
+  "system" removes the attribute so the dark :root tokens govern). */
 
 :root[data-theme="dark"] {
   --sim-bg: 222 34% 6%;
@@ -69,52 +57,7 @@
   overflow: hidden;
 }
 
-/* ---- honesty badge ---- */
-
-.sim-topbar {
-  display: flex;
-  align-items: center;
-  background: hsl(var(--sim-warn) / 0.08);
-  border-bottom: 1px solid hsl(var(--sim-warn) / 0.35);
-}
-
-.sim-topbar .sim-badge {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border-bottom: 0;
-}
-
-.sim-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.375rem 1rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-  color: hsl(var(--sim-warn));
-  background: hsl(var(--sim-warn) / 0.08);
-  border-bottom: 1px solid hsl(var(--sim-warn) / 0.35);
-  user-select: none;
-}
-
-.sim-badge strong {
-  font-weight: 700;
-}
-
-/* ---- live-mode honesty strip + toggle ---- */
-
-.sim-badge-live {
-  color: hsl(var(--sim-good));
-  background: hsl(var(--sim-good) / 0.08);
-  border-bottom-color: hsl(var(--sim-good) / 0.35);
-}
-
-.sim-topbar .sim-badge-live {
-  background: transparent;
-  border-bottom: 0;
-}
+/* ---- mode toggle (lives in the status rail's flyouts now) ---- */
 
 .sim-mode-toggle {
   display: inline-flex;
@@ -147,6 +90,57 @@
 .sim-mode-toggle.sim-mode-live {
   color: hsl(var(--sim-good));
   border-color: hsl(var(--sim-good) / 0.5);
+}
+
+/* The execution-mode picker: a segmented Simulated | Live choice. Both
+   options stay visible, so going live is an explicit choice on screen —
+   not a hidden flip behind a single button's label. */
+.sim-mode-picker {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: hsl(var(--sim-bg-raised));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+}
+
+.sim-mode-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  color: hsl(var(--sim-text) / 0.65);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.sim-mode-option:hover:not(:disabled):not(.sim-mode-option-on) {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-accent) / 0.1);
+}
+
+.sim-mode-option:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sim-mode-option-on {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-panel));
+  box-shadow: inset 0 0 0 1px hsl(var(--sim-border));
+}
+
+.sim-mode-option-live.sim-mode-option-on {
+  color: hsl(var(--sim-good));
+  background: hsl(var(--sim-good) / 0.1);
+  box-shadow: inset 0 0 0 1px hsl(var(--sim-good) / 0.5);
 }
 
 /* ---- broadcast (synced viewing) ---- */
@@ -321,24 +315,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden; /* the frame is sized to fit — never show scrollbars here */
+  /* The stage is a <main>, and the scaffold pads every main 32px — that
+     padding showed up as a hard dark frame around the sky's room glow
+     (the glow lives on .sim-canvas-area, so its box edge read as a seam). */
+  padding: 0;
   background: hsl(var(--sim-stage));
-  /* Aspect decides header-row vs left-rail mode below. Size-independent:
-     the stage's own box comes from flex layout, never from its content. */
-  container-type: size;
-}
-
-/* Header strip above the canvas: scene heading left, stage note right.
-   Paddings/gaps stay tight — every pixel here comes off the 16:9 canvas. */
-.sim-stage-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.35rem 2rem;
-  padding: 0.55rem 1.5rem 0.3rem;
-  /* the same raised surface as the .sim-aside on the right — both flanking
-     panels read as one material in rail and row layouts alike */
-  background: hsl(var(--sim-bg-raised));
 }
 
 /* The remaining vertical band hosts the centered 16:9 frame. Its background
@@ -355,10 +336,25 @@
     hsl(var(--sim-stage));
 }
 
-/* The rail-only menu showcase mirror — display:none unless the wide rail
-   layout is active (query below). */
+/* The story rail's content, inside the shared drawer: heading, note, and
+   the menu showcase filling the leftover height below them. */
+.sim-story {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100%;
+}
+
+/* The menu showcase mirror under the heading — the open fan, mirrored for
+   show. display-only as a whole; the dial band re-arms its own pointer
+   events so the ring can still be spun. */
 .sim-menu-showcase {
-  display: none;
+  display: block;
+  flex: 1 1 auto;
+  min-height: 14rem;
+  width: 100%;
+  pointer-events: none;
+  animation: sim-menu-in 200ms ease;
 }
 
 /* Empty state for a platform picked before any of its menu planets are
@@ -415,55 +411,6 @@
 
 .sim-menu-showcase[data-dragging] .sim-menu-band {
   cursor: grabbing;
-}
-
-/* Wide-short stage: a header row would spend scarce height while wide
-   side bands sit idle, so fold heading + note into a left rail. Breakpoint
-   is where (W − rail) still yields a taller 16:9 box than (H − header):
-   rail wins from aspect ≈ 2.4 up. The query cannot style .sim-stage itself
-   (containers don't match their own queries), so the two children go
-   absolute instead of flipping the stage's flex direction. Same flow
-   family either way — the cast is never covered. */
-@container (min-aspect-ratio: 12/5) {
-  .sim-stage-header {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: min(18rem, 30%);
-    /* same raised surface and edge as the .sim-aside on the right — the
-       two flanking panels read as one material */
-    background: hsl(var(--sim-bg-raised));
-    border-right: 1px solid hsl(var(--sim-border));
-    flex-direction: column;
-    flex-wrap: nowrap;
-    justify-content: flex-start; /* not the row's space-between: keep the
-                                    note beside the heading it describes */
-    gap: 1rem;
-    padding: 0.9rem 1rem 0.9rem 1.5rem;
-    overflow-y: auto;
-  }
-
-  .sim-canvas-area {
-    position: absolute;
-    inset: 0 0 0 min(18rem, 30%);
-  }
-
-  .sim-note {
-    max-width: none;
-  }
-
-  /* The menu showcase fills the rail's leftover space below the heading:
-     the open fan mirrored in place, display only. Row layout has no rail
-     to host it, so it exists only here. */
-  .sim-menu-showcase {
-    display: block;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    height: auto;
-    margin-top: 0.25rem;
-    pointer-events: none; /* showcase — the canvas fan answers clicks */
-    animation: sim-menu-in 200ms ease;
-  }
 }
 
 /* Exactly 16:9, sized by JS (useMeetBox): the SVG fills it edge to edge.
@@ -548,19 +495,84 @@
 }
 
 .sim-node-body {
-  fill: hsl(var(--sim-bg-raised));
-  stroke: hsl(var(--node-hue) / 0.55);
-  stroke-width: 2;
+  /* a world, not a button: its own hue mixed deep into the night ground —
+     the sphere's roundness comes from the sun-facing shade painted above */
+  fill: color-mix(in oklab, hsl(var(--node-hue)) 30%, hsl(var(--sim-bg-raised)));
+  stroke: hsl(var(--node-hue) / 0.5);
+  stroke-width: 1.5;
+}
+
+/* --- world-building paint: surface, rings, moon, night side -------------
+   Everything here is chrome on the body: transparent to the pointer, so
+   hover and click still land on the world beneath. */
+
+.sim-node-surface,
+.sim-node-night {
+  pointer-events: none;
+}
+
+/* the baked terrain fills the disk edge to edge; the shade and limb
+   overlays round it into a sphere */
+.sim-node-terrain {
+  image-rendering: auto;
+}
+
+/* the cloud deck drifts across its wider strip (106 wide vs the 88 disk,
+   so the shuttling never exposes an edge) */
+.sim-node-clouds {
+  animation: sim-cloud-drift var(--drift-dur, 50s) ease-in-out infinite alternate;
+}
+
+@keyframes sim-cloud-drift {
+  from { transform: translateX(0px); }
+  to { transform: translateX(-9px); }
+}
+
+/* the small moon and its squashed rail */
+.sim-moon {
+  fill: #c9d4e4;
+}
+
+/* the night side: shade and the settlements' warm lights */
+
+.sim-node-lights circle {
+  fill: #ffd98a;
+}
+
+/* atmosphere: the faintest haze hugging the limb — a whisper of gas, not
+   a glass bead's shine, so the world stays matte */
+.sim-node-atmo {
+  fill: none;
+  stroke: hsl(var(--node-hue) / 0.14);
+  stroke-width: 3;
+  filter: blur(2.5px);
+  pointer-events: none;
 }
 
 .sim-node-halo {
   fill: none;
+  /* the belt stays dark while a world sits idle — state rules light it
+     only when the body speaks or a signal runs through it */
+  opacity: 0;
   stroke: hsl(var(--node-hue) / 0.18);
   stroke-width: 2;
+  transition: opacity 0.3s ease;
+}
+
+.sim-node-glyph-disc {
+  fill: hsl(var(--sim-bg-raised) / 0.55);
+  stroke: hsl(var(--node-hue) / 0.35);
+  stroke-width: 1.2;
 }
 
 .sim-node-glyph {
   color: hsl(var(--node-hue));
+  opacity: 1;
+}
+
+g[data-clickable]:hover .sim-node-glyph,
+.sim-node[data-state="speaking"] .sim-node-glyph {
+  filter: drop-shadow(0 0 9px hsl(var(--node-hue) / 0.7));
 }
 
 .sim-node-glyph svg {
@@ -569,9 +581,21 @@
   height: 28px;
 }
 
+/* Observatory-chart plates: a hairline leader drops from each body to its
+   callout — designation + role in the console faces. Typography carries the
+   realism: the display face, letter-spaced caps, for the name; the mono
+   catalog line beneath. */
+.sim-node-tick {
+  stroke: hsl(var(--sim-text-dim) / 0.5);
+  stroke-width: 1;
+}
+
 .sim-node-name {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   fill: hsl(var(--sim-text));
   /* Labels float above whatever body is passing beneath, so they carry a
      backdrop halo — readable over a bright sun or a neighbor's disk. */
@@ -581,11 +605,30 @@
 }
 
 .sim-node-role {
-  font-size: 14px;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
   fill: hsl(var(--sim-text-dim));
   paint-order: stroke;
   stroke: hsl(var(--sim-bg-raised) / 0.75);
   stroke-width: 2.5;
+}
+
+/* The census line: how many menu planets this body carries, in its own
+   hue — the at-a-glance answer to "which world is busiest". */
+.sim-node-count {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  fill: hsl(var(--node-hue) / 0.85);
+  paint-order: stroke;
+  stroke: hsl(var(--sim-bg-raised) / 0.75);
+  stroke-width: 2.5;
+}
+
+/* The chart reads the room: the speaking body's name lights in its own hue. */
+.sim-node[data-state="speaking"] .sim-node-name {
+  fill: hsl(var(--node-hue));
 }
 
 /* The label layer is pure chrome: never catches the pointer — clicks fall
@@ -609,12 +652,24 @@ g[data-clickable] {
   cursor: pointer;
 }
 
-g[data-clickable]:hover .sim-node-halo {
-  stroke: hsl(var(--node-hue) / 0.5);
+/* The node's own default must not bury the parent's pointer: every
+   clickable body — the sun included — reads as clickable on hover. */
+g[data-clickable] .sim-node {
+  cursor: pointer;
 }
 
 g[data-clickable]:hover .sim-node-body {
   stroke: hsl(var(--node-hue));
+}
+
+/* The sun's glow, bloom and prominences are decoration: transparent to
+   the pointer, so a hover near the star lands on the star's body
+   itself — not on its light (whose painted radius would light the
+   sun's hover chips from a hundred pixels away). */
+.sim-sun-glow,
+.sim-sun-bloom,
+.sim-sun-proms {
+  pointer-events: none;
 }
 
 /* The menu fan exists only while open, so each ring plays a short mount
@@ -789,6 +844,7 @@ g[data-clickable]:hover .sim-node-body {
 }
 
 .sim-node[data-state="speaking"] .sim-node-halo {
+  opacity: 1;
   stroke: hsl(var(--node-hue) / 0.85);
   animation: sim-pulse 1.6s ease-in-out infinite;
 }
@@ -797,15 +853,12 @@ g[data-clickable]:hover .sim-node-body {
   stroke: hsl(var(--node-hue));
 }
 
-.sim-node[data-state="listening"] .sim-node-halo {
-  stroke: hsl(var(--node-hue) / 0.45);
-}
-
 .sim-node[data-state="listening"] {
   opacity: 0.85;
 }
 
 .sim-node[data-state="processing"] .sim-node-halo {
+  opacity: 1;
   stroke: hsl(var(--sim-accent) / 0.6);
 }
 
@@ -825,6 +878,7 @@ g[data-clickable]:hover .sim-node-body {
 }
 
 .sim-node[data-state="success"] .sim-node-halo {
+  opacity: 1;
   stroke: hsl(var(--sim-good) / 0.7);
   stroke-width: 4;
 }
@@ -834,6 +888,7 @@ g[data-clickable]:hover .sim-node-body {
 }
 
 .sim-node[data-state="failure"] .sim-node-halo {
+  opacity: 1;
   stroke: hsl(var(--sim-bad) / 0.7);
   stroke-width: 4;
 }
@@ -844,6 +899,7 @@ g[data-clickable]:hover .sim-node-body {
 }
 
 .sim-node[data-state="timeout-retry"] .sim-node-halo {
+  opacity: 1;
   stroke: hsl(var(--sim-timeout) / 0.7);
   stroke-width: 4;
 }
@@ -876,11 +932,15 @@ g[data-clickable]:hover .sim-node-body {
 }
 
 /* names of our real neighbors — every one named, however small its disk;
-   the label holds still while the disk behind it slowly turns */
+   the label holds still while the disk behind it slowly turns. Set like a
+   survey catalog: mono caps, gently dimmed, never competing with the cast. */
 .sim-galaxy-name {
-  fill: #cdd9f0;
-  font-size: 11px;
-  opacity: 0.82;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  fill: #b9c8e6;
+  opacity: 0.62;
 }
 
 .sim-galaxy-spin {
@@ -964,6 +1024,23 @@ g[data-clickable]:hover .sim-node-body {
   opacity: var(--star-alpha, 0.4);
 }
 
+/* real stars span colors — warm giants, hot blues, the rest cool white */
+.sim-star[data-tint="warm"] {
+  fill: #ffe2b8;
+}
+
+.sim-star[data-tint="blue"] {
+  fill: #cfe2ff;
+}
+
+/* diffraction cross on the brightest points — astrophoto realism */
+.sim-star-spike {
+  fill: none;
+  stroke: #dfe9ff;
+  stroke-width: 0.5;
+  opacity: 0.55;
+}
+
 .sim-star[data-twinkle] {
   animation: sim-twinkle var(--tw-dur, 3.5s) ease-in-out var(--tw-delay, 0s) infinite;
 }
@@ -980,16 +1057,6 @@ g[data-clickable]:hover .sim-node-body {
 
 /* On the light theme the sky is a pale panel — sink the backdrop hard so
    rings and nodes stay legible. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .sim-galaxies {
-    opacity: 0.4;
-  }
-
-  :root:not([data-theme="dark"]) .sim-menu-showcase-sky {
-    opacity: 0.45;
-  }
-}
-
 :root[data-theme="light"] .sim-galaxies {
   opacity: 0.4;
 }
@@ -1024,25 +1091,34 @@ g[data-clickable]:hover .sim-node-body {
   animation: sim-sun-breathe 5.5s ease-in-out infinite;
 }
 
-/* flare streaks hold their bearing — a star doesn't wheel them around like
-   a pinwheel; each streak only shimmers */
-.sim-sun-rays {
+/* the wide haze far beyond the limb; breathes against the glow */
+.sim-sun-bloom {
   stroke: none;
+  animation: sim-sun-breathe 7.5s ease-in-out infinite reverse;
 }
 
-.sim-sun-ray {
-  opacity: 0.7;
-  animation: sim-sun-ray-flick var(--flick, 5s) ease-in-out var(--fdelay, 0s) infinite;
+/* the baked photosphere IS the surface — it carries the white-hot core
+   and the burnt lanes itself; the fill gradient under it is only edge
+   insurance for the half-pixel at the limb */
+.sim-sun-photosphere {
+  opacity: 1;
 }
 
-@keyframes sim-sun-ray-flick {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.95;
-  }
+/* thin bright chromosphere right at the limb */
+.sim-sun-rim {
+  fill: none;
+  stroke: #ffd97a;
+  stroke-width: 2.4;
+  filter: blur(2.2px);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* plasma blooms half-spilled past the limb */
+.sim-sun-proms circle {
+  fill: #ff9a3d;
+  filter: blur(3px);
+  opacity: 0.55;
 }
 
 /* The photosphere turns like a real sphere — front to back, not around
@@ -1203,19 +1279,28 @@ g[data-clickable]:hover .sim-node-body {
 .sim-strip-block {
   position: relative;
   min-width: 1.2rem;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
   font-size: 0.68rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
   color: hsl(var(--sim-text-dim));
-  background: hsl(var(--sim-panel));
+  background: hsl(var(--sim-panel) / 0.7);
   border: 1px solid hsl(var(--sim-border));
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   overflow: hidden;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 160ms ease;
 }
 
 .sim-strip-block:hover {
-  color: hsl(var(--sim-text));
+  color: hsl(var(--sim-accent));
+  background: hsl(var(--sim-accent) / 0.08);
   border-color: hsl(var(--sim-accent) / 0.6);
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.18);
 }
 
 .sim-strip-playhead {
@@ -1225,6 +1310,7 @@ g[data-clickable]:hover .sim-node-body {
   height: 1.7rem;
   background: hsl(var(--sim-accent));
   border-radius: 1px;
+  box-shadow: 0 0 9px hsl(var(--sim-accent) / 0.9);
   pointer-events: none;
 }
 
@@ -1244,17 +1330,24 @@ g[data-clickable]:hover .sim-node-body {
 .sim-chip {
   min-width: 1.75rem;
   height: 1.75rem;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
   font-size: 0.75rem;
   font-weight: 600;
   color: hsl(var(--sim-text-dim));
-  background: hsl(var(--sim-panel));
+  background: hsl(var(--sim-panel) / 0.7);
   border: 1px solid hsl(var(--sim-border));
-  border-radius: 0.4rem;
+  border-radius: 0.25rem;
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 160ms ease;
 }
 
 .sim-chip:hover {
-  color: hsl(var(--sim-text));
+  color: hsl(var(--sim-accent));
+  background: hsl(var(--sim-accent) / 0.08);
   border-color: hsl(var(--sim-accent) / 0.6);
 }
 
@@ -1262,6 +1355,7 @@ g[data-clickable]:hover .sim-node-body {
   color: hsl(222 34% 6%);
   background: hsl(var(--sim-accent));
   border-color: hsl(var(--sim-accent));
+  box-shadow: 0 0 12px hsl(var(--sim-accent) / 0.55);
 }
 
 .sim-btn-small {
@@ -1279,13 +1373,65 @@ g[data-clickable]:hover .sim-node-body {
 
 /* ---- transport ---- */
 
+/* A floating bottom console, mission-control style: the sky owns the screen
+   and the bar slides in only when the pointer comes down to the window's
+   bottom band (or focus enters it — see TransportBar). A thin accent rule
+   crowns the console with a light pulse forever sweeping along it. Sits
+   under the zoom overlay (57) on purpose: during full-display zoom the bar
+   stays out of the way, and under the drawers (90) the same way. */
 .sim-transport {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 50;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.6rem 1.25rem 0.75rem;
-  background: hsl(var(--sim-bg-raised));
-  border-top: 1px solid hsl(var(--sim-border));
+  gap: 0.45rem;
+  padding: 0.75rem 1.25rem 0.85rem;
+  background: linear-gradient(180deg, hsl(222 30% 7% / 0.86), hsl(224 34% 4% / 0.96));
+  backdrop-filter: blur(10px);
+  border-top: 1px solid hsl(var(--sim-accent) / 0.28);
+  box-shadow: 0 -18px 44px hsl(222 60% 2% / 0.7);
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1),
+    opacity 240ms ease;
+}
+
+/* the crown: accent rule fading at both ends */
+.sim-transport::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.65) 10%, hsl(var(--sim-accent) / 0.65) 90%, transparent);
+  pointer-events: none;
+}
+
+/* a probe of light sweeping the crown forever */
+.sim-transport::after {
+  animation: sim-transport-scan 7s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  content: "";
+  height: 1px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: -1px;
+  width: 180px;
+}
+@keyframes sim-transport-scan {
+  from { transform: translateX(-200px); }
+  to { transform: translateX(calc(100vw + 40px)); }
+}
+
+.sim-transport[data-revealed] {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sim-scrubber {
@@ -1294,23 +1440,87 @@ g[data-clickable]:hover .sim-node-body {
   gap: 0.75rem;
 }
 
+/* mission clock: mono, glowing — the running head */
 .sim-clock {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 0.82rem;
-  color: hsl(var(--sim-text));
-  min-width: 3.2rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: hsl(var(--sim-accent));
+  text-shadow: 0 0 12px hsl(var(--sim-accent) / 0.4);
+  min-width: 3.6rem;
+}
+
+.sim-clock::before {
+  content: "T+";
+  margin-right: 2px;
+  opacity: 0.55;
 }
 
 .sim-clock-total {
   color: hsl(var(--sim-text-dim));
   text-align: right;
+  text-shadow: none;
 }
 
+.sim-clock-total::before {
+  content: "Σ";
+  margin-right: 2px;
+  opacity: 0.45;
+}
+
+/* the scrubber rail: elapsed fill painted from --progress (set per frame
+   by the Scrubber), needle thumb, quiet track */
 .sim-range {
   flex: 1;
-  accent-color: hsl(var(--sim-accent));
+  appearance: none;
+  -webkit-appearance: none;
   height: 1.25rem;
   cursor: pointer;
+  background: transparent;
+}
+
+.sim-range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--sim-accent)) var(--progress, 0%),
+    hsl(var(--sim-border)) var(--progress, 0%)
+  );
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.2);
+}
+
+.sim-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 6px;
+  height: 17px;
+  margin-top: -7px;
+  border-radius: 3px;
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 12px hsl(var(--sim-accent) / 0.85);
+}
+
+.sim-range::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--sim-border));
+}
+
+.sim-range::-moz-range-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.3);
+}
+
+.sim-range::-moz-range-thumb {
+  width: 6px;
+  height: 17px;
+  border: none;
+  border-radius: 3px;
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 12px hsl(var(--sim-accent) / 0.85);
 }
 
 .sim-transport-row {
@@ -1326,6 +1536,7 @@ g[data-clickable]:hover .sim-node-body {
   gap: 0.5rem;
 }
 
+/* shield plates: sharp corners, accent edges that ignite on hover */
 .sim-btn {
   display: inline-flex;
   align-items: center;
@@ -1333,18 +1544,24 @@ g[data-clickable]:hover .sim-node-body {
   width: 2.75rem;
   height: 2.75rem;
   color: hsl(var(--sim-text));
-  background: hsl(var(--sim-panel));
+  background: hsl(var(--sim-panel) / 0.6);
   border: 1px solid hsl(var(--sim-border));
-  border-radius: 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition:
     background-color 120ms ease,
-    border-color 120ms ease;
+    border-color 120ms ease,
+    box-shadow 160ms ease,
+    color 120ms ease;
 }
 
 .sim-btn:hover {
-  background: hsl(var(--sim-accent) / 0.12);
-  border-color: hsl(var(--sim-accent) / 0.5);
+  color: hsl(var(--sim-accent));
+  background: hsl(var(--sim-accent) / 0.1);
+  border-color: hsl(var(--sim-accent) / 0.55);
+  box-shadow:
+    0 0 14px hsl(var(--sim-accent) / 0.2),
+    inset 0 0 10px hsl(var(--sim-accent) / 0.08);
 }
 
 .sim-btn:focus-visible {
@@ -1356,10 +1573,14 @@ g[data-clickable]:hover .sim-node-body {
   color: hsl(222 34% 6%);
   background: hsl(var(--sim-accent));
   border-color: hsl(var(--sim-accent));
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.4);
 }
 
 .sim-btn-primary:hover {
-  background: hsl(var(--sim-accent) / 0.85);
+  color: hsl(222 34% 6%);
+  background: hsl(var(--sim-accent));
+  border-color: hsl(var(--sim-accent));
+  box-shadow: 0 0 26px hsl(var(--sim-accent) / 0.65);
 }
 
 /* Narration toggle on the transport: lit while on, dimmed while off, and
@@ -1376,26 +1597,38 @@ g[data-clickable]:hover .sim-node-body {
   opacity: 0.55;
 }
 
+/* rate selector: a labeled console control, mono uppercase */
 .sim-speed {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
+  gap: 0.55rem;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
   color: hsl(var(--sim-text-dim));
+  text-transform: uppercase;
 }
 
 .sim-speed select {
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.55rem;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
   font-size: 0.85rem;
+  letter-spacing: 0.08em;
   color: hsl(var(--sim-text));
-  background: hsl(var(--sim-panel));
+  background: hsl(var(--sim-panel) / 0.7);
   border: 1px solid hsl(var(--sim-border));
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.sim-speed select:hover {
+  border-color: hsl(var(--sim-accent) / 0.55);
 }
 
 /* ---- main row: stage + inspector ---- */
 
 .sim-main {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -1403,13 +1636,9 @@ g[data-clickable]:hover .sim-node-body {
 
 /* ---- inspector ---- */
 
+/* The deck's content layout inside the shared drawer — SimDrawer owns the
+   shell (width, scroll, surface, slide-in); this is only the stack. */
 .sim-aside {
-  flex: none;
-  width: 21rem;
-  overflow-y: auto;
-  padding: 0.9rem 1rem 1.5rem;
-  background: hsl(var(--sim-bg-raised));
-  border-left: 1px solid hsl(var(--sim-border));
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -2138,29 +2367,571 @@ g[data-clickable]:hover .sim-node-body {
   border-radius: 0.3rem;
 }
 
-/* ---- drawer (panel deck below 1024 px) ---- */
+/* ---- connected repositories (Config panel) ---- */
 
-.sim-drawer-btn {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 55;
-  display: none;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: hsl(222 34% 6%);
-  background: hsl(var(--sim-accent));
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px hsl(var(--sim-bg) / 0.5);
+/* One card per attached local folder: the planet's hue names it, the
+   counts and top languages describe it. Read-only summary — the walk
+   never leaves the laptop. */
+.sim-repo {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  background: hsl(var(--sim-panel) / 0.6);
+  border: 1px solid hsl(var(--sim-border) / 0.7);
+  border-left: 3px solid hsl(var(--node-hue) / 0.75);
+  border-radius: 0.45rem;
 }
 
+.sim-repo-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.sim-repo-dot {
+  flex: none;
+  align-self: center;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: hsl(var(--node-hue));
+  box-shadow: 0 0 6px hsl(var(--node-hue) / 0.7);
+}
+
+.sim-repo-name {
+  font-size: 0.82rem;
+  color: hsl(var(--sim-text));
+  overflow-wrap: anywhere;
+}
+
+.sim-repo-meta {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-repo-langs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.sim-repo-lang {
+  display: grid;
+  grid-template-columns: 5.4rem 1fr 2.6rem;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.7rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-repo-lang-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sim-repo-lang-bar {
+  height: 0.32rem;
+  background: hsl(var(--sim-border) / 0.5);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.sim-repo-lang-fill {
+  display: block;
+  height: 100%;
+  background: hsl(var(--node-hue) / 0.85);
+  border-radius: 999px;
+}
+
+.sim-repo-lang-pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the one drawer (SimDrawer: repo picker, run-panel deck, …) ---- */
+
+/* Slides in from the right edge over a dimming backdrop. One shell for
+   every sheet in the app: callers set --sim-drawer-w and may pass a node
+   hue to tint the accent border. */
+.sim-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  background: hsl(var(--sim-bg) / 0.55);
+  animation: sim-drawer-fade 180ms ease;
+}
+
+.sim-drawer {
+  /* The scaffold's global `aside { flex: 0 0 240px; width: 240px }` rule
+     would size this flex item — flex-basis beats width, so the drawer sat
+     at 240px no matter what. flex: none returns sizing to our width. */
+  flex: none;
+  width: var(--sim-drawer-w, min(24rem, 92vw));
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.1rem 1.2rem 1.4rem;
+  background: hsl(var(--sim-bg-raised));
+  border-left: 3px solid hsl(var(--node-hue, var(--sim-accent)) / 0.85);
+  box-shadow: -18px 0 40px hsl(var(--sim-bg) / 0.6);
+  animation: sim-drawer-in 240ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.sim-repo-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.8rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid hsl(var(--sim-border));
+}
+
+.sim-repo-drawer-title {
+  min-width: 0;
+}
+
+.sim-repo-drawer-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: hsl(var(--sim-text));
+}
+
+.sim-repo-drawer-title p {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-repo-drawer-close {
+  margin-left: auto;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.sim-repo-drawer-close:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--node-hue));
+}
+
+.sim-repo-drawer-section {
+  margin-bottom: 1.1rem;
+}
+
+.sim-repo-drawer-section h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--node-hue));
+}
+
+.sim-repo-drawer-hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-drawer .sim-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sim-drawer .sim-report-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sim-repo-disconnect {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: hsl(var(--sim-bad));
+  background: transparent;
+  border: 1px solid hsl(var(--sim-bad) / 0.45);
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.sim-repo-disconnect:hover {
+  background: hsl(var(--sim-bad) / 0.12);
+  border-color: hsl(var(--sim-bad));
+}
+
+@keyframes sim-drawer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sim-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-drawer-overlay,
+  .sim-drawer,
+  .sim-rail-flyout,
+  .sim-menu-showcase {
+    animation: none;
+  }
+
+  .sim-rail::after {
+    animation: none;
+  }
+
+  .sim-transport {
+    transition: none;
+  }
+}
+
+/* ---- command rail (the sci-fi display toggles, left edge) ----
+   The rail reads as one instrument spine: a tick ruler along the inner
+   edge, a pulsing head node up top, and shield plates for buttons — each
+   nav plate carries a mono micro-label under its icon. */
+
+.sim-rail {
+  position: relative; /* anchors the spine pseudo-elements */
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 3.4rem;
+  padding: 0.8rem 0.45rem;
+  background: hsl(var(--sim-bg-raised));
+  border-right: 1px solid hsl(var(--sim-border));
+  /* The scaffold's global `nav` rule scrolls its sidebar — here it would
+     clip the flyouts, which must hang outside the rail's box. */
+  overflow: visible;
+}
+
+/* Tick ruler hugging the content-facing edge. */
+.sim-rail::before {
+  background: repeating-linear-gradient(
+    180deg,
+    hsl(var(--sim-accent) / 0.4) 0 2px,
+    transparent 2px 16px
+  );
+  content: "";
+  inset: 14px 0 14px auto;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.sim-rail-right::before {
+  inset: 14px auto 14px 0;
+}
+
+/* The rail's head node: a small pulsing diamond at the top. */
+.sim-rail::after {
+  animation: sim-rail-node 2.4s ease-in-out infinite;
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.7);
+  content: "";
+  height: 6px;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  right: auto;
+  top: 9px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 6px;
+}
+
+@keyframes sim-rail-node {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.sim-rail-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+/* Shield plates: the 1px edge is a ring painted by ::before (masked —
+   it must never flood the face behind it, and a mask on the button itself
+   would erase the icon inside), the face paints its own surface. Two
+   opposite corners are cut deep (9px), the classic FUI shield read. */
+.sim-rail-btn {
+  display: block;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  background: none;
+  position: relative;
+  clip-path: polygon(
+    9px 0,
+    100% 0,
+    100% calc(100% - 9px),
+    calc(100% - 9px) 100%,
+    0 100%,
+    0 9px
+  );
+  transition: filter 140ms ease;
+}
+
+.sim-rail-btn::before {
+  background: linear-gradient(
+    160deg,
+    hsl(var(--sim-accent) / 0.75),
+    hsl(var(--sim-accent) / 0.2) 55%,
+    hsl(var(--sim-accent) / 0.5)
+  );
+  clip-path: inherit;
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.sim-rail-btn-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 2.4rem;
+  height: 2.75rem;
+  color: hsl(var(--sim-text) / 0.72);
+  background: linear-gradient(
+    180deg,
+    hsl(var(--sim-panel) / 0.92),
+    hsl(var(--sim-panel) / 0.62)
+  );
+  clip-path: inherit;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+/* The micro-label under a nav plate's icon. */
+.sim-rail-btn-tag {
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 6.5px;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em; /* re-center: the tracking pads the right side */
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.sim-rail-btn:hover {
+  filter: drop-shadow(0 0 7px hsl(var(--sim-accent) / 0.45));
+}
+
+.sim-rail-btn:hover .sim-rail-btn-face {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-accent) / 0.12);
+}
+
+.sim-rail-btn:hover .sim-rail-btn-tag {
+  opacity: 1;
+}
+
+/* Lit while its panel is open (or zoom active): solid glowing ring,
+   accent face — the icon stays dark-field and readable. */
+.sim-rail-btn-on::before,
+.sim-rail-btn-on:hover::before,
+.sim-rail-btn:focus-visible::before {
+  background: hsl(var(--sim-accent));
+}
+
+.sim-rail-btn-on,
+.sim-rail-btn-on:hover,
+.sim-rail-btn:focus-visible {
+  filter: drop-shadow(0 0 9px hsl(var(--sim-accent) / 0.55));
+}
+
+.sim-rail-btn-on .sim-rail-btn-face,
+.sim-rail-btn-on:hover .sim-rail-btn-face,
+.sim-rail-btn:focus-visible .sim-rail-btn-face {
+  color: hsl(var(--sim-accent));
+  background: hsl(var(--sim-accent) / 0.16);
+  filter: drop-shadow(0 0 6px hsl(var(--sim-accent) / 0.5));
+}
+
+.sim-rail-btn-on .sim-rail-btn-tag,
+.sim-rail-btn:focus-visible .sim-rail-btn-tag {
+  opacity: 1;
+}
+
+/* ---- status rail (right edge: mode / broadcast / account + legend) ---- */
+
+.sim-rail-right {
+  border-right: none;
+  border-left: 1px solid hsl(var(--sim-border));
+}
+
+.sim-rail-slot {
+  position: relative; /* anchors its flyout */
+}
+
+/* The flyout is a little HUD console: chamfered shell, glowing ring edge
+   (the mask trick), scanline whisper on the face. Box-shadow can't cross
+   a clip-path, so the drop-shadow rides a filter. */
+.sim-rail-flyout {
+  position: absolute;
+  right: calc(100% + 0.6rem);
+  top: 0;
+  z-index: 60;
+  width: 15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+  background: hsl(var(--sim-bg-raised) / 0.96);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
+  filter: drop-shadow(0 12px 26px hsl(var(--sim-bg) / 0.6));
+  animation: sim-flyout-in 180ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.sim-rail-flyout::before {
+  background: linear-gradient(
+    150deg,
+    hsl(var(--sim-accent) / 0.8),
+    hsl(var(--sim-accent) / 0.2) 45%,
+    hsl(var(--sim-accent) / 0.55) 90%
+  );
+  clip-path: inherit;
+  content: "";
+  inset: 0;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.sim-rail-flyout::after {
+  background: repeating-linear-gradient(
+    0deg,
+    hsl(var(--sim-text) / 0.03) 0 1px,
+    transparent 1px 4px
+  );
+  clip-path: inherit;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes sim-flyout-in {
+  from {
+    transform: translateX(8px);
+    opacity: 0;
+  }
+}
+
+.sim-rail-flyout-title {
+  align-items: center;
+  display: flex;
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 0.62rem;
+  gap: 8px;
+  letter-spacing: 0.3em;
+  margin: 0;
+  text-transform: uppercase;
+  color: hsl(var(--sim-accent));
+  text-shadow: 0 0 10px hsl(var(--sim-accent) / 0.45);
+}
+
+.sim-rail-flyout-title::before {
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.5);
+  clip-path: polygon(2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%, 0 2px);
+  content: "";
+  flex-shrink: 0;
+  height: 7px;
+  width: 7px;
+}
+
+.sim-rail-flyout-title::after {
+  background: linear-gradient(90deg, hsl(var(--sim-accent) / 0.4), transparent);
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+.sim-rail-flyout-note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: hsl(var(--sim-text-dim));
+}
+
+/* The broadcast control was a top-bar row; in the flyout it stacks. */
+.sim-rail-flyout .sim-broadcast {
+  flex-wrap: wrap;
+}
+
+.sim-rail-flyout .sim-broadcast-status {
+  white-space: normal;
+}
+
+@media (max-width: 640px) {
+  .sim-rail {
+    width: 2.9rem;
+    padding: 0.6rem 0.25rem;
+  }
+
+  .sim-rail-btn-face {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+}
+
+/* ---- deck header inside the shared drawer ---- */
+
 .sim-drawer-close {
-  display: none;
+  display: inline-flex;
   flex: none;
   width: 1.75rem;
   height: 1.75rem;
@@ -2177,14 +2948,14 @@ g[data-clickable]:hover .sim-node-body {
   display: flex;
   align-items: flex-start;
   gap: 0.4rem;
-  /* pinned header: stays at the top of the scrolling panel. Full-bleed
-     over the aside's padding, with deep bottom padding that also covers
+  /* pinned header: stays at the top of the scrolling drawer. Full-bleed
+     over the drawer's padding, with deep bottom padding that also covers
      the flex gap, so nothing peeks through while content slides under. */
   position: sticky;
   top: 0;
   z-index: 3;
-  margin: -0.9rem -1rem -1.1rem;
-  padding: 0.9rem 1rem 1.6rem;
+  margin: -1.1rem -1.2rem -1.4rem;
+  padding: 1.1rem 1.2rem 1.6rem;
   background: hsl(var(--sim-bg-raised));
 }
 
@@ -2193,8 +2964,8 @@ g[data-clickable]:hover .sim-node-body {
   position: sticky;
   top: 4.1rem; /* tucked under the tabs — overlap, never a see-through gap */
   z-index: 2;
-  margin: 0 -1rem;
-  padding: 0.35rem 1rem 0.55rem;
+  margin: 0 -1.2rem;
+  padding: 0.35rem 1.2rem 0.55rem;
   background: hsl(var(--sim-bg-raised));
 }
 
@@ -2204,49 +2975,23 @@ g[data-clickable]:hover .sim-node-body {
 
 /* ---- responsive ---- */
 
-@media (max-width: 1024px) {
-  .sim-drawer-btn {
-    display: flex;
-  }
-
-  .sim-drawer-close {
-    display: inline-flex;
-  }
-
-  .sim-aside {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 56;
-    width: min(21rem, 92vw);
-    transform: translateX(105%);
-    transition: transform 220ms ease;
-    box-shadow: -8px 0 24px hsl(var(--sim-bg) / 0.45);
-  }
-
-  .sim-aside-open {
-    transform: none;
-  }
-}
-
 @media (max-width: 768px) {
   .sim-scene-title {
     font-size: 1.05rem;
   }
 
-  /* On a phone the header would wrap and eat canvas height — drop the chip;
-    the canvas and its speech bubbles carry the beat. */
+  /* On a phone the narrow drawer reads better without the chip — the
+    scene heading and the canvas carry the beat. */
   .sim-note {
     display: none;
   }
 
   .sim-node-name {
-    font-size: 17px;
+    font-size: 13px;
   }
 
   .sim-node-role {
-    font-size: 12px;
+    font-size: 9px;
   }
 }
 
@@ -2256,7 +3001,7 @@ g[data-clickable]:hover .sim-node-body {
   .sim-node[data-state="speaking"] .sim-node-halo,
   .sim-node-sweep,
   .sim-sun-glow,
-  .sim-sun-ray,
+  .sim-sun-bloom,
   .sim-sun-granule,
   .sim-sun-spot,
   .sim-galaxy-spin,
@@ -2264,7 +3009,9 @@ g[data-clickable]:hover .sim-node-body {
   .sim-comet,
   .sim-comet-swing,
   .sim-live-pulse,
-  .sim-planet-menu {
+  .sim-node-clouds,
+  .sim-planet-menu,
+  .sim-transport::after {
     animation: none;
   }
 
@@ -2293,7 +3040,7 @@ g[data-clickable]:hover .sim-node-body {
 html[data-motion="reduce"] .sim-node[data-state="speaking"] .sim-node-halo,
 html[data-motion="reduce"] .sim-node-sweep,
 html[data-motion="reduce"] .sim-sun-glow,
-html[data-motion="reduce"] .sim-sun-ray,
+html[data-motion="reduce"] .sim-sun-bloom,
 html[data-motion="reduce"] .sim-sun-granule,
 html[data-motion="reduce"] .sim-sun-spot,
 html[data-motion="reduce"] .sim-galaxy-spin,
@@ -2301,7 +3048,9 @@ html[data-motion="reduce"] .sim-star[data-twinkle],
 html[data-motion="reduce"] .sim-comet,
 html[data-motion="reduce"] .sim-comet-swing,
 html[data-motion="reduce"] .sim-live-pulse,
-html[data-motion="reduce"] .sim-planet-menu {
+html[data-motion="reduce"] .sim-node-clouds,
+html[data-motion="reduce"] .sim-planet-menu,
+html[data-motion="reduce"] .sim-transport::after {
   animation: none;
 }
 
@@ -2321,10 +3070,6 @@ html[data-motion="reduce"] .sim-node-speech {
   transition: none;
 }
 
-html[data-motion="reduce"] .sim-aside {
-  transition: none;
-}
-
 html[data-motion="full"] .sim-node[data-state="speaking"] .sim-node-halo {
   animation: sim-pulse 1.6s ease-in-out infinite;
 }
@@ -2333,17 +3078,18 @@ html[data-motion="full"] .sim-node-sweep {
   animation: sim-sweep 1.4s linear infinite;
 }
 
-html[data-motion="full"] .sim-sun-ray {
-  animation: sim-sun-ray-flick var(--flick, 5s) ease-in-out var(--fdelay, 0s) infinite;
-}
-
 html[data-motion="full"] .sim-sun-granule,
 html[data-motion="full"] .sim-sun-spot {
   animation: sim-sun-drift var(--drift, 4.5s) linear var(--delay, 0s) infinite;
 }
 
-html[data-motion="full"] .sim-sun-glow {
+html[data-motion="full"] .sim-sun-glow,
+html[data-motion="full"] .sim-sun-bloom {
   animation: sim-sun-breathe 5.5s ease-in-out infinite;
+}
+
+html[data-motion="full"] .sim-transport::after {
+  animation: sim-transport-scan 7s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 html[data-motion="full"] .sim-galaxy-spin {
@@ -2364,4 +3110,362 @@ html[data-motion="full"] .sim-comet-swing {
 
 html[data-motion="full"] .sim-node[data-dimmed] {
   transition: opacity 600ms ease;
+}
+
+/* ---- planet menu modal — a click on any body opens its menu tree in a
+        panel instead of fanning rings over the sky. Same mini-planet
+        design as the old fan (the .sim-menu-node-* classes above), same
+        --node-hue rule, HUD chrome like the drawers. ---- */
+
+.sim-menu-modal {
+  position: fixed;
+  inset: 0;
+  /* above the story rail / panel deck drawers (z 90) it can open over */
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.sim-menu-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: hsl(var(--sim-bg) / 0.62);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  animation: sim-menu-modal-fade 180ms ease;
+}
+
+.sim-menu-modal-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(46rem, 94vw);
+  max-height: min(82vh, 44rem);
+  padding: 1rem 1.4rem 1.2rem;
+  background: hsl(var(--sim-bg-raised));
+  border: 1px solid hsl(var(--node-hue) / 0.4);
+  border-top: 3px solid hsl(var(--node-hue) / 0.85);
+  border-radius: 0.6rem;
+  box-shadow: 0 24px 70px hsl(var(--sim-bg) / 0.75);
+  outline: none;
+  animation: sim-menu-modal-in 240ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.sim-menu-modal-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid hsl(var(--sim-border));
+}
+
+.sim-menu-modal-planet {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  overflow: visible;
+}
+
+.sim-menu-modal-title {
+  min-width: 0;
+}
+
+.sim-menu-modal-title h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: hsl(var(--sim-text));
+}
+
+.sim-menu-modal-title p {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-menu-modal-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.sim-menu-modal-close:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--node-hue));
+}
+
+/* The level's play action: the trail hands to the showcase, the panel
+   closes and the show starts — tinted with this level's own hue. */
+.sim-menu-modal-play {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: hsl(var(--node-hue));
+  background: hsl(var(--node-hue) / 0.12);
+  border: 1px solid hsl(var(--node-hue) / 0.5);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.sim-menu-modal-play:hover {
+  background: hsl(var(--node-hue) / 0.22);
+  border-color: hsl(var(--node-hue));
+}
+
+/* No folder, no show — the play action waits for this level's
+   repository, dimmed until the walk lands. */
+.sim-menu-modal-play:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.sim-menu-modal-play:disabled:hover {
+  background: hsl(var(--node-hue) / 0.12);
+  border-color: hsl(var(--node-hue) / 0.5);
+}
+
+/* The walked trail: Planet › Branch › Sub — every earlier step clicks
+   back up to its level. flex:none: when the repo console pushes the
+   panel over its max-height, the grid (flex:1) absorbs the squeeze —
+   this row never lets itself be crushed into a sliver. */
+.sim-menu-modal-crumbs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.55rem 0 0;
+  font-size: 0.74rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-menu-modal-crumbs button {
+  padding: 0.1rem 0.45rem;
+  color: hsl(var(--sim-text-dim));
+  background: hsl(var(--node-hue) / 0.07);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.sim-menu-modal-crumbs button:hover {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--node-hue) / 0.6);
+}
+
+.sim-menu-modal-crumb-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sim-menu-modal-crumb-step[aria-current],
+.sim-menu-modal-crumbs [aria-current] {
+  padding: 0.1rem 0.45rem;
+  color: hsl(var(--node-hue));
+  background: hsl(var(--node-hue) / 0.1);
+  border: 1px solid hsl(var(--node-hue) / 0.45);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* The menu planets themselves: the fan's bodies, regrouped as a grid.
+   Scrolls inside the panel when a crowded submenu overflows it. */
+.sim-menu-modal-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem 0.2rem 0.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.7rem 0.5rem;
+  align-content: start;
+}
+
+.sim-menu-modal-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.35rem 0.55rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.sim-menu-modal-item:hover {
+  border-color: hsl(var(--node-hue) / 0.4);
+  background: hsl(var(--node-hue) / 0.06);
+}
+
+.sim-menu-modal-item:focus-visible {
+  outline: 2px solid hsl(var(--node-hue) / 0.8);
+  outline-offset: 2px;
+}
+
+.sim-menu-modal-item svg {
+  width: 70px;
+  height: 70px;
+  overflow: visible;
+}
+
+.sim-menu-modal-item-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  color: hsl(var(--sim-text));
+}
+
+/* the item's census: how many sub-menus this menu carries */
+.sim-menu-modal-item-count {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: hsl(var(--node-hue) / 0.9);
+}
+
+.sim-menu-modal-empty {
+  margin: 0;
+  padding: 1.6rem 0 0.4rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: hsl(var(--sim-text-dim));
+}
+
+/* The planet-level repository section: the same add/connect console the
+   configure drawer carries, docked under the menu grid. The grid keeps
+   the scroll; this section stays fixed at the panel's foot. */
+.sim-menu-modal-repo {
+  flex: none;
+  margin-top: 0.7rem;
+  padding: 0.85rem 0.2rem 0.2rem;
+  border-top: 1px solid hsl(var(--sim-border));
+}
+
+.sim-menu-modal-repo h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--node-hue));
+}
+
+.sim-menu-modal-repo .sim-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sim-menu-modal-repo .sim-report-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Leaf consoles (nothing nested beneath) lay folder and loose files
+   side by side — folder left, files right, an "or" fork between. */
+.sim-menu-modal-repo-cols {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0 1.1rem;
+}
+
+.sim-menu-modal-repo-or {
+  align-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--sim-text-dim));
+}
+
+.sim-menu-modal-repo-or::before,
+.sim-menu-modal-repo-or::after {
+  content: "";
+  width: 1px;
+  height: 2.8rem;
+  background: hsl(var(--sim-border));
+}
+
+@media (max-width: 760px) {
+  .sim-menu-modal-repo-cols {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .sim-menu-modal-repo-or {
+    justify-items: start;
+  }
+
+  .sim-menu-modal-repo-or::before,
+  .sim-menu-modal-repo-or::after {
+    width: auto;
+    height: 1px;
+  }
+}
+
+@keyframes sim-menu-modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sim-menu-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-menu-modal-backdrop,
+  .sim-menu-modal-panel {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .sim-menu-modal {
+    padding: 0.6rem;
+  }
+
+  .sim-menu-modal-panel {
+    width: 100%;
+    padding: 0.8rem 0.9rem 1rem;
+  }
+
+  .sim-menu-modal-planet {
+    width: 56px;
+    height: 56px;
+  }
+
+  .sim-menu-modal-grid {
+    grid-template-columns: repeat(auto-fill, minmax(6.8rem, 1fr));
+  }
 }

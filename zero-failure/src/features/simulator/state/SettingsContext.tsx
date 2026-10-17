@@ -13,6 +13,7 @@ import {
   type ReactNode
 } from "react";
 import type { ExecutionMode } from "../engine/types";
+import { userScopedKey } from "../../../shared/storage/userScope";
 
 export type ThemePreference = "system" | "dark" | "light";
 export type MotionPreference = "system" | "reduce" | "full";
@@ -53,7 +54,7 @@ const STORAGE_KEY = "zero-failure-settings";
 
 function loadSettings(): Settings {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(userScopedKey(STORAGE_KEY));
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<Settings>;
     // v1 saved narration:false / sfx:false silently on first mount — an
@@ -105,7 +106,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      window.localStorage.setItem(userScopedKey(STORAGE_KEY), JSON.stringify(settings));
     } catch {
       // Private mode / storage blocked — settings stay session-only.
     }

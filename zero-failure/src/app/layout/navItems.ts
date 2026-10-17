@@ -1,5 +1,5 @@
-import { UserRound } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 export const navItems = [
-  { href: "/account", labelKey: "nav.profile", icon: UserRound }
+  { href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard }
 ] as const;

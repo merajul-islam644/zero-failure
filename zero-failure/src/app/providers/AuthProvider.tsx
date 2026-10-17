@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { fetchSessionClaims, logout as endSession, onSessionExpired, startLogin } from "../../lib/blocks/auth";
+import { setCurrentUserScope } from "../../shared/storage/userScope";
 
 type AuthStatus = "authenticated" | "loading" | "unauthenticated";
 
@@ -30,6 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // what "signed in" means, not the presence of a cached access token.
   const refresh = useCallback(async () => {
     const sessionClaims = await fetchSessionClaims();
+    // the storage scope follows the account — every per-user drawer
+    // (repos, run paths, forged systems, settings) keys off whoever
+    // auth/me just answered with, before any gated page mounts
+    setCurrentUserScope(sessionClaims);
     setClaims(sessionClaims);
     setStatus(sessionClaims ? "authenticated" : "unauthenticated");
   }, []);

@@ -1,0 +1,12 @@
+{
+  "schemaName": "forged_system",
+  "collectionName": "forged_system",
+  "schemaType": 1,
+  "fields": [
+    { "name": "base", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "sun", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "note", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "planetsJson", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false },
+    { "name": "seq", "type": "String", "isArray": false, "isPIIData": false, "isUniqueData": false }
+  ]
+}

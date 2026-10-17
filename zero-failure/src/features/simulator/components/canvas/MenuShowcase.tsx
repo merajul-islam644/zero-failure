@@ -1,4 +1,4 @@
-// The left-rail showcase mirror of the open menu: the selected planet with
+// The story rail's showcase mirror of the open menu: the selected planet with
 // its menu ring — or, one selection deeper, the selected mini planet with
 // its submenu ring — drawn in exactly the canvas fan's design, by the same
 // PlanetMenu component. The ring is a display dial: grabbing its band
@@ -7,7 +7,7 @@
 // same distances — and letting go mid-twist coasts the wheel through
 // several more revolutions before it eases to a stop. Nothing is
 // clickable: the minis carry no role, focus or handlers, and the only
-// interaction is the twist. Hidden outside the wide rail layout (see
+// interaction is the twist. Rendered inside the story-rail drawer (see
 // simulator.css).
 
 import { useEffect, useRef, useState } from "react";
