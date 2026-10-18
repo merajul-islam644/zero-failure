@@ -142,7 +142,7 @@ export const scene10: SceneDefinition = {
       text: "Then our final verdict must be based on the assertions, not on how smoothly the animation played."
     },
     { type: "note", text: "All character panels converge into one dashboard: green passed, red failed, amber warning or recovered failure, grey not tested." },
-    { type: "dialogue", speaker: "all-cast", text: "Operation Zero Failure — Verification complete!" },
+    { type: "dialogue", speaker: "all-cast", text: "Mission Deck — Verification complete!" },
     {
       type: "dialogue",
       speaker: "os",

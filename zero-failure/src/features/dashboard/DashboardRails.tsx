@@ -10,8 +10,16 @@ import { CircleUser, LayoutDashboard, MonitorPlay, Presentation, Rocket, Theater
 import { AccountBar } from "../simulator/components/AccountBar";
 import { useRouterNavigate } from "../../app/router/RouterContext";
 
-/** Which of the rail's five sectors is currently on screen. */
-export type RailSector = "deck" | "sim" | "presentation" | "playwright" | "create";
+/** Which of the rail's sectors is currently on screen — the five
+ *  machine sectors, plus the account family (the dossier, the access
+ *  registry and the role registry reached from it; no left rail
+ *  button lights for any of them — the right rail's ACCT is their
+ *  anchor). */
+export type RailSector = "deck" | "sim" | "presentation" | "playwright" | "create" | "account" | "access" | "roles";
+
+/** The sectors of the account family — the dossier and the consoles
+ *  reached from it. They share the right rail's ACCT light. */
+const ACCOUNT_SECTORS: readonly RailSector[] = ["account", "access", "roles"];
 
 export function DashboardRails({ active = "deck", children }: { active?: RailSector; children: ReactNode }) {
   const [accountOpen, setAccountOpen] = useState(false);
@@ -116,10 +124,10 @@ export function DashboardRails({ active = "deck", children }: { active?: RailSec
           <div className="sim-rail-slot">
             <button
               type="button"
-              className={`sim-rail-btn${accountOpen ? " sim-rail-btn-on" : ""}`}
+              className={`sim-rail-btn${accountOpen || ACCOUNT_SECTORS.includes(active) ? " sim-rail-btn-on" : ""}`}
               aria-expanded={accountOpen}
               aria-label="Account"
-              title="Signed-in account"
+              title={ACCOUNT_SECTORS.includes(active) ? "Signed-in account — you are here" : "Signed-in account"}
               onClick={() => setAccountOpen((cur) => !cur)}
             >
               <span className="sim-rail-btn-face">
@@ -131,6 +139,11 @@ export function DashboardRails({ active = "deck", children }: { active?: RailSec
               <div className="sim-rail-flyout" role="group" aria-label="Account">
                 <p className="sim-rail-flyout-title">Account</p>
                 <AccountBar />
+                {/* the flyout's way out: the signed-in dossier, the
+                    account sector's own full-display file */}
+                <a className="sim-rail-flyout-link" href="/account" onClick={followLink("/account")}>
+                  Open the dossier <span aria-hidden>→</span>
+                </a>
               </div>
             )}
           </div>

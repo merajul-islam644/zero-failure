@@ -1,35 +1,94 @@
-import { describe, expect, it } from "vitest";
-import { isOwnForge } from "./systemsDoc";
+import { Rocket } from "lucide-react";
+import { describe, expect, it, vi } from "vitest";
+import type { BlocksClient } from "@seliseblocks/client";
+import type { BodyLogo } from "./iconCatalog";
+import { forgedLevelCount, readForgedSystems, type ForgedSystem } from "./systemsDoc";
 
-// The deck's creator filter: a forged_system record rides a
-// platform-managed CreatedBy stamp, and an account sees its own
-// forges — plus any record whose stamp never rode back.
-describe("isOwnForge", () => {
-  const mine = new Set(["u-1", "a@b.c"]);
+// every test logo is the same shape — the count never reads it
+const glyph: BodyLogo = { kind: "icon", icon: Rocket };
 
-  it("keeps a record this account created", () => {
-    expect(isOwnForge({ CreatedBy: "u-1" }, mine)).toBe(true);
+// The deck's one read: every record the gateway answers reaches every
+// operative's deck — the sky is shared, inviter and invitee alike, so
+// no creator filter stands between an account and the tenant's forges.
+describe("readForgedSystems", () => {
+  const wireSystem = (over: Record<string, unknown>) => ({
+    base: "app",
+    sun: "OS",
+    note: "",
+    planetsJson: JSON.stringify({ ring: [{ name: "Billing", logo: { kind: "icon", name: "rocket" } }] }),
+    ...over,
   });
 
-  it("drops a record another account created", () => {
-    expect(isOwnForge({ CreatedBy: "u-2" }, mine)).toBe(false);
+  function fakeClient(items: Record<string, unknown>[]): BlocksClient {
+    const list = vi.fn().mockResolvedValue({ data: { items } });
+    return { data: { collection: () => ({ list }) } } as unknown as BlocksClient;
+  }
+
+  it("screens every record the gateway answers, whoever forged it", async () => {
+    const systems = await readForgedSystems(
+      fakeClient([
+        wireSystem({ ItemId: "a", seq: "2", CreatedBy: "the-inviter" }),
+        wireSystem({ ItemId: "b", base: "menu", sun: "Pay", seq: "1", CreatedBy: "the-invitee" }),
+      ])
+    );
+
+    expect(systems.map((system) => system.sun)).toEqual(["Pay", "OS"]);
   });
 
-  it("matches any of the account's identity strings", () => {
-    expect(isOwnForge({ CreatedBy: "a@b.c" }, mine)).toBe(true);
+  it("orders the deck by forge order, oldest first", async () => {
+    const systems = await readForgedSystems(
+      fakeClient([wireSystem({ ItemId: "a", seq: "30" }), wireSystem({ ItemId: "b", seq: "20" }), wireSystem({ ItemId: "c", seq: "10" })])
+    );
+
+    expect(systems.map((system) => system.seq)).toEqual([10, 20, 30]);
   });
 
-  it("trims the stamp before matching", () => {
-    expect(isOwnForge({ CreatedBy: " u-1 " }, mine)).toBe(true);
+  it("drops a stranger record instead of breaking the deck", async () => {
+    const systems = await readForgedSystems(
+      fakeClient([wireSystem({ ItemId: "a" }), { ItemId: "b", base: "somewhere" }, wireSystem({ ItemId: "c", planetsJson: "not json" })])
+    );
+
+    expect(systems).toHaveLength(1);
+  });
+});
+
+// The mission readout's level math: a body's walkable chain — menus
+// and sub-menus — counted the same way every console walks it.
+describe("forgedLevelCount", () => {
+  const system = (planets: ForgedSystem["planets"]): ForgedSystem => ({
+    base: "app",
+    sun: "OS",
+    note: "",
+    planets,
   });
 
-  it("keeps a record whose creator stamp never rode back", () => {
-    expect(isOwnForge({}, mine)).toBe(true);
+  it("counts a menu base's menu → sub-menu chains", () => {
+    const menuBase: ForgedSystem = {
+      ...system([
+        { name: "Billing", logo: glyph, submenu: [{ name: "Cards", logo: glyph }, { name: "Loans", logo: glyph }] },
+        { name: "Vault", logo: glyph, submenu: [] },
+      ]),
+      base: "menu",
+    };
+    expect(forgedLevelCount(menuBase)).toBe(2);
   });
 
-  it("keeps nothing but its own when signed out", () => {
-    const none = new Set<string>([]);
-    expect(isOwnForge({ CreatedBy: "u-1" }, none)).toBe(false);
-    expect(isOwnForge({}, none)).toBe(true);
+  it("counts an app base's app → menu → sub-menu chains", () => {
+    const appBase = system([
+      {
+        name: "Console",
+        logo: glyph,
+        menus: [
+          { name: "Payments", logo: glyph, submenu: [{ name: "Cards", logo: glyph }] },
+          { name: "Vault", logo: glyph },
+        ],
+      },
+      { name: "Portal", logo: glyph },
+    ]);
+    expect(forgedLevelCount(appBase)).toBe(3);
+  });
+
+  it("counts nothing for a deck of bare bodies", () => {
+    expect(forgedLevelCount(system([{ name: "Sun", logo: glyph }]))).toBe(0);
   });
 });

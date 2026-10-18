@@ -37,7 +37,7 @@ export function SceneOverlay({ timeline, showcase }: SceneOverlayProps) {
           </>
         ) : (
           <>
-            <span className="sim-scene-kicker">Operation Zero Failure</span>
+            <span className="sim-scene-kicker">Mission Deck</span>
             <h1 className="sim-scene-title">
               SELISE Blocks Integration Simulator
             </h1>

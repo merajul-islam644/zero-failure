@@ -1,16 +1,17 @@
 // The sign-in landing screen: a live mission-control deck in the same
-// visual language as the simulator's stage — deep space, orbiting planets,
-// HUD panels. The mission at a glance (what the simulator tests, with
-// which cast, across which scenarios) and the one action that matters:
-// opening the solar system. Everything shown is the app's own catalog
-// data (scenario registry, scenes, cast, assertion list) — nothing
-// invented, nothing fetched. The decorative chrome (starfield, radar
-// sweep) carries no data of its own; the clocks are real
-// (UTC wall time, time-on-page) and the boot lines report the real
-// catalog counts.
+// visual language as the simulator's stage — deep space, HUD panels.
+// The mission at a glance is the whole five-sector operation now: the
+// forged deck this tenant's operatives share (straight from the data
+// gateway — inviter and invitee alike), the playwright run desk's
+// readiness on this browser (linked repos, run homes), and the
+// simulator's own catalog (scenarios, scenes, cast, assertions).
+// Nothing invented — every number reads the app's real registries and
+// caches. The decorative chrome (starfield, radar sweep) carries no
+// data of its own; the clocks are real (UTC wall time, time-on-page)
+// and the boot lines report the real counts.
 
 import { useEffect, useRef, useState } from "react";
-import { MonitorPlay } from "lucide-react";
+import { MonitorPlay, Presentation, Rocket, Theater } from "lucide-react";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 import { useRouterNavigate } from "../../app/router/RouterContext";
 import seliseLogo from "../../assets/selise-blocks-logo.png";
@@ -18,10 +19,12 @@ import seliseLogo from "../../assets/selise-blocks-logo.png";
 // that styles them (Vite dedupes it against the simulator's own import).
 import "../simulator/styles/simulator.css";
 import { DashboardRails } from "./DashboardRails";
+import { readDeskSidecar } from "./deskSidecar";
+import { forgedLevelCount, type ForgedSystem } from "../create/systemsDoc";
+import { useForgedSystems } from "../create/useForgedSystems";
 import { ASSERTIONS } from "../simulator/run/assertions";
 import { CAST } from "../simulator/script/cast";
 import { SCENES } from "../simulator/script/scenes";
-import { SCENARIOS } from "../simulator/scenarios/registry";
 
 // A readout that boots up: counts 0 → target once, like instrumentation
 // powering on. Reduced motion skips the count and shows the number.
@@ -132,14 +135,19 @@ function Starfield() {
   return <canvas ref={ref} className="dash-stars" aria-hidden />;
 }
 
-// Power-on: the catalog self-check types out once per browser session
-// (real counts, straight from the registries), then the deck takes over.
-// Click anywhere skips it; reduced motion never shows it.
+// Power-on: the operation self-checks once per browser session (real
+// counts, straight from the registries and the deck cache), then the
+// deck takes over. Click anywhere skips it; reduced motion never shows.
 const BOOT_MS = 2100;
 
 export function DashboardPage() {
   const { t } = useT();
   const navigate = useRouterNavigate();
+  // The tenant's forged deck — cache-first, so the counts are real the
+  // moment the page mounts; the gateway replaces them when it answers.
+  const systems = useForgedSystems();
+  // The run desk's sidecars on this browser, read once per visit.
+  const [sidecar] = useState(readDeskSidecar);
 
   const [booted, setBooted] = useState(() => {
     try {
@@ -168,17 +176,28 @@ export function DashboardPage() {
   const skipBoot = () => setBooted(true);
 
   const bootLines = [
-    { text: "CATALOG INDEX", value: `${SCENARIOS.length} OK` },
+    { text: "SECTOR GRID", value: "5 OK" },
+    { text: "FORGED DECK", value: `${systems.length} OK` },
     { text: "STORYLINE", value: `${SCENES.length} OK` },
-    { text: "PLATFORMS", value: `${CAST.length} OK` },
-    { text: "ASSERTIONS", value: `${ASSERTIONS.length} OK` }
+    { text: "PLATFORMS", value: `${CAST.length} OK` }
   ];
 
+  const deckBodies = systems.reduce((sum, system) => sum + system.planets.length, 0);
+  const deckLevels = systems.reduce((sum, system) => sum + forgedLevelCount(system), 0);
+
   const stats = [
-    { label: t("dashboard.stat.scenarios"), value: SCENARIOS.length },
-    { label: t("dashboard.stat.scenes"), value: SCENES.length },
-    { label: t("dashboard.stat.platforms"), value: CAST.length },
-    { label: t("dashboard.stat.assertions"), value: ASSERTIONS.length }
+    { label: t("dashboard.stat.systems"), value: systems.length },
+    { label: t("dashboard.stat.levels"), value: deckLevels },
+    { label: t("dashboard.stat.repos"), value: sidecar.repos.length },
+    { label: t("dashboard.stat.homes"), value: sidecar.homes.length }
+  ];
+
+  // The hero's way into every sector — the operation's four doors.
+  const sectors = [
+    { href: "/create", icon: Rocket, name: t("dashboard.sector.create"), hint: t("dashboard.sector.create.hint") },
+    { href: "/presentation", icon: Presentation, name: t("dashboard.sector.pres"), hint: t("dashboard.sector.pres.hint") },
+    { href: "/playwright", icon: Theater, name: t("dashboard.sector.pw"), hint: t("dashboard.sector.pw.hint") },
+    { href: "/simulator", icon: MonitorPlay, name: t("dashboard.sector.sim"), hint: t("dashboard.sector.sim.hint") }
   ];
 
   return (
@@ -187,7 +206,7 @@ export function DashboardPage() {
       {!booted && (
         <button type="button" className="dash-boot" onClick={skipBoot} aria-label="System check — select to skip">
           <span className="dash-boot-box" aria-hidden>
-            <span className="dash-boot-title">ZERO FAILURE // OPS DECK</span>
+            <span className="dash-boot-title">MISSION DECK // OPS CONSOLE</span>
             {bootLines.map((line, i) => (
               <span key={line.text} className="dash-boot-line" style={{ animationDelay: `${140 + i * 260}ms` }}>
                 {line.text}
@@ -215,29 +234,36 @@ export function DashboardPage() {
           <MissionClocks />
         </div>
 
-        {/* The briefing banner: the mission's name, the way in, and the
-            stage dial sweeping the scene count on the right. */}
+        {/* The briefing banner: the operation's name, the four doors into
+            it, and the stage dial sweeping the scene count on the right. */}
         <section className="dash-hero">
           <span className="dash-hero-edge" aria-hidden />
           <div className="dash-hero-main">
             <p className="dash-kicker">{t("dashboard.hero.title")}</p>
             <h2>{t("dashboard.title")}</h2>
             <p className="dash-hero-body">{t("dashboard.hero.body")}</p>
-            <a
-              className="dash-open"
-              href="/simulator"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate("/simulator");
-              }}
-            >
-              <MonitorPlay size={16} aria-hidden />
-              {t("dashboard.open")}
-            </a>
+            <div className="dash-sectors">
+              {sectors.map((sector, i) => (
+                <a
+                  key={sector.href}
+                  className="dash-sector"
+                  href={sector.href}
+                  style={{ animationDelay: `${340 + i * 90}ms` }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate(sector.href);
+                  }}
+                >
+                  <sector.icon size={18} strokeWidth={1.8} aria-hidden />
+                  <span className="dash-sector-name">{sector.name}</span>
+                  <span className="dash-sector-hint">{sector.hint}</span>
+                </a>
+              ))}
+            </div>
           </div>
           {/* The stage dial: one tick per scene around a live radar sweep,
               the scene count glowing dead center. Decorative motion; the
-              number is real but the stats row says it too. */}
+              number is real and the storyline card says it too. */}
           <div className="dash-radar" aria-hidden>
             <span className="dash-radar-sweep" />
             <span className="dash-radar-ticks" />
@@ -255,7 +281,8 @@ export function DashboardPage() {
           ))}
         </div>
 
-        {/* HUD readouts: the size of the mission, straight from the catalog. */}
+        {/* HUD readouts: the operation at a glance — the deck this account
+            owns and the run desk's readiness on this browser. */}
         <div className="dash-stats">
           {stats.map((stat, i) => (
             <StatTile key={stat.label} value={stat.value} label={stat.label} delay={180 + i * 70} />
@@ -263,87 +290,95 @@ export function DashboardPage() {
         </div>
 
         <div className="dash-grid">
-          {/* The scenario catalog: every selectable storyline and what it
-              proves. The simulator's Config panel selects among these. */}
+          {/* The forged deck: every system this tenant's operatives
+              forged, straight from the gateway — the create sector
+              authors them, every signed-in account screens them. */}
           <section className="dash-card dash-card-wide">
             <h3>
               <span className="dash-h3-no">01</span>
-              {t("dashboard.scenarios.title")}
-              <span className="dash-h3-tag">REGISTRY</span>
-              <span className="dash-h3-count">{SCENARIOS.length} ENTRIES</span>
+              {t("dashboard.deck.title")}
+              <span className="dash-h3-tag">GATEWAY</span>
+              <span className="dash-h3-count">{systems.length} SYSTEMS</span>
             </h3>
-            <p className="dash-card-hint">{t("dashboard.scenarios.hint")}</p>
-            <div className="dash-table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t("dashboard.scenarios.col.title")}</th>
-                    <th>{t("dashboard.scenarios.col.description")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SCENARIOS.map((scenario, i) => (
-                    <tr key={scenario.id}>
-                      <td className="dash-cell-title">
-                        <span className="dash-row-no">{String(i + 1).padStart(2, "0")}</span>
-                        {scenario.title}
-                      </td>
-                      <td className="dash-cell-desc">{scenario.description}</td>
+            <p className="dash-card-hint">{t("dashboard.deck.hint")}</p>
+            {systems.length === 0 ? (
+              <p className="dash-empty">{t("dashboard.deck.empty")}</p>
+            ) : (
+              <div className="dash-table-scroll dash-deck-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t("dashboard.deck.col.system")}</th>
+                      <th>{t("dashboard.deck.col.base")}</th>
+                      <th>{t("dashboard.deck.col.bodies")}</th>
+                      <th>{t("dashboard.deck.col.levels")}</th>
+                      <th>{t("dashboard.deck.col.note")}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {systems.map((system: ForgedSystem, i) => (
+                      <tr key={system.itemId ?? `${system.sun}-${i}`}>
+                        <td className="dash-cell-title">
+                          <span className="dash-row-no">{String(i + 1).padStart(2, "0")}</span>
+                          {system.sun}
+                        </td>
+                        <td>
+                          <span className="dash-base-tag">{system.base === "app" ? "APP" : "MENU"}</span>
+                        </td>
+                        <td className="dash-num">{system.planets.length}</td>
+                        <td className="dash-num">{forgedLevelCount(system)}</td>
+                        <td className="dash-cell-desc">{system.note}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <div className="dash-card-foot">
               <span>
-                ENTRIES <b>{SCENARIOS.length}</b>
+                SYSTEMS <b>{systems.length}</b>
               </span>
-              <span>SELECTED IN SIM // CONFIG PANEL</span>
+              <span>
+                BODIES <b>{deckBodies}</b>
+              </span>
+              <span>{t("dashboard.deck.foot")}</span>
             </div>
           </section>
 
-          <section className="dash-card dash-card-scenes">
+          {/* The run desk's readiness on this browser: which levels carry
+              a linked repository, the loose-file sets, the launch pads. */}
+          <section className="dash-card dash-card-wide">
             <h3>
               <span className="dash-h3-no">02</span>
-              {t("dashboard.scenes.title")}
-              <span className="dash-h3-tag">PLAY ORDER</span>
-              <span className="dash-h3-count">{SCENES.length} SCENES</span>
+              {t("dashboard.rundesk.title")}
+              <span className="dash-h3-tag">PLAYWRIGHT</span>
+              <span className="dash-h3-count">{sidecar.repos.length} REPOS</span>
             </h3>
-            <p className="dash-card-hint">{t("dashboard.scenes.hint")}</p>
-            <ul className="dash-list">
-              {SCENES.map((scene) => (
-                <li key={scene.index} className="dash-list-row">
-                  <span className="dash-list-index">{scene.index}</span>
-                  <span className="dash-list-name">{scene.title}</span>
-                  <span className="dash-list-meta">{scene.environment}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="dash-card">
-            <h3>
-              <span className="dash-h3-no">03</span>
-              {t("dashboard.cast.title")}
-              <span className="dash-h3-tag">ROSTER</span>
-              <span className="dash-h3-count">{CAST.length} PLATFORMS</span>
-            </h3>
-            <p className="dash-card-hint">{t("dashboard.cast.hint")}</p>
-            <ul className="dash-list">
-              {CAST.map((character) => (
-                <li key={character.id} className="dash-list-row">
-                  <span className="dash-dot" style={{ "--dash-hue": character.hue } as React.CSSProperties} aria-hidden />
-                  <span className="dash-list-name">{character.name}</span>
-                  <span className="dash-sig" aria-hidden>
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <span className="dash-list-meta">{character.role}</span>
-                  <span className="dash-onstage">ON STAGE</span>
-                </li>
-              ))}
-            </ul>
+            <p className="dash-card-hint">{t("dashboard.rundesk.hint")}</p>
+            {sidecar.repos.length === 0 ? (
+              <p className="dash-empty">{t("dashboard.rundesk.empty")}</p>
+            ) : (
+              <ul className="dash-list">
+                {sidecar.repos.map((repo) => (
+                  <li key={repo.key} className="dash-list-row">
+                    <span className="dash-dot" style={{ "--dash-hue": "var(--sim-accent)" } as React.CSSProperties} aria-hidden />
+                    <span className="dash-list-name">{repo.name}</span>
+                    <span className="dash-list-meta">{repo.files} files</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="dash-card-foot">
+              <span>
+                REPOS <b>{sidecar.repos.length}</b>
+              </span>
+              <span>
+                {t("dashboard.rundesk.filesets")} <b>{sidecar.fileSets}</b>
+              </span>
+              <span>
+                {t("dashboard.rundesk.homes")} <b>{sidecar.homes.length}</b>
+              </span>
+            </div>
           </section>
         </div>
       </DashboardRails>

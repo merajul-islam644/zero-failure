@@ -158,7 +158,11 @@ export function ForgeBody({ uid, bodyId, hue, logo, bearing, scale, reduced }: F
   return (
     <g
       transform={scale === 1 ? undefined : `scale(${scale})`}
-      style={{ "--node-hue": `${hue} 58%` } as React.CSSProperties}
+      /* the full "H S% L%" triple the dash chrome paints with — hsl()
+         needs the lightness (a two-part value falls back to white), and
+         the saturation rides the sim cast's own vivid range so the
+         sigil, its halo and the body's rim glow the way the canvas's do */
+      style={{ "--node-hue": `${hue} 72% 60%` } as React.CSSProperties}
       aria-hidden
     >
       <circle className="dash-body-ball" r={44} />
@@ -196,14 +200,15 @@ export function ForgeBody({ uid, bodyId, hue, logo, bearing, scale, reduced }: F
       </g>
       <circle r={44} fill={`url(#${uid}-limb)`} />
       <circle className="dash-body-atmo" r={47} />
-      {/* the chosen logo rides its own dark disc, the way the canvas
-          bodies wear their sigils */}
-      <circle className="dash-body-sigil-disc" r={19} />
-      <g className="dash-body-sigil" transform="translate(-15 -15)">
+      {/* the chosen logo rides its own dark disc — the canvas's sigil
+          seat, sized up so the mark reads as the body's hero at every
+          scale the forged skies render at (deck panel, cards, modals) */}
+      <circle className="dash-body-sigil-disc" r={23} />
+      <g className="dash-body-sigil" transform="translate(-19 -19)">
         {logo.kind === "icon" ? (
-          <logo.icon size={30} strokeWidth={1.9} aria-hidden />
+          <logo.icon size={38} strokeWidth={1.9} aria-hidden />
         ) : (
-          <image href={logo.src} width={30} height={30} preserveAspectRatio="xMidYMid meet" />
+          <image href={logo.src} width={38} height={38} preserveAspectRatio="xMidYMid meet" />
         )}
       </g>
       {/* the world's own moon, when its id hashes one — SMIL turns the

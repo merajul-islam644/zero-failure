@@ -8,7 +8,7 @@
 
 import type { BlocksClient } from "@seliseblocks/client";
 import { DEFAULT_FORGE_ICON, FORGE_ICONS, type BodyLogo } from "./iconCatalog";
-import { currentUserIds, userScopedKey } from "../../shared/storage/userScope";
+import { userScopedKey } from "../../shared/storage/userScope";
 
 export type ForgeBase = "app" | "menu";
 
@@ -197,6 +197,23 @@ export const FORGED_COLLECTION = "forged_system";
 /** localStorage key for the per-browser cache — what the deck shows
  *  when the gateway hasn't answered (or the schema isn't pushed yet). */
 const CACHE_KEY = "zf-forged-systems";
+
+/** One system's walkable levels beneath its bodies — menus and
+ *  sub-menus, the chain a console walks below the first ring. The
+ *  bodies themselves aren't levels; the mission readout counts them
+ *  separately. An app base walks app → menu → sub-menu, a menu base
+ *  menu → sub-menu, and a body with neither walks nowhere. */
+export function forgedLevelCount(system: ForgedSystem): number {
+  let levels = 0;
+  for (const planet of system.planets) {
+    if (planet.menus) {
+      for (const menu of planet.menus) levels += 1 + (menu.submenu?.length ?? 0);
+    } else {
+      levels += planet.submenu?.length ?? 0;
+    }
+  }
+  return levels;
+}
 
 /* ---- the voice: per-level narration writes ----------------------------- */
 
@@ -632,28 +649,19 @@ function toWire(system: ForgedSystem): Record<string, unknown> {
   };
 }
 
-/** The deck, oldest first — forge order, stable across reloads.
- *  CreatedBy is platform-managed — Blocks stamps the creator on every
- *  record — so the deck keeps only this account's forges; a record
- *  whose creator stamp never rode back stays public rather than
- *  vanishing on everyone. */
+/** The deck, oldest first — forge order, stable across reloads. The
+ *  deck is the sky this tenant's operatives share: whatever the
+ *  gateway answers, every signed-in account screens — the inviter's
+ *  forges and the invitee's alike. That shared sight is the whole
+ *  point of inviting an operative in; no creator filter stands
+ *  between them. */
 export async function readForgedSystems(client: BlocksClient): Promise<ForgedSystem[]> {
   const collection = client.data.collection<Record<string, unknown>>(FORGED_COLLECTION);
-  const response = await collection.list({ fields: [...WIRE_FIELDS, "CreatedBy"] });
-  const mine = new Set(currentUserIds());
+  const response = await collection.list({ fields: [...WIRE_FIELDS] });
   return extractItems(response)
-    .filter((item) => isOwnForge(item, mine))
     .map(parseForgedSystem)
     .filter((system): system is ForgedSystem => system !== null)
     .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
-}
-
-/** A record this account may see on its deck: its own — the creator
- *  stamp matches one of the account's identity strings — or
- *  creator-less, the defensive case where the stamp never rode back. */
-export function isOwnForge(item: Record<string, unknown>, mine: ReadonlySet<string>): boolean {
-  const creator = typeof item.CreatedBy === "string" ? item.CreatedBy.trim() : "";
-  return creator.length === 0 || mine.has(creator);
 }
 
 export async function createForgedSystem(client: BlocksClient, system: ForgedSystem): Promise<string | null> {

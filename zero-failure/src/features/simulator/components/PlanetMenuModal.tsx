@@ -12,13 +12,23 @@
 // trail as it descends. Escape or the backdrop closes it; focus lands
 // on the panel so keyboard users start inside.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { FilePlus2, FolderGit2, Link2Off, Play, Trash2, X } from "lucide-react";
 import { CAST_BY_ID } from "../script/cast";
-import type { OpenPlanetMenu, PlatformMenuItem } from "../script/platformMenus";
+import { menuLevelWords, type OpenPlanetMenu, type PlatformMenuItem } from "../script/platformMenus";
 import { PLATFORM_MENUS } from "../script/platformMenus";
 import type { FilesSummary, RepoSummary } from "../script/repoScan";
 import { repoKey } from "../script/repoScan";
+import { speak, stopSpeech } from "../state/audio";
+import { useSettings } from "../state/SettingsContext";
+import {
+  castPlan,
+  pitchForPlatform,
+  rateForPlatform,
+  resolveSpeakerVoice,
+  resolveVoice,
+  useVoices,
+} from "../state/voices";
 import { SUN_HUE } from "./canvas/PlanetMenuLayer";
 import { CharacterNode } from "./canvas/CharacterNode";
 import { FilesSummaryCard, RepoSummaryCard } from "./RepoSummaryCards";
@@ -69,6 +79,34 @@ export function PlanetMenuModal({
   onClose,
 }: PlanetMenuModalProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+
+  // The level's own voice: opening a console speaks its words — the
+  // authored line, or the level's label where none was written — in
+  // the planet's cast voice, the same voice, pitch and speed the body
+  // narrates the story with. The narration switch governs here too:
+  // off, the walk stays silent. A new level cancels the last one; a
+  // closed modal stops the line mid-word.
+  const { narration, voice, castVoices } = useSettings();
+  const installed = useVoices();
+  const plan = useMemo(() => castPlan(installed), [installed]);
+  const narrationVoice = useMemo(() => resolveVoice(voice), [voice]);
+  const trailKey = menu ? menu.path.join(">") : "";
+  useEffect(() => {
+    if (!menu || !narration) return;
+    const words = menuLevelWords(menu.planet, menu.path);
+    if (!words) return;
+    const spoke = speak(words, {
+      playbackRate: 1,
+      voice: resolveSpeakerVoice(menu.planet, castVoices, plan, narrationVoice),
+      pitch: pitchForPlatform(menu.planet),
+      rate: rateForPlatform(menu.planet)
+    });
+    return () => {
+      if (spoke) stopSpeech();
+    };
+    // trailKey stands in for the path array — a re-render with the same
+    // trail must never restart the line mid-word.
+  }, [menu?.planet, trailKey, narration, castVoices, plan, narrationVoice]);
 
   useEffect(() => {
     if (!menu) return;

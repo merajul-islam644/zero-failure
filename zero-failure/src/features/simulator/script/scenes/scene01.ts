@@ -47,7 +47,7 @@ export const scene01: SceneDefinition = {
     {
       type: "dialogue",
       speaker: "os",
-      text: "Excellent. Team, initialize the test environment. Operation Zero Failure begins now."
+      text: "Excellent. Team, initialize the test environment. Mission Deck begins now."
     }
   ],
   checkpoints: [

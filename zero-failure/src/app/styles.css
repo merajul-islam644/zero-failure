@@ -1000,13 +1000,22 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   stroke-width: 3;
   filter: blur(2.5px);
 }
+/* the sigil is the body's hero mark: a shade darker disc than the
+   canvas's so the mark pops over any terrain, a ring that survives the
+   deck and card scales, and a soft permanent halo — the canvas lights
+   its glyph only on hover, but the forged skies render the same paint
+   at half size or less, so the mark carries its own light. */
 .dash-body-sigil-disc {
-  fill: hsl(var(--sim-bg-raised) / 0.55);
-  stroke: hsl(var(--node-hue) / 0.35);
-  stroke-width: 1.2;
+  fill: hsl(var(--sim-bg-raised) / 0.62);
+  stroke: hsl(var(--node-hue) / 0.45);
+  stroke-width: 1.4;
 }
-.dash-body-sigil { color: hsl(var(--node-hue)); }
-.dash-body-sigil svg { display: block; width: 30px; height: 30px; }
+.dash-body-sigil {
+  color: hsl(var(--node-hue));
+  filter: drop-shadow(0 0 4px hsl(var(--node-hue) / 0.65))
+    drop-shadow(0 0 11px hsl(var(--node-hue) / 0.38));
+}
+.dash-body-sigil svg { display: block; width: 38px; height: 38px; }
 .dash-body-moon { fill: #c9d4e4; }
 
 /* the forged star: the canvas sun's own fire */
@@ -1522,15 +1531,66 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .dash-list { list-style: none; margin: 0; padding: 0; }
 .dash-list-row { align-items: center; border-bottom: 1px solid hsl(var(--sim-border) / 0.35); display: flex; gap: 12px; padding: 9px 0; }
 .dash-list-row:last-child { border-bottom: 0; }
-/* Scene numbers sit in glowing HUD chips — the storyline as a timeline. */
-.dash-list-index { align-items: center; border: 1px solid hsl(var(--sim-accent) / 0.55); border-radius: 4px; box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.2), inset 0 0 8px hsl(var(--sim-accent) / 0.12); color: hsl(var(--sim-accent)); display: flex; flex-shrink: 0; font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace; font-size: 11px; font-variant-numeric: tabular-nums; height: 24px; justify-content: center; width: 24px; }
 /* Cast dots are little planets: lit from the top-left, glowing in their
    own hue (the same "H S% L%" string the canvas paints them with). */
 .dash-dot { align-self: center; background: radial-gradient(circle at 32% 30%, hsl(var(--dash-hue)), hsl(var(--dash-hue) / 0.5) 62%, hsl(var(--dash-hue) / 0.2)); border-radius: 50%; box-shadow: 0 0 10px hsl(var(--dash-hue) / 0.55); flex-shrink: 0; height: 13px; width: 13px; }
 .dash-list-name { font-size: 14px; font-weight: 600; }
 .dash-list-meta { color: hsl(var(--sim-text-dim)); font-size: 12px; margin-left: auto; text-align: right; }
+
+/* The sector launcher: the operation's four doors under the briefing —
+   chamfered tiles, icon + name + one-line brief, in like the panels. */
+.dash-sectors { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 26px; }
+.dash-sector {
+  background: linear-gradient(180deg, hsl(var(--sim-accent) / 0.08), hsl(var(--sim-accent) / 0.02));
+  box-shadow: inset 0 0 0 1px hsl(var(--sim-accent) / 0.28);
+  clip-path: var(--chamfer);
+  color: hsl(var(--sim-text));
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px 16px 13px;
+  text-decoration: none;
+  transition: transform 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
+}
+.dash-sector > svg { color: hsl(var(--sim-accent)); flex-shrink: 0; }
+.dash-sector-name {
+  font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.dash-sector-hint { color: hsl(var(--sim-text-dim)); font-size: 11px; letter-spacing: 0.04em; line-height: 1.45; }
+.dash-sector:hover {
+  background-color: hsl(var(--sim-accent) / 0.16);
+  box-shadow: inset 0 0 0 1px hsl(var(--sim-accent) / 0.6), 0 10px 26px hsl(var(--sim-accent) / 0.14);
+  transform: translateY(-3px);
+}
+.dash-sector:focus-visible { outline: 2px solid hsl(var(--sim-accent) / 0.7); outline-offset: 3px; }
+
+/* Reserved panels: an empty deck or run desk reads as awaiting work,
+   never as a break. */
+.dash-empty {
+  border: 1px dashed hsl(var(--sim-accent) / 0.35);
+  color: hsl(var(--sim-text-dim));
+  font-size: 13px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+}
+
+/* The forged deck's table dress: tabular counts and the APP/MENU chips. */
+.dash-num { font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+.dash-base-tag {
+  border: 1px solid hsl(var(--sim-accent) / 0.45);
+  color: hsl(var(--sim-accent));
+  font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  padding: 2px 7px 1px;
+}
+/* A big deck scrolls inside its card — the footer stays in view. */
+.dash-deck-scroll { max-height: 280px; overflow-y: auto; }
 @media (prefers-reduced-motion: reduce) {
-  .dash-hero::before, .dash-stat::before, .dash-hero-edge, .dash-matrix i, .dash-deck::after { animation: none; }
+  .dash-hero::before, .dash-stat::before, .dash-hero-edge, .dash-matrix i, .dash-deck::after, .dash-live-dot { animation: none; }
 }
 @media (max-width: 1100px) {
   .dash-grid { grid-template-columns: 1fr; }
@@ -1541,6 +1601,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   .dash-brand img { height: 20px; }
   .dash-hero { padding: 24px 20px; }
   .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* --- The deck, second pass: real instrumentation ------------------------
@@ -1561,7 +1622,6 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .dash-stat strong,
 .dash-stat span,
 .dash-card h3,
-.dash-list-index,
 .dash-card th {
   font-family: "Share Tech Mono", ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
 }
@@ -1584,12 +1644,12 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   from { opacity: 0; transform: translateY(16px); }
 }
 .dash-hero { animation: dash-in 560ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.dash-sector { animation: dash-in 560ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
 .dash-matrix { animation: dash-in 560ms 160ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
 .dash-stat { animation: dash-in 560ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
 .dash-card { animation: dash-in 620ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
 .dash-grid .dash-card:nth-child(1) { animation-delay: 380ms; }
 .dash-grid .dash-card:nth-child(2) { animation-delay: 480ms; }
-.dash-grid .dash-card:nth-child(3) { animation-delay: 580ms; }
 
 /* Console headers number themselves: 01 catalog, 02 storyline, 03 cast. */
 .dash-h3-no { color: hsl(var(--sim-accent) / 0.8); }
@@ -1666,8 +1726,8 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .dash-space ::selection { background: hsl(var(--sim-accent) / 0.35); }
 
 @media (prefers-reduced-motion: reduce) {
-  .dash-hero, .dash-matrix, .dash-stat, .dash-card { animation: none; }
-  .dash-card { transition: none; }
+  .dash-hero, .dash-sector, .dash-matrix, .dash-stat, .dash-card { animation: none; }
+  .dash-card, .dash-sector { transition: none; }
   .dash-radar-sweep { animation: none; }
 }
 @media (max-width: 1100px) {
@@ -2164,57 +2224,6 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 /* Catalog rows number themselves — the registry reads like a manifest. */
 .dash-row-no { color: hsl(var(--sim-accent) / 0.75); font-family: "Share Tech Mono", ui-monospace, monospace; font-size: 11px; margin-right: 10px; }
 
-/* Cast rows are live: three equalizer bars of signal + an ON STAGE chip
-   (the cast hint says every platform is visible in every scene). */
-.dash-sig { align-items: flex-end; display: flex; flex-shrink: 0; gap: 2px; height: 12px; margin-left: auto; }
-.dash-sig i { animation: dash-sig 1.1s ease-in-out infinite alternate; background: hsl(var(--sim-accent) / 0.8); box-shadow: 0 0 6px hsl(var(--sim-accent) / 0.4); height: 30%; width: 3px; }
-.dash-sig i:nth-child(2) { animation-delay: 0.25s; }
-.dash-sig i:nth-child(3) { animation-delay: 0.5s; }
-@keyframes dash-sig {
-  from { height: 20%; }
-  to { height: 100%; }
-}
-.dash-onstage {
-  border: 1px solid hsl(var(--sim-accent) / 0.4);
-  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
-  color: hsl(var(--sim-accent) / 0.9);
-  flex-shrink: 0;
-  font-family: "Share Tech Mono", ui-monospace, monospace;
-  font-size: 8px;
-  letter-spacing: 0.24em;
-  padding: 3px 6px;
-}
-.dash-list-row:has(.dash-sig) .dash-list-meta { margin-left: 0; }
-
-/* Storyline spine: the index chips sit on a rail, and a pulse travels it
-   in play order — the script running under the list. */
-.dash-card-scenes .dash-list { position: relative; }
-.dash-card-scenes .dash-list::before { background: hsl(var(--sim-accent) / 0.22); content: ""; inset: 10px auto 10px 12px; pointer-events: none; position: absolute; width: 1px; }
-.dash-card-scenes .dash-list::after {
-  animation: dash-run 5.5s linear infinite;
-  background: linear-gradient(180deg, transparent, hsl(var(--sim-accent)), transparent);
-  border-radius: 1px;
-  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.7);
-  content: "";
-  height: 18px;
-  left: 11.5px;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  width: 2px;
-}
-@keyframes dash-run {
-  from { top: 0; }
-  to { top: calc(100% - 18px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dash-live-dot, .dash-sig i, .dash-card-scenes .dash-list::after { animation: none; }
-}
-@media (max-width: 760px) {
-  .dash-sig, .dash-onstage { display: none; }
-}
-
 /* --- The sector jump: the transition between pages ----------------------
    Every route change renders this overlay in the same commit as the new
    page, opaque from frame one — the swap hides inside the jump. Star
@@ -2683,3 +2692,733 @@ tbody tr:last-child td { border-bottom: 0; }
   .pagination { align-items: stretch; flex-direction: column; }
   .pagination-controls { justify-content: space-between; }
 }
+
+/* ---- The account sector: the operative's dossier. The deck's own
+   chrome — deep sky, chamfered panels, corner ticks — carrying the
+   IAM record as a file: the holo portrait with its orbit ring, the
+   clearance chips, and the session's mission window counting toward
+   expiry. Every rule stays .acct-scoped; nothing else moves. ---- */
+.acct-dossier { display: grid; gap: 18px; margin-top: 26px; }
+.acct-id {
+  align-items: center;
+  background:
+    linear-gradient(180deg, hsl(var(--sim-accent) / 0.07), transparent 34%),
+    hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  overflow: hidden;
+  padding: 28px 32px;
+  position: relative;
+}
+/* the scanline sweeping the file's top edge, breathing like the deck's */
+.acct-id::before {
+  animation: dash-breathe 3.4s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
+  box-shadow: 0 0 18px hsl(var(--sim-accent) / 0.55);
+  content: "";
+  height: 2px;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  position: absolute;
+}
+/* corner ticks — the reserved-sector frames' own registration marks */
+.acct-id::after,
+.acct-panel::after {
+  --tick: hsl(var(--sim-accent) / 0.75);
+  background:
+    linear-gradient(var(--tick), var(--tick)) top left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) top right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) top right / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 1px 20px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 20px 1px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 1px 20px;
+  background-repeat: no-repeat;
+  content: "";
+  inset: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+/* the holo portrait: initials on a dark disc, a dashed orbit ring
+   wheeling around it — the deck's moons' own rail */
+.acct-holo { flex: none; height: 118px; width: 118px; }
+.acct-holo svg { display: block; height: 100%; width: 100%; }
+.acct-holo-orbit {
+  fill: none;
+  stroke: hsl(var(--sim-accent) / 0.5);
+  stroke-dasharray: 4 7;
+  stroke-width: 1;
+}
+.acct-holo-ring { animation: acct-orbit 26s linear infinite; transform-origin: 60px 60px; }
+@keyframes acct-orbit { to { transform: rotate(360deg); } }
+.acct-holo-disc {
+  fill: hsl(var(--sim-stage) / 0.85);
+  stroke: hsl(var(--sim-accent) / 0.55);
+  stroke-width: 1.4;
+}
+.acct-holo-initials {
+  fill: hsl(var(--sim-accent));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 30px;
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+  text-shadow: 0 0 14px hsl(var(--sim-accent) / 0.6);
+}
+/* the portrait is its own projection door: the whole holo is a
+   button — counter-rotating rings ride over the face, the scan field
+   breathes, the targeting frame draws in on hover, and the chamfered
+   camera badge surfaces at the corner while the bytes travel */
+.acct-holo-btn {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  flex: none;
+  padding: 0;
+  position: relative;
+}
+.acct-holo-btn .acct-holo { display: block; }
+.acct-holo-img {
+  aspect-ratio: 1;
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px hsl(var(--sim-stage) / 0.55),
+    0 0 22px hsl(var(--sim-accent) / 0.3),
+    0 0 4px hsl(var(--sim-accent) / 0.35);
+  filter: saturate(0.94) contrast(1.05);
+  height: 63.33%; /* the disc's own 76-of-120 viewBox share */
+  left: 50%;
+  object-fit: cover;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: box-shadow 0.2s ease;
+  width: 63.33%;
+}
+.acct-holo-btn:hover .acct-holo-img,
+.acct-holo-btn:focus-visible .acct-holo-img {
+  box-shadow:
+    0 0 0 4px hsl(var(--sim-stage) / 0.55),
+    0 0 30px hsl(var(--sim-accent) / 0.45),
+    0 0 6px hsl(var(--sim-accent) / 0.5);
+}
+/* the projection: both orbit rings over the face, the second riding
+   counter to the first on its own tilt */
+.acct-holo-veil { inset: 0; opacity: 0.5; position: absolute; }
+.acct-holo-ring.is-alt { animation: acct-orbit-alt 34s linear infinite; }
+@keyframes acct-orbit-alt { to { transform: rotate(-360deg); } }
+/* the scan field: a hairline lattice across the face and one bright
+   band forever walking the frame — faster while the upload runs */
+.acct-holo-scan {
+  border-radius: 50%;
+  box-shadow: inset 0 0 16px hsl(var(--sim-accent) / 0.22);
+  height: 63.33%;
+  left: 50%;
+  overflow: hidden;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 63.33%;
+}
+.acct-holo-scan::before {
+  background: repeating-linear-gradient(
+    0deg,
+    hsl(var(--sim-accent) / 0.1) 0 1px,
+    transparent 1px 4px
+  );
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+.acct-holo-scan::after {
+  animation: acct-sweep 5.2s linear infinite;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    hsl(var(--sim-accent) / 0.3) 46% 54%,
+    transparent
+  );
+  content: "";
+  height: 30%;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -32%;
+}
+@keyframes acct-sweep { to { top: 106%; } }
+/* the targeting frame: cardinal ticks standing watch, corner brackets
+   drawing in when the upload door opens */
+.acct-holo-reticle {
+  fill: none;
+  inset: 0;
+  position: absolute;
+  stroke: hsl(var(--sim-accent));
+  stroke-width: 2;
+}
+.acct-holo-ticks { opacity: 0.55; }
+.acct-holo-corners {
+  opacity: 0;
+  transform: scale(1.045);
+  transform-origin: 60px 60px;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.acct-holo-btn:hover .acct-holo-corners,
+.acct-holo-btn:focus-visible .acct-holo-corners,
+.acct-holo-btn.is-uploading .acct-holo-corners {
+  opacity: 0.95;
+  transform: scale(1);
+}
+/* the camera: a chamfered HUD chip at the corner, not a plain round dot */
+.acct-holo-cam {
+  align-items: center;
+  background: hsl(var(--sim-stage) / 0.94);
+  border: 1px solid hsl(var(--sim-accent) / 0.6);
+  bottom: -4px;
+  clip-path: polygon(0 7px, 7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+  color: hsl(var(--sim-accent));
+  display: flex;
+  filter: drop-shadow(0 0 8px hsl(var(--sim-accent) / 0.35));
+  height: 32px;
+  justify-content: center;
+  opacity: 0;
+  position: absolute;
+  right: -4px;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  width: 32px;
+}
+.acct-holo-btn:hover .acct-holo-cam,
+.acct-holo-btn:focus-visible .acct-holo-cam,
+.acct-holo-btn.is-uploading .acct-holo-cam {
+  opacity: 1;
+  transform: translateY(0);
+}
+.acct-holo-btn.is-uploading { cursor: progress; opacity: 0.6; }
+.acct-holo-btn.is-uploading .acct-holo-scan::after { animation-duration: 1.1s; }
+.acct-id-body { display: grid; gap: 7px; min-width: 0; position: relative; }
+.acct-id-body h2 {
+  font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: -0.01em;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35);
+}
+.acct-id-line {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.acct-id-foot { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+.acct-clearance {
+  align-items: center;
+  border: 1px solid hsl(var(--sim-accent) / 0.4);
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  gap: 7px;
+  letter-spacing: 0.18em;
+  padding: 5px 11px;
+  text-transform: uppercase;
+}
+.acct-clearance i { border-radius: 50%; flex: none; height: 6px; width: 6px; }
+.acct-clearance.is-good { border-color: rgb(124 227 139 / 0.45); color: #7ce38b; }
+.acct-clearance.is-good i { background: #7ce38b; box-shadow: 0 0 8px rgb(124 227 139 / 0.8); }
+.acct-clearance.is-warn { border-color: rgb(255 180 84 / 0.45); color: #ffb454; }
+.acct-clearance.is-warn i { background: #ffb454; box-shadow: 0 0 8px rgb(255 180 84 / 0.8); }
+.acct-exit {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border) / 0.9);
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  gap: 7px;
+  letter-spacing: 0.18em;
+  padding: 5px 11px;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.acct-exit:hover, .acct-exit:focus-visible { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+/* the file's leaves: three chamfered panels under the face */
+.acct-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1000px) { .acct-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .acct-grid { grid-template-columns: 1fr; } }
+.acct-panel {
+  background: hsl(var(--sim-panel) / 0.6);
+  clip-path: var(--chamfer);
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 150px;
+  padding: 20px 22px;
+  position: relative;
+}
+.acct-panel-head {
+  align-items: center;
+  color: hsl(var(--sim-text-dim));
+  display: flex;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  gap: 8px;
+  letter-spacing: 0.24em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.acct-panel-head::before {
+  background: hsl(var(--sim-accent));
+  box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.5);
+  clip-path: polygon(2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%, 0 2px);
+  content: "";
+  flex-shrink: 0;
+  height: 7px;
+  width: 7px;
+}
+.acct-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.acct-chip {
+  background: hsl(var(--sim-accent) / 0.06);
+  border: 1px solid hsl(var(--sim-accent) / 0.35);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  color: hsl(var(--sim-text));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+  padding: 4px 10px;
+}
+.acct-empty { color: hsl(var(--sim-text-dim)); font-size: 12px; }
+.acct-times { display: flex; gap: 12px; justify-content: space-between; margin: 0; }
+.acct-times dt {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.acct-times dd {
+  color: hsl(var(--sim-text));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12px;
+  margin: 3px 0 0;
+}
+/* the dossier's invited-operatives window: the registry drawn
+   inside the file, wearing the console's row shapes */
+.acct-invited {
+  background: hsl(var(--sim-panel) / 0.4);
+  border: 1px solid hsl(var(--sim-border) / 0.45);
+  clip-path: var(--chamfer);
+  display: grid;
+  padding: 16px 0 6px;
+}
+.acct-invited-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  justify-content: space-between;
+  padding: 0 18px 10px;
+}
+.acct-invited-link {
+  background: transparent;
+  border: 0;
+  color: hsl(var(--sim-accent));
+  cursor: pointer;
+  flex: none;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+.acct-invited-link:hover,
+.acct-invited-link:focus-visible { text-decoration: underline; }
+.acct-invited-empty {
+  color: hsl(var(--sim-text-dim));
+  font-size: 12px;
+  margin: 0;
+  padding: 6px 18px 12px;
+}
+/* an invitation still waiting out its activation mail — the held
+   amber, breathing while it waits */
+.acc-row-status.is-pending { color: #ffb454; }
+.acc-row-status.is-pending i {
+  animation: acct-pending-pulse 1.6s ease-in-out infinite;
+  background: #ffb454;
+  box-shadow: 0 0 8px rgb(255 180 84 / 0.8);
+}
+@keyframes acct-pending-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+/* the catalog lines: the body's id and the tenant, PLT-plate voice */
+.acct-catalog {
+  background: hsl(var(--sim-panel) / 0.4);
+  border: 1px solid hsl(var(--sim-border) / 0.45);
+  clip-path: var(--chamfer);
+  display: grid;
+}
+.acct-cat-row {
+  align-items: center;
+  border-bottom: 1px dashed hsl(var(--sim-border) / 0.35);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 18px;
+}
+.acct-cat-row:last-child { border-bottom: 0; }
+.acct-cat-key {
+  color: hsl(var(--sim-accent));
+  flex: none;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 10px hsl(var(--sim-accent) / 0.45);
+}
+.acct-cat-val {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+@media (prefers-reduced-motion: reduce) {
+  .acct-holo-ring,
+  .acct-holo-scan::after,
+  .acct-id::before { animation: none; }
+}
+
+/* ============================================================
+   ACCESS CONTROL — the account family's registry console. The
+   dossier's way in ("Access control") lands here: every operative
+   on file, one sweep wide, each row opening its access file — the
+   modal that stages a clearance change and transmits it on an
+   explicit confirm.
+   ============================================================ */
+.acc-console { display: grid; gap: 16px; margin-top: 26px; }
+.acc-head { align-items: end; display: flex; flex-wrap: wrap; gap: 12px 18px; justify-content: space-between; }
+.acc-head-title h2 {
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35);
+}
+.acc-search { flex: 1 1 220px; max-width: 340px; }
+.acc-count {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+/* the registry sheet: chamfered, hairline-divided rows */
+.acc-table {
+  background: hsl(var(--sim-panel) / 0.4);
+  border: 1px solid hsl(var(--sim-border) / 0.45);
+  clip-path: var(--chamfer);
+  display: grid;
+}
+.acc-row {
+  align-items: center;
+  border-bottom: 1px dashed hsl(var(--sim-border) / 0.35);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 13px 18px;
+}
+.acc-row:last-child { border-bottom: 0; }
+.acc-row-skeleton { display: block; }
+.acc-row-id {
+  display: grid;
+  /* the info block takes what the chips/status/button leave, and its
+     own text wraps — a long description must never push the row's
+     tail onto a second line (the very bug that stranded one row's
+     Open button on the left edge) */
+  flex: 1 1 0;
+  gap: 2px;
+  margin-right: auto;
+  min-width: 0;
+}
+.acc-row-name { font-size: 14px; }
+.acc-row-email {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.acc-row-status {
+  align-items: center;
+  color: hsl(var(--sim-text-dim));
+  display: flex;
+  flex: none;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 9px;
+  gap: 6px;
+  letter-spacing: 0.2em;
+}
+.acc-row-status i { border-radius: 50%; flex: none; height: 6px; width: 6px; }
+.acc-row-status.is-good { color: #7ce38b; }
+.acc-row-status.is-good i { background: #7ce38b; box-shadow: 0 0 8px rgb(124 227 139 / 0.8); }
+.acc-row-status.is-warn { color: #ffb454; }
+.acc-row-status.is-warn i { background: #ffb454; box-shadow: 0 0 8px rgb(255 180 84 / 0.8); }
+.acc-row-open {
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border) / 0.9);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  flex: none;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  padding: 5px 11px;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.acc-row-open:hover:not(:disabled),
+.acc-row-open:focus-visible { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+.acc-row-open:disabled { cursor: not-allowed; opacity: 0.4; }
+/* the console's empty and refused states, centered like a briefing */
+.acc-empty-panel { display: grid; gap: 10px; justify-items: center; padding: 34px 22px; text-align: center; }
+.acc-empty-panel h3 {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  margin: 0;
+}
+.acc-empty-panel p { color: hsl(var(--sim-text-dim)); font-size: 13px; margin: 0; max-width: 46ch; }
+.acc-pager { align-items: center; display: flex; gap: 14px; justify-content: center; }
+.acc-pager-readout {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+.acc-pager-btn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid hsl(var(--sim-border) / 0.9);
+  color: hsl(var(--sim-text-dim));
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  width: 30px;
+}
+.acc-pager-btn:hover:not(:disabled),
+.acc-pager-btn:focus-visible { border-color: hsl(var(--sim-accent) / 0.7); color: hsl(var(--sim-accent)); }
+.acc-pager-btn:disabled { cursor: not-allowed; opacity: 0.35; }
+/* the access file: a wide, left-aligned modal over the registry */
+.acc-panel { text-align: left; width: min(880px, calc(100vw - 48px)); }
+.acc-cols {
+  display: grid;
+  gap: 16px 26px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  margin-top: 18px;
+}
+@media (max-width: 720px) { .acc-cols { grid-template-columns: 1fr; } }
+.acc-col { display: grid; align-content: start; gap: 10px; min-width: 0; }
+.acc-col-head {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.acc-mini-search .dash-shelf-input { font-size: 12px; padding: 8px 0; }
+.acc-checks { display: grid; gap: 4px; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+.acc-check { align-items: start; cursor: pointer; display: flex; gap: 10px; padding: 5px 4px; position: relative; }
+.acc-check input { height: 1px; opacity: 0; position: absolute; pointer-events: none; width: 1px; }
+.acc-check-box {
+  border: 1px solid hsl(var(--sim-border) / 0.9);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+  flex: none;
+  height: 15px;
+  margin-top: 2px;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 15px;
+}
+.acc-check input:checked + .acc-check-box {
+  background: hsl(var(--sim-accent) / 0.85);
+  border-color: hsl(var(--sim-accent));
+  box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.5);
+}
+.acc-check input:checked + .acc-check-box::after {
+  border: solid hsl(var(--sim-stage));
+  border-width: 0 0 2px 2px;
+  content: "";
+  height: 4px;
+  left: 2px;
+  position: absolute;
+  top: 3px;
+  transform: rotate(-45deg);
+  width: 8px;
+}
+.acc-check:hover .acc-check-box,
+.acc-check input:focus-visible + .acc-check-box { border-color: hsl(var(--sim-accent) / 0.8); }
+.acc-check input:focus-visible + .acc-check-box { box-shadow: 0 0 0 2px hsl(var(--sim-accent) / 0.35); }
+.acc-check input:disabled + .acc-check-box { opacity: 0.4; }
+.acc-check-body { display: grid; gap: 1px; min-width: 0; }
+.acc-check-name { font-size: 13px; overflow-wrap: anywhere; }
+.acc-check-meta {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+/* the staged-change strip: reads live while staging, glows while the
+   operator reviews it before the one confirm */
+.acc-delta {
+  background: hsl(var(--sim-stage) / 0.6);
+  border: 1px solid hsl(var(--sim-border) / 0.6);
+  clip-path: var(--chamfer);
+  margin-top: 18px;
+  min-height: 40px;
+  padding: 10px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.acc-delta.is-open {
+  border-color: hsl(var(--sim-accent) / 0.7);
+  box-shadow: 0 0 16px hsl(var(--sim-accent) / 0.25);
+}
+.acc-delta-none {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.acc-delta-items { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.acc-delta-item {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.acc-delta-add { color: #7ce38b; }
+.acc-delta-remove { color: #ff7a7a; }
+.acc-delta-note {
+  color: hsl(var(--sim-text-dim));
+  flex-basis: 100%;
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+}
+.acc-alert {
+  border: 1px solid rgb(255 122 122 / 0.5);
+  border-left: 3px solid #ff7a7a;
+  color: #ffb0b0;
+  font-size: 12px;
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+  padding: 9px 12px;
+}
+.acc-self-note {
+  color: #ffb454;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  margin: 8px 0 0;
+}
+/* the dossier's way into this console — the exit button's dress with
+   a resting accent tint, so the registry door reads as a door */
+.acc-entry { border-color: hsl(var(--sim-accent) / 0.45); }
+
+/* ---- role control (rc-*) — the definition console, dressed from the
+   access console's acc-* wardrobe; only the pieces it genuinely adds
+   get their own rules ---- */
+/* the registry head's way in: define a new role */
+.rc-new {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
+  white-space: nowrap;
+}
+/* the role file's byline: slug and purpose under the name */
+.acc-role-desc {
+  color: hsl(var(--sim-text-dim));
+  font-size: 12px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+/* what enforces a grant — the gateway, the SPA gate, or masking */
+.acc-type-tag {
+  border: 1px solid hsl(var(--sim-border) / 0.9);
+  margin-left: 8px;
+  padding: 1px 5px;
+}
+.acc-type-tag.is-endpoint { color: #7cc4ff; }
+.acc-type-tag.is-frontend { color: #c9a7ff; }
+.acc-type-tag.is-data { color: #ffb454; }
+/* platform-seeded, or a definition retired — dim and out of the way */
+.acc-builtin-tag {
+  border: 1px solid hsl(var(--sim-border) / 0.7);
+  color: hsl(var(--sim-text-dim));
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  margin-left: 8px;
+  padding: 1px 5px;
+  vertical-align: 1px;
+}
+.acc-row-name .acc-builtin-tag { margin-left: 8px; }
+/* the create-role form: label over field, the field dressed like the
+   console's chamfered panels (the shelf input is borderless — a bare
+   form field would read as invisible) */
+.acc-field { display: grid; gap: 5px; margin-top: 14px; }
+.acc-field label {
+  color: hsl(var(--sim-text-dim));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.acc-field-input {
+  background: hsl(var(--sim-stage) / 0.5);
+  border: 1px solid hsl(var(--sim-border) / 0.7);
+  clip-path: var(--chamfer);
+  color: hsl(var(--sim-text));
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  outline: none;
+  padding: 10px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+.acc-field-input::placeholder { color: hsl(var(--sim-text) / 0.35); }
+.acc-field-input:focus-visible {
+  border-color: hsl(var(--sim-accent) / 0.8);
+  box-shadow: 0 0 0 2px hsl(var(--sim-accent) / 0.3);
+}
+.acc-field-input:disabled { opacity: 0.5; }
+.acc-panel-create { width: min(560px, calc(100vw - 48px)); }
+/* the invite form: the two name fields share a row; hints and the
+   duplicate-address warning speak under their field */
+.acc-field-pair { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 640px) {
+  .acc-field-pair { grid-template-columns: 1fr; }
+}
+.acc-field-hint {
+  color: hsl(var(--sim-text-dim));
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.acc-field-warn {
+  color: #ffb454;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+/* the invite form's roles block: shorter than the editor's sweep list */
+.acc-checks-tight { max-height: 168px; margin-top: 2px; }

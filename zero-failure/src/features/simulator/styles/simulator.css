@@ -1,4 +1,4 @@
-/* Operation Zero Failure — simulator look and feel.
+/* Mission Deck — simulator look and feel.
    Tokens on :root — dark is the default; light only via the manual
    data-theme="light" override. Node states key off [data-state]; reduced
    motion strips travel/pulse. */
@@ -2905,6 +2905,23 @@ g[data-clickable]:hover .sim-node-body {
   font-size: 0.75rem;
   line-height: 1.45;
   color: hsl(var(--sim-text-dim));
+}
+
+/* the flyout's way into the account sector — the dossier link rides
+   the title's own mono voice, lighting on hover like the rail buttons */
+.sim-rail-flyout-link {
+  color: hsl(var(--sim-accent));
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-shadow: 0 0 10px hsl(var(--sim-accent) / 0.4);
+  text-transform: uppercase;
+}
+
+.sim-rail-flyout-link:hover,
+.sim-rail-flyout-link:focus-visible {
+  text-decoration: underline;
 }
 
 /* The broadcast control was a top-bar row; in the flyout it stacks. */

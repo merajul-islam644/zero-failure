@@ -1,4 +1,4 @@
-// Playwright e2e for Operation Zero Failure. Strategy: full playthroughs are
+// Playwright e2e for Mission Deck. Strategy: full playthroughs are
 // too slow for a verdict matrix, but seeking to the End crosses every
 // assertion-result event at once — so each scenario's final verdict is
 // reachable in milliseconds. One real 16x playthrough smoke proves the

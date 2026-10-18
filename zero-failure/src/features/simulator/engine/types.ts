@@ -1,4 +1,4 @@
-// Shared types for the Operation Zero Failure simulator.
+// Shared types for the Mission Deck simulator.
 // Everything downstream (clock, compiler, canvas, dashboard, report)
 // compiles against this file — change names here first, nowhere else.
 

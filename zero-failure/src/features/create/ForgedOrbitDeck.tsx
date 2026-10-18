@@ -106,7 +106,11 @@ function ForgedPlate({
       style={{ "--node-hue": hue } as React.CSSProperties}
       transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}
     >
-      <line className="sim-node-tick" y1={isSun ? 84 : 54} y2={isSun ? 96 : 66} />
+      <line
+        className="sim-node-tick"
+        y1={isSun ? 84 : 54}
+        y2={isSun ? 96 : 66}
+      />
       <text className="sim-node-name" y={isSun ? 110 : 80} dx={1.5} textAnchor="middle">
         {name}
       </text>

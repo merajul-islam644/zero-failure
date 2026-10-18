@@ -10,11 +10,12 @@ import { DashboardPage } from "../../features/dashboard/DashboardPage";
 import { CreateSolarSystemPage } from "../../features/create/CreateSolarSystemPage";
 import { PresentationPage } from "../../features/presentation/PresentationPage";
 import { PlaywrightPage } from "../../features/playwright/PlaywrightPage";
+import { AccessConsolePage } from "../../features/access/AccessConsolePage";
+import { RolesConsolePage } from "../../features/access/RolesConsolePage";
 import { ProfilePage } from "../../features/profile/ProfilePage";
 import { SimulatorPage } from "../../features/simulator/components/SimulatorPage";
 
 const protectedRoutes = {
-  "/account": ProfilePage,
   "/error": ErrorPage
 };
 
@@ -27,6 +28,8 @@ const JUMP_LABELS: Record<string, string> = {
   "/playwright": "PLAYWRIGHT",
   "/create": "CREATE SOLAR SYSTEM",
   "/account": "ACCOUNT",
+  "/access": "ACCESS CONTROL",
+  "/roles": "ROLE CONTROL",
   "/error": "DIAGNOSTICS",
   "/login": "AUTH GATE"
 };
@@ -125,6 +128,40 @@ export function AppRouter() {
     return (
       <RequireAuth currentPath={path} onNavigate={navigate}>
         <CreateSolarSystemPage />
+      </RequireAuth>
+    );
+  }
+
+  // The account sector rides the same full-viewport HUD as the other
+  // space sectors — the dossier is one more console of the machine,
+  // not a page inside the shell sidebar.
+  if (path === "/account") {
+    return (
+      <RequireAuth currentPath={path} onNavigate={navigate}>
+        <ProfilePage />
+      </RequireAuth>
+    );
+  }
+
+  // The access-control sector: the account family's registry console —
+  // every operative on file, each one's clearance editable from its
+  // access file. Reached from the dossier, full viewport like it.
+  if (path === "/access") {
+    return (
+      <RequireAuth currentPath={path} onNavigate={navigate}>
+        <AccessConsolePage />
+      </RequireAuth>
+    );
+  }
+
+  // The role-control sector: the account family's definition console —
+  // every role on file, each one's permission set editable from its
+  // role file, new roles defined from the same console. Reached from
+  // the dossier, full viewport like it.
+  if (path === "/roles") {
+    return (
+      <RequireAuth currentPath={path} onNavigate={navigate}>
+        <RolesConsolePage />
       </RequireAuth>
     );
   }
