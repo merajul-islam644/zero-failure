@@ -91,10 +91,26 @@ export function PlanetMenuModal({
   const plan = useMemo(() => castPlan(installed), [installed]);
   const narrationVoice = useMemo(() => resolveVoice(voice), [voice]);
   const trailKey = menu ? menu.path.join(">") : "";
+  // The restart key distills every voice fact the line needs into one
+  // string: the resolved voice's URI. Its inputs churn identity without
+  // changing what anyone hears — useVoices re-arms on mount, and the
+  // browser re-fires `voiceschanged` for the very same list — and keying
+  // on those identities restarted the same line mid-word: the planet
+  // audibly said its words twice. Same URI, same voice, no restart; a
+  // genuinely remapped cast still re-speaks with the new voice.
+  const speakerVoice = menu
+    ? resolveSpeakerVoice(menu.planet, castVoices, plan, narrationVoice)
+    : null;
+  const speakerUri = speakerVoice?.voiceURI ?? "";
+  // Latest voice inputs for the speak call itself — read through the ref so
+  // their identities never key the restart (AudioLayer's callback-ref idiom).
+  const voiceInputsRef = useRef({ castVoices, plan, narrationVoice });
+  voiceInputsRef.current = { castVoices, plan, narrationVoice };
   useEffect(() => {
     if (!menu || !narration) return;
     const words = menuLevelWords(menu.planet, menu.path);
     if (!words) return;
+    const { castVoices, plan, narrationVoice } = voiceInputsRef.current;
     const spoke = speak(words, {
       playbackRate: 1,
       voice: resolveSpeakerVoice(menu.planet, castVoices, plan, narrationVoice),
@@ -106,7 +122,7 @@ export function PlanetMenuModal({
     };
     // trailKey stands in for the path array — a re-render with the same
     // trail must never restart the line mid-word.
-  }, [menu?.planet, trailKey, narration, castVoices, plan, narrationVoice]);
+  }, [menu?.planet, trailKey, narration, speakerUri]);
 
   useEffect(() => {
     if (!menu) return;

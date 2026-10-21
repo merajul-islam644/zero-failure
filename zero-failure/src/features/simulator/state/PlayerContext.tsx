@@ -130,6 +130,14 @@ function orbitSnapshot(clock: SequencerClock): number {
   return orbitLoops.get(clock)?.cached ?? clock.time;
 }
 
+/** The sky's current timebase — story head while playing, story head plus
+ *  paused-drift (drift-target clamped) otherwise. Readers outside the frame
+ *  loop — the audio layer's seamless narration resume — rejoin the story to
+ *  exactly where the sky stands through this. */
+export function orbitSkyTime(clock: SequencerClock): number {
+  return orbitSnapshot(clock);
+}
+
 function orbitSubscribe(clock: SequencerClock, onChange: () => void): () => void {
   let existing = orbitLoops.get(clock);
   if (!existing) {
@@ -151,9 +159,18 @@ function orbitSubscribe(clock: SequencerClock, onChange: () => void): () => void
         loop.credit = 0;
         loop.cached = clock.time;
       } else {
-        if (loop.lastPlaying) loop.pausedFrom = clock.time;
+        // A seek while parked (scrub, narration's own resume jump) re-anchors
+        // the drift: the sky continues from the new head, never the stale base.
+        if (loop.lastPlaying || clock.time !== loop.pausedFrom) {
+          loop.pausedFrom = clock.time;
+          loop.credit = 0;
+        }
         loop.credit += delta;
-        loop.cached = loop.pausedFrom + loop.credit;
+        // The narration drift target parks the sky at the spoken line's
+        // resume point, so the story rejoins it without a snap.
+        const cap = clock.pausedDriftTargetMs;
+        loop.cached =
+          cap !== null ? Math.min(loop.pausedFrom + loop.credit, cap) : loop.pausedFrom + loop.credit;
       }
       loop.lastPlaying = clock.isPlaying;
       loop.raf = requestAnimationFrame(frame);

@@ -103,7 +103,12 @@ export function deriveStateAt(
   let dialogue: DerivedState["dialogue"] = null;
   let note: string | null = null;
 
-  for (const e of events.slice(0, idx + 1)) {
+  // Bounded walk, no slice — this runs on every clock frame, so allocating
+  // a fresh prefix array here (the old slice) was GC churn the sky felt as
+  // periodic stutters, growing with the story's length.
+  for (let i = 0; i <= idx; i++) {
+    const e = events[i];
+    if (!e) continue;
     switch (e.kind) {
       case "scene-start":
         scene = { index: e.sceneIndex, title: e.title, environment: e.environment, startMs: e.time };

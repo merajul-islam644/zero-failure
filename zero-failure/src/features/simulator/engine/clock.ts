@@ -29,6 +29,15 @@ export class SequencerClock {
   private stopAt: number | null = null;
   private stopResolve: ((stop: ClockStop) => void) | null = null;
   private listeners = new Set<ClockListener>();
+  /**
+   * While paused, the sky's drift may advance up to here (ms) and no
+   * further — the narration pause's target: the spoken line's window tail.
+   * The orbit loop clamps its paused drift to this, so by the time the
+   * voice ends the sky already stands at the story's resume point and
+   * resuming never snaps the planets. play() and seek() clear it: the
+   * target only binds the pause it was set for.
+   */
+  pausedDriftTargetMs: number | null = null;
 
   constructor(private durationMs: number) {
     this.timeMs = 0;
@@ -73,6 +82,7 @@ export class SequencerClock {
 
   play(): void {
     if (this.playing) return;
+    this.pausedDriftTargetMs = null;
     // Finished story: Play replays from the top (standard transport
     // convention) — an enabled Play button must never be a silent no-op.
     if (this.timeMs >= this.durationMs) {
@@ -102,6 +112,7 @@ export class SequencerClock {
     const next = clamp(timeMs, 0, this.durationMs);
     if (next === this.timeMs) return;
     this.timeMs = next;
+    this.pausedDriftTargetMs = null;
     // Crossing the stop point while scrubbing cancels a pending replay stop.
     if (this.stopAt !== null && next !== this.stopAt) {
       this.resolveStop(null);
