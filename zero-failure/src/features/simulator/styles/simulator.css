@@ -780,26 +780,26 @@
 
 @keyframes sim-sun-drift {
   0% {
-    transform: translate(calc(-1px * var(--amp, 60)), 0) scaleX(0.3);
+    transform: translate(calc(1px * var(--amp, 60)), 0) scaleX(0.3);
     opacity: 0;
   }
   10% {
     opacity: var(--peak, 0.3);
   }
   25% {
-    transform: translate(calc(-0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
+    transform: translate(calc(0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
   }
   50% {
     transform: translate(0, calc(-1px * var(--arc, 16))) scaleX(1);
   }
   75% {
-    transform: translate(calc(0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
+    transform: translate(calc(-0.71px * var(--amp, 60)), calc(-0.71px * var(--arc, 16))) scaleX(0.72);
   }
   90% {
     opacity: var(--peak, 0.3);
   }
   100% {
-    transform: translate(calc(1px * var(--amp, 60)), 0) scaleX(0.3);
+    transform: translate(calc(-1px * var(--amp, 60)), 0) scaleX(0.3);
     opacity: 0;
   }
 }
