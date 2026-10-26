@@ -34,9 +34,9 @@ export function LoginPage({ returnTo }: { returnTo?: string }) {
       <section className="auth-brief">
         {/* the official logo crowns the briefing, above the kicker —
             shown as provided, on a light chip so it reads on the night sky */}
-        <div className="auth-brief-brand">
+        {/* <div className="auth-brief-brand">
           <img src={seliseLogo} alt="SELISE Blocks" />
-        </div>
+        </div> */}
         <span className="auth-brief-kicker">{t("auth.briefKicker")}</span>
         <h1 className="auth-brief-title">{t("dashboard.title")}</h1>
         <p className="auth-brief-sub">{t("dashboard.hero.title")}</p>
