@@ -6,7 +6,6 @@
 
 import { useMemo } from "react";
 import { CAST } from "../../script/cast";
-import type { OpenPlanetMenu } from "../../script/platformMenus";
 import { useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
 import type { LiveActivityEvent } from "../../live/activity";
@@ -21,33 +20,15 @@ import { LivePulseLayer } from "./LivePulseLayer";
 interface CommandCanvasProps {
   timeline: Timeline;
   liveEvents?: LiveActivityEvent[];
-  /** Frame aspect (w/h) while zoomed: the viewBox grows past the 1600x900
-   *  design frame — centered on the sun — until it matches, so a wide or
-   *  tall window fills edge to edge instead of letterboxing. */
-  aspect?: number;
-  /** The open planet menu — owned by SimulatorStage so the left-rail
-   *  showcase can mirror it. The picked body reads highlighted. */
-  menu: OpenPlanetMenu | null;
-  /** A planet body was clicked — open, close or switch its menu modal. */
-  onPlanetToggle: (id: OpenPlanetMenu["planet"]) => void;
 }
 
 export function CommandCanvas({
   timeline,
-  liveEvents,
-  aspect,
-  menu,
-  onPlanetToggle
+  liveEvents
 }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
 
-  // Stretch the sky, never the story: grow one axis into the padded sky
-  // bounds until the viewBox matches the frame's shape. Content stays
-  // centered and undistorted; meet then fills the frame exactly.
-  const ratio = aspect && Number.isFinite(aspect) && aspect > 0 ? aspect : 16 / 9;
-  const vw = Math.max(1600, 900 * ratio);
-  const vh = Math.max(900, 1600 / ratio);
-  const viewBox = `${ORBIT_CENTER.x - vw / 2} ${ORBIT_CENTER.y - vh / 2} ${vw} ${vh}`;
+  const viewBox = `${ORBIT_CENTER.x - 800} ${ORBIT_CENTER.y - 450} 1600 900`;
 
   // The solar system is the full cast: every platform stays fully visible
   // in every scene. Scene-based dimming left the early story nearly empty —
@@ -123,11 +104,10 @@ export function CommandCanvas({
           <stop offset="100%" stopColor="#010208" stopOpacity={0.5} />
         </radialGradient>
       </defs>
-      {/* The room glow now lives on the surrounding band (.sim-canvas-area /
-          .sim-zoom-overlay in simulator.css): one gradient continues under
-          this transparent-backed SVG, so the 16:9 frame edge never reads as
-          a black seam against the letterbox — in the stage or full-display
-          zoom alike. */}
+      {/* The room glow lives on the surrounding band (.sim-canvas-area in
+          simulator.css): one gradient continues under this transparent-backed
+          SVG, so the 16:9 frame edge never reads as a black seam against the
+          letterbox. */}
 
       {/* deep-sky backdrop sits behind everything on the canvas */}
       <GalaxyLayer />
@@ -154,14 +134,10 @@ export function CommandCanvas({
       <SolarNodeLayer
         states={snapshot.states}
         visibleCast={visibleCast}
-        selectedId={menu?.planet ?? null}
-        onPlanetToggle={onPlanetToggle}
       />
       <PacketLayer timeline={timeline} />
       {liveEvents && liveEvents.length > 0 && <LivePulseLayer events={liveEvents} />}
-      {/* Menus live in the stage-level modal now (PlanetMenuModal) — a
-          pick opens the panel instead of fanning rings over the sky. The
-          speaking bubble still outranks every body here. */}
+      {/* The speaking bubble outranks every body here. */}
       <SpeechBubbleLayer dialogue={snapshot.dialogue} states={snapshot.states} />
     </svg>
   );

@@ -2,8 +2,8 @@
 // picker, the run-panel deck, whatever comes next — is this component
 // with different content: the overlay, the slide-in, the Escape and
 // backdrop-click close live here exactly once (Escape stops at document
-// so it can never leak to the window handler and exit full-display zoom
-// by accident). Callers own only what's inside — and, if they must, the
+// so no window-level handler ever reacts to a sheet's own close).
+// Callers own only what's inside — and, if they must, the
 // width via the --sim-drawer-w variable.
 
 import { useEffect, type CSSProperties, type ReactNode } from "react";
@@ -25,7 +25,7 @@ export function SimDrawer({ open, label, hue, width, onClose, children }: SimDra
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        // document fires before window: stopping here keeps zoom mode alive
+        // document fires before window: the sheet's close stays its own
         event.stopPropagation();
         onClose();
       }

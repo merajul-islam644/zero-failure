@@ -57,125 +57,6 @@
   overflow: hidden;
 }
 
-/* ---- mode toggle (lives in the status rail's flyouts now) ---- */
-
-.sim-mode-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-right: 0.75rem;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.78rem;
-  color: hsl(var(--sim-text));
-  background: hsl(var(--sim-panel));
-  border: 1px solid hsl(var(--sim-border));
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-.sim-mode-toggle:hover:not(:disabled) {
-  background: hsl(var(--sim-accent) / 0.12);
-  border-color: hsl(var(--sim-accent) / 0.5);
-}
-
-.sim-mode-toggle:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.sim-mode-toggle.sim-mode-live {
-  color: hsl(var(--sim-good));
-  border-color: hsl(var(--sim-good) / 0.5);
-}
-
-/* The execution-mode picker: a segmented Simulated | Live choice. Both
-   options stay visible, so going live is an explicit choice on screen —
-   not a hidden flip behind a single button's label. */
-.sim-mode-picker {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--sim-bg-raised));
-  border: 1px solid hsl(var(--sim-border));
-  border-radius: 999px;
-}
-
-.sim-mode-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.78rem;
-  color: hsl(var(--sim-text) / 0.65);
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
-}
-
-.sim-mode-option:hover:not(:disabled):not(.sim-mode-option-on) {
-  color: hsl(var(--sim-text));
-  background: hsl(var(--sim-accent) / 0.1);
-}
-
-.sim-mode-option:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.sim-mode-option-on {
-  color: hsl(var(--sim-text));
-  background: hsl(var(--sim-panel));
-  box-shadow: inset 0 0 0 1px hsl(var(--sim-border));
-}
-
-.sim-mode-option-live.sim-mode-option-on {
-  color: hsl(var(--sim-good));
-  background: hsl(var(--sim-good) / 0.1);
-  box-shadow: inset 0 0 0 1px hsl(var(--sim-good) / 0.5);
-}
-
-/* ---- broadcast (synced viewing) ---- */
-
-.sim-broadcast {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 0;
-  margin-right: 0.75rem;
-}
-
-/* The toggle reuses .sim-mode-toggle (which carries its own margin-right) —
-   cancel it so the gap above is the only spacing. */
-.sim-broadcast .sim-mode-toggle {
-  margin-right: 0;
-}
-
-.sim-broadcast-status {
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: hsl(var(--sim-text) / 0.6);
-}
-
-.sim-broadcast-status[data-state="on"] {
-  color: hsl(var(--sim-good));
-}
-
-.sim-broadcast-status[data-state="error"] {
-  color: hsl(var(--sim-bad));
-}
-
 /* ---- inspector: live connector probes ---- */
 
 .sim-live-head {
@@ -297,12 +178,6 @@
   .sim-account-name {
     display: none;
   }
-
-  /* Phones: keep the toggles, drop the prose — the button's title tooltip
-     and the topbar's width budget both stay intact. */
-  .sim-broadcast-status {
-    display: none;
-  }
 }
 
 /* ---- stage ---- */
@@ -336,83 +211,6 @@
     hsl(var(--sim-stage));
 }
 
-/* The story rail's content, inside the shared drawer: heading, note, and
-   the menu showcase filling the leftover height below them. */
-.sim-story {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-height: 100%;
-}
-
-/* The menu showcase mirror under the heading — the open fan, mirrored for
-   show. display-only as a whole; the dial band re-arms its own pointer
-   events so the ring can still be spun. */
-.sim-menu-showcase {
-  display: block;
-  flex: 1 1 auto;
-  min-height: 14rem;
-  width: 100%;
-  pointer-events: none;
-  animation: sim-menu-in 200ms ease;
-}
-
-/* Empty state for a platform picked before any of its menu planets are
-   authored: a dashed ghost mini where the fan will live. */
-.sim-menu-showcase-ghost {
-  fill: none;
-  stroke: hsl(var(--sim-accent) / 0.35);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 5;
-}
-
-.sim-menu-showcase-empty-title {
-  font-size: 14px;
-  font-weight: 700;
-  fill: hsl(var(--sim-text));
-  text-anchor: middle;
-}
-
-.sim-menu-showcase-empty-note {
-  font-size: 11px;
-  fill: hsl(var(--sim-text-dim));
-  text-anchor: middle;
-}
-
-/* The showcase's deep sky (ShowcaseSky): the same vocabulary as the canvas
-   backdrop — star scatter, tilted dashed orbit rings, real named galaxies —
-   kept well below the fan's contrast so the showcased ring stays the
-   subject. Stars and smudges reuse the canvas classes; only the rings and
-   the name size are showcase-scoped. */
-.sim-menu-showcase-orbit {
-  fill: none;
-  stroke: hsl(var(--sim-accent) / 0.16);
-  stroke-width: 1.2;
-  stroke-dasharray: 3 7;
-}
-
-.sim-menu-showcase .sim-galaxy-name {
-  font-size: 12px;
-  opacity: 0.75;
-}
-
-/* The showcase dial: an invisible band riding the ring's own circle —
-   the grab surface for spinning the fan. pointer-events re-arms it inside
-   the showcase svg, which is pointer-events:none as a whole: the band is
-   the one intentional touchpoint, everything else stays display-only. */
-.sim-menu-band {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 44;
-  pointer-events: stroke;
-  cursor: grab;
-  touch-action: none; /* the twist is ours, not a page scroll */
-}
-
-.sim-menu-showcase[data-dragging] .sim-menu-band {
-  cursor: grabbing;
-}
-
 /* Exactly 16:9, sized by JS (useMeetBox): the SVG fills it edge to edge.
    Absolute centering — flex margin:auto kept a stale-line offset. */
 .sim-canvas-frame {
@@ -427,64 +225,6 @@
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-/* ---- scene heading + stage note ---- */
-
-.sim-scene-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.sim-scene-kicker {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: hsl(var(--sim-accent));
-}
-
-.sim-scene-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0;
-}
-
-.sim-scene-env {
-  font-size: 0.85rem;
-  color: hsl(var(--sim-text-dim));
-}
-
-/* Stage-direction chip, right side of the header strip — flow content above
-  the canvas, so it can never cover a character node or label at any window
-  size (the old in-canvas absolute placement could not guarantee that). */
-.sim-note {
-  flex: 0 1 auto;
-  max-width: 24rem;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: hsl(var(--sim-text));
-  /* same surface as the stage section around it — no raised card floating
-     on the rail */
-  background: transparent;
-  border: 1px solid hsl(var(--sim-border));
-  border-left: 3px solid hsl(var(--sim-accent));
-  border-radius: 0.5rem;
-}
-
-.sim-note-kicker {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: hsl(var(--sim-text-dim));
-  margin-bottom: 0.15rem;
 }
 
 /* ---- nodes ---- */
@@ -570,7 +310,6 @@
   opacity: 1;
 }
 
-g[data-clickable]:hover .sim-node-glyph,
 .sim-node[data-state="speaking"] .sim-node-glyph {
   filter: drop-shadow(0 0 9px hsl(var(--node-hue) / 0.7));
 }
@@ -614,18 +353,6 @@ g[data-clickable]:hover .sim-node-glyph,
   stroke-width: 2.5;
 }
 
-/* The census line: how many menu planets this body carries, in its own
-   hue — the at-a-glance answer to "which world is busiest". */
-.sim-node-count {
-  font-family: "Share Tech Mono", ui-monospace, monospace;
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
-  fill: hsl(var(--node-hue) / 0.85);
-  paint-order: stroke;
-  stroke: hsl(var(--sim-bg-raised) / 0.75);
-  stroke-width: 2.5;
-}
-
 /* The chart reads the room: the speaking body's name lights in its own hue. */
 .sim-node[data-state="speaking"] .sim-node-name {
   fill: hsl(var(--node-hue));
@@ -642,52 +369,13 @@ g[data-clickable]:hover .sim-node-glyph,
   transition: opacity 600ms ease;
 }
 
-/* ---- planet menus — click a planet and its platform sections ring it ---- */
-
-/* Every planet is clickable — pointer on hover, and its rim brightens
-   like the speaking state, whatever its menu's rollout status. The
-   attributes live on the layer's positioning <g> (the .sim-node is the
-   memo'd child inside it), so selectors key on [data-clickable] itself. */
-g[data-clickable] {
-  cursor: pointer;
-}
-
-/* The node's own default must not bury the parent's pointer: every
-   clickable body — the sun included — reads as clickable on hover. */
-g[data-clickable] .sim-node {
-  cursor: pointer;
-}
-
-g[data-clickable]:hover .sim-node-body {
-  stroke: hsl(var(--node-hue));
-}
-
 /* The sun's glow, bloom and prominences are decoration: transparent to
    the pointer, so a hover near the star lands on the star's body
-   itself — not on its light (whose painted radius would light the
-   sun's hover chips from a hundred pixels away). */
+   itself — not on its light. */
 .sim-sun-glow,
 .sim-sun-bloom,
 .sim-sun-proms {
   pointer-events: none;
-}
-
-/* The menu fan exists only while open, so each ring plays a short mount
-   lift — and closes by unmounting, which needs no exit transition. */
-.sim-planet-menu {
-  animation: sim-menu-in 200ms ease;
-  pointer-events: auto;
-}
-
-@keyframes sim-menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Rays: dashed lines in the host's hue, orbit-ring styling, from the
@@ -704,37 +392,9 @@ g[data-clickable]:hover .sim-node-body {
   pointer-events: none;
 }
 
-/* The neon spark riding a ray from the parent body to its menu mini:
-   a white-hot core rimmed by the hue, with a hue halo — same read as
-   the sun's own limb. */
-.sim-menu-neon {
-  fill: hsl(var(--node-hue) / 0.25);
-  stroke: hsl(var(--node-hue));
-  stroke-width: 1.4;
-  filter: drop-shadow(0 0 3px hsl(var(--node-hue)))
-    drop-shadow(0 0 7px hsl(var(--node-hue) / 0.8));
-  pointer-events: none;
-}
-
 /* Mini planets: the cast's round bodies one step smaller, wearing the
-   host's own hue via the inherited --node-hue. */
-.sim-menu-node {
-  cursor: pointer;
-}
-
-/* Clicking a mini focuses its group (role=button, tabIndex 0) and the
-   browser paints its default focus rectangle around the whole group —
-   a white box that has nothing to do with the sky. Outline off; keyboard
-   tabs still announce themselves as a bright ring on the round halo. */
-.sim-menu-node:focus {
-  outline: none;
-}
-
-.sim-menu-node:focus-visible .sim-menu-node-halo {
-  stroke: hsl(var(--node-hue));
-  stroke-width: 2.5;
-}
-
+   host's own hue via the inherited --node-hue — the same trio the
+   playwright and speech modals paint. */
 .sim-menu-node-halo {
   fill: none;
   stroke: hsl(var(--node-hue) / 0.35);
@@ -756,37 +416,6 @@ g[data-clickable]:hover .sim-node-body {
   display: block;
   width: 20px;
   height: 20px;
-}
-
-.sim-menu-node-name {
-  font-size: 14px;
-  font-weight: 600;
-  fill: hsl(var(--sim-text));
-  text-anchor: middle;
-  pointer-events: none;
-  user-select: none;
-}
-
-.sim-menu-node:hover .sim-menu-node-body {
-  stroke: hsl(var(--node-hue));
-}
-
-.sim-menu-node:hover .sim-menu-node-name {
-  fill: hsl(var(--node-hue));
-}
-
-/* The branch the viewer has walked down: its mini planet reads fully lit,
-   marking the ring behind it as that submenu's home. */
-.sim-menu-node[data-selected] .sim-menu-node-halo {
-  stroke: hsl(var(--node-hue) / 0.7);
-}
-
-.sim-menu-node[data-selected] .sim-menu-node-body {
-  stroke: hsl(var(--node-hue));
-}
-
-.sim-menu-node[data-selected] .sim-menu-node-name {
-  fill: hsl(var(--node-hue));
 }
 
 /* ---- speech bubble — who is talking right now ---- */
@@ -1059,10 +688,6 @@ g[data-clickable]:hover .sim-node-body {
    rings and nodes stay legible. */
 :root[data-theme="light"] .sim-galaxies {
   opacity: 0.4;
-}
-
-:root[data-theme="light"] .sim-menu-showcase-sky {
-  opacity: 0.45;
 }
 
 /* ---- sun ---- */
@@ -1377,8 +1002,7 @@ g[data-clickable]:hover .sim-node-body {
    and the bar slides in only when the pointer comes down to the window's
    bottom band (or focus enters it — see TransportBar). A thin accent rule
    crowns the console with a light pulse forever sweeping along it. Sits
-   under the zoom overlay (57) on purpose: during full-display zoom the bar
-   stays out of the way, and under the drawers (90) the same way. */
+   under the drawers (90) so a sheet always reads above it. */
 .sim-transport {
   position: fixed;
   inset: auto 0 0 0;
@@ -2147,29 +1771,6 @@ g[data-clickable]:hover .sim-node-body {
   line-height: 1.4;
 }
 
-/* ---- zoom (full-display) mode ---- */
-
-/* The zoomed canvas leaves the stage band for a fixed full-display layer.
-   Same 16:9 meet-box math — measured against the viewport instead of the
-   stage — so the solar system and galaxy fill the display edge to edge
-   without ever cropping. */
-.sim-zoom-overlay {
-  position: fixed;
-  inset: 0;
-  /* Above the mobile drawer (55/56); the report overlay (60) still wins. */
-  z-index: 57;
-  /* Same sky as the stage band — the zoomed frame keeps blending into it. */
-  background:
-    radial-gradient(80% 80% at 50% 18%, hsl(var(--sim-accent) / 0.14), transparent),
-    hsl(var(--sim-stage));
-}
-
-.sim-zoom-exit {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
 /* ---- report overlay ---- */
 
 .sim-report-overlay {
@@ -2595,8 +2196,7 @@ g[data-clickable]:hover .sim-node-body {
 @media (prefers-reduced-motion: reduce) {
   .sim-drawer-overlay,
   .sim-drawer,
-  .sim-rail-flyout,
-  .sim-menu-showcase {
+  .sim-rail-flyout {
     animation: none;
   }
 
@@ -2764,7 +2364,7 @@ g[data-clickable]:hover .sim-node-body {
   opacity: 1;
 }
 
-/* Lit while its panel is open (or zoom active): solid glowing ring,
+/* Lit while its panel is open: solid glowing ring,
    accent face — the icon stays dark-field and readable. */
 .sim-rail-btn-on::before,
 .sim-rail-btn-on:hover::before,
@@ -2924,15 +2524,6 @@ g[data-clickable]:hover .sim-node-body {
   text-decoration: underline;
 }
 
-/* The broadcast control was a top-bar row; in the flyout it stacks. */
-.sim-rail-flyout .sim-broadcast {
-  flex-wrap: wrap;
-}
-
-.sim-rail-flyout .sim-broadcast-status {
-  white-space: normal;
-}
-
 @media (max-width: 640px) {
   .sim-rail {
     width: 2.9rem;
@@ -3027,18 +2618,7 @@ g[data-clickable]:hover .sim-node-body {
   .sim-comet-swing,
   .sim-live-pulse,
   .sim-node-clouds,
-  .sim-planet-menu,
   .sim-transport::after {
-    animation: none;
-  }
-
-  /* The ray sparks are SMIL, unstoppable by CSS — PlanetMenuLayer also
-     refuses to render them when motion is reduced. Belt and braces. */
-  .sim-menu-neon {
-    display: none;
-  }
-
-  .sim-menu-showcase {
     animation: none;
   }
 
@@ -3066,16 +2646,7 @@ html[data-motion="reduce"] .sim-comet,
 html[data-motion="reduce"] .sim-comet-swing,
 html[data-motion="reduce"] .sim-live-pulse,
 html[data-motion="reduce"] .sim-node-clouds,
-html[data-motion="reduce"] .sim-planet-menu,
 html[data-motion="reduce"] .sim-transport::after {
-  animation: none;
-}
-
-html[data-motion="reduce"] .sim-menu-neon {
-  display: none;
-}
-
-html[data-motion="reduce"] .sim-menu-showcase {
   animation: none;
 }
 

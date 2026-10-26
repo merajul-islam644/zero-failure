@@ -1,95 +1,80 @@
-// The command rail: a slim chamfered icon column hugging the stage's left
-// edge, in the vein of classic planetarium HUDs. The dashboard link leads
-// back to the mission-control deck; below it, three toggles — the story
-// rail (scene heading + menu showcase), the run-panel deck, and full-display
-// zoom. Both panels start folded: the sky owns the stage until one of these
-// is pressed. Each button is a two-layer chamfer — the outer ring paints
-// the 1px edge, the inner face carries the surface — because clip-path
-// shears plain borders away.
+// The section rail: a slim chamfered icon column hugging the left edge,
+// in the vein of classic planetarium HUDs — the same column the dashboard
+// family flanks its pages with, so no seat ever disappears between
+// sectors: the machine carries its full menu everywhere, and the sector
+// you're on stays lit while the rest lead out. Each button is a two-layer
+// chamfer — the outer ring paints the 1px edge, the inner face carries
+// the surface — because clip-path shears plain borders away.
 
-import { LayoutDashboard, Orbit, Settings, ZoomIn } from "lucide-react";
+import { LayoutDashboard, MonitorPlay, Presentation, Rocket } from "lucide-react";
 import { useRouterNavigate } from "../../../app/router/RouterContext";
 
-interface CommandRailProps {
-  /** The story rail (scene heading + showcase) is unfolded. */
-  railOpen: boolean;
-  /** The run-panel deck is unfolded. */
-  deckOpen: boolean;
-  /** Full-display zoom is active. */
-  zoomed: boolean;
-  onToggleRail: () => void;
-  onToggleDeck: () => void;
-  onToggleZoom: () => void;
-}
+/** Which of the rail's sectors is currently on screen — the five
+ *  machine sectors, plus the account family (the dossier, the access
+ *  registry and the role registry reached from it; no rail
+ *  button lights for any of them — the right rail's ACCT is their
+ *  anchor). */
+export type RailSector = "deck" | "sim" | "presentation" | "playwright" | "create" | "account" | "access" | "roles";
 
-export function CommandRail({
-  railOpen,
-  deckOpen,
-  zoomed,
-  onToggleRail,
-  onToggleDeck,
-  onToggleZoom
-}: CommandRailProps) {
+export function CommandRail({ active }: { active?: RailSector }) {
   const navigate = useRouterNavigate();
+  // Rail links route in-app (no full reload — the sector jump plays).
+  const followLink = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    navigate(href);
+  };
+
   return (
-    <nav className="sim-rail" aria-label="Display panels">
+    <nav className="sim-rail" aria-label="Sections">
       <div className="sim-rail-btns">
         <a
-          className="sim-rail-btn"
+          className={`sim-rail-btn${active === "deck" ? " sim-rail-btn-on" : ""}`}
           href="/"
           aria-label="Dashboard"
           title="Dashboard — the mission-control deck"
-          onClick={(event) => {
-            event.preventDefault();
-            navigate("/");
-          }}
+          onClick={followLink("/")}
         >
           <span className="sim-rail-btn-face">
             <LayoutDashboard size={17} strokeWidth={1.8} aria-hidden />
             <span className="sim-rail-btn-tag">DECK</span>
           </span>
         </a>
-        <button
-          type="button"
-          className={`sim-rail-btn${railOpen ? " sim-rail-btn-on" : ""}`}
-          aria-pressed={railOpen}
-          aria-label="Toggle the story rail"
-          title="Story rail — scene heading and menu showcase"
-          onClick={onToggleRail}
+        <a
+          className={`sim-rail-btn${active === "create" ? " sim-rail-btn-on" : ""}`}
+          href="/create"
+          aria-label="Create solar system"
+          title="Create solar system — author your own system"
+          onClick={followLink("/create")}
         >
           <span className="sim-rail-btn-face">
-            <Orbit size={17} strokeWidth={1.8} aria-hidden />
-            <span className="sim-rail-btn-tag">STORY</span>
+            <Rocket size={17} strokeWidth={1.8} aria-hidden />
+            <span className="sim-rail-btn-tag">CREATE</span>
           </span>
-        </button>
-        <button
-          type="button"
-          className={`sim-rail-btn${deckOpen ? " sim-rail-btn-on" : ""}`}
-          aria-pressed={deckOpen}
-          aria-label="Toggle the run panels"
-          title="Run panels — Inspector, Results, Evidence, Config"
-          onClick={onToggleDeck}
+        </a>
+        <a
+          className={`sim-rail-btn${active === "presentation" ? " sim-rail-btn-on" : ""}`}
+          href="/presentation"
+          aria-label="Presentation"
+          title="Presentation — the mission's slide deck"
+          onClick={followLink("/presentation")}
         >
           <span className="sim-rail-btn-face">
-            <Settings size={17} strokeWidth={1.8} aria-hidden />
-            <span className="sim-rail-btn-tag">PANEL</span>
+            <Presentation size={17} strokeWidth={1.8} aria-hidden />
+            <span className="sim-rail-btn-tag">PRES</span>
           </span>
-        </button>
-        <button
-          type="button"
-          className={`sim-rail-btn${zoomed ? " sim-rail-btn-on" : ""}`}
-          aria-pressed={zoomed}
-          aria-label={
-            zoomed ? "Exit full-display zoom" : "Zoom — show the solar system across the display"
-          }
-          title={zoomed ? "Exit zoom (Esc)" : "Zoom to full display"}
-          onClick={onToggleZoom}
+        </a>
+        <a
+          className={`sim-rail-btn${active === "sim" ? " sim-rail-btn-on" : ""}`}
+          href="/simulator"
+          aria-label="Simulator"
+          title="Open the solar-system simulator"
+          onClick={followLink("/simulator")}
         >
           <span className="sim-rail-btn-face">
-            <ZoomIn size={17} strokeWidth={1.8} aria-hidden />
-            <span className="sim-rail-btn-tag">{zoomed ? "EXIT" : "ZOOM"}</span>
+            <MonitorPlay size={17} strokeWidth={1.8} aria-hidden />
+            <span className="sim-rail-btn-tag">SIM</span>
           </span>
-        </button>
+        </a>
       </div>
     </nav>
   );

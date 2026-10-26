@@ -2,13 +2,11 @@
 // pre-executes the
 // selected scenario up-front; the timeline compiles from its structured
 // messages, so playback is a pure fold over real results. Composes the
-// engine: clock via PlayerProvider, canvas, overlay, transport,
+// engine: clock via PlayerProvider, canvas, transport,
 // audio (opt-in) and the panel deck.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { userScopedKey } from "../../../shared/storage/userScope";
 import type { RefObject } from "react";
-import { Minimize2 } from "lucide-react";
 import { SCENES } from "../script/scenes";
 import { buildTimeline } from "../engine/timeline";
 import type { Timeline } from "../engine/timeline";
@@ -19,13 +17,8 @@ import { useBroadcastActions } from "../live/broadcast/useBroadcastActions";
 import { PlayerProvider, usePlayer } from "../state/PlayerContext";
 import { RunProvider, useRun } from "../run/RunContext";
 import { SettingsProvider } from "../state/SettingsContext";
-import type { OpenPlanetMenu } from "../script/platformMenus";
-import { pickFiles, pickRepo, repoKey, type FilesSummary, type RepoSummary } from "../script/repoScan";
 import { CommandCanvas } from "./canvas/CommandCanvas";
 import { CommandRail } from "./CommandRail";
-import { SceneOverlay } from "./canvas/SceneOverlay";
-import { PlanetMenuModal } from "./PlanetMenuModal";
-import { SimDrawer } from "./SimDrawer";
 import { StatusRail } from "./StatusRail";
 import { TransportBar, SPEEDS } from "./transport/TransportBar";
 import { AudioLayer } from "./AudioLayer";
@@ -62,125 +55,18 @@ function SimulatorScreen() {
 }
 
 function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEvents: LiveActivityEvent[] }) {
-  const { clock, playing } = usePlayer();
+  const { clock } = usePlayer();
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const zoomRef = useRef<HTMLDivElement | null>(null);
-  // Zoom moves the canvas out of the stage band into a fixed full-display
-  // layer. Playback never notices: clock and snapshot live in the providers,
-  // and the canvas is a pure subscriber that simply re-parents.
-  const [zoomed, setZoomed] = useState(false);
-  const box = useMeetBox(zoomed ? zoomRef : stageRef);
-  // The zoom overlay's raw size: zoom stretches the sky to the window's
-  // whole shape instead of the stage band's 16:9.
-  const zoomArea = useAreaSize(zoomed ? zoomRef : null);
+  const box = useMeetBox(stageRef);
   // Broadcast owns the room (poll + publish); actions wraps every transport
   // call so local moves reach the shared head. Off, they are plain clock
   // calls — zero behavior change.
   const broadcast = useBroadcast();
   const actions = useBroadcastActions(broadcast);
 
-  // The planet menu modal. Lives at the stage level — not inside the
-  // canvas — so a pick keeps feeding the left-rail showcase exactly as
-  // the old sky fan did. Clicking a planet opens it; Escape, the ✕ or
-  // the backdrop close it (the modal owns those).
-  const [openMenu, setOpenMenu] = useState<OpenPlanetMenu | null>(null);
-  // The rail showcase, by contrast, is a sticky mirror of the LAST
-  // selection: click-away, Escape and even a full reload leave it standing
-  // (localStorage) — only picking another planet or menu planet moves it.
-  const [showcase, setShowcase] = useState<OpenPlanetMenu | null>(readShowcase);
-  useEffect(() => {
-    try {
-      if (showcase) localStorage.setItem(userScopedKey(SHOWCASE_KEY), JSON.stringify(showcase));
-      else localStorage.removeItem(userScopedKey(SHOWCASE_KEY));
-    } catch {
-      // storage unavailable (private mode etc.) — the showcase just won't
-      // survive reloads; nothing else is affected
-    }
-  }, [showcase]);
-
-  // Connected repositories, one local folder per level: the planet's own
-  // (the menu modal's planet level) and each menu's own (the modal's
-  // drill-down levels). Keys come from
-  // repoKey — the planet's id, or "planet:menu>submenu" below it.
-  // Session-only: a refresh detaches every repo (nothing is persisted,
-  // nothing is read beyond the walk).
-  const [repos, setRepos] = useState<Partial<Record<string, RepoSummary>>>({});
-  // Loose-file sets, keyed the same way — leaf menus and sub-menus
-  // carry them beside their folder.
-  const [files, setFiles] = useState<Partial<Record<string, FilesSummary>>>({});
-  // True while the laptop's folder walk is in flight — the modal's pick
-  // button goes busy so a big repository never looks like a dead click.
-  const [connecting, setConnecting] = useState(false);
-  // Same busy idea for the loose-files picker.
-  const [pickingFiles, setPickingFiles] = useState(false);
-  const connectRepo = async (key: string) => {
-    setConnecting(true);
-    try {
-      const repo = await pickRepo();
-      if (!repo) return; // picker closed without a choice — nothing changes
-      setRepos((prev) => ({ ...prev, [key]: repo }));
-    } finally {
-      setConnecting(false);
-    }
-  };
-  const connectFiles = async (key: string) => {
-    setPickingFiles(true);
-    try {
-      const summary = await pickFiles();
-      if (!summary) return;
-      setFiles((prev) => ({ ...prev, [key]: summary }));
-    } finally {
-      setPickingFiles(false);
-    }
-  };
-  // A level's folder anchors the levels beneath it — letting go
-  // detaches the whole subtree from both maps (menus under a planet,
-  // sub-menus under a menu). Session-only, so nothing survives to
-  // dangle: the tree can never hold a child whose parent is gone.
-  const disconnectRepo = (key: string) => {
-    setRepos((prev) => dropSubtree(prev, key));
-    setFiles((prev) => dropSubtree(prev, key));
-  };
-  const disconnectFiles = (key: string) => {
-    setFiles((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  // The two flanking panels start folded — the sky owns the stage until the
-  // command rail's icons unfold them (orbit = the story rail with the scene
-  // heading and menu showcase, gear = the run-panel deck).
-  const [railOpen, setRailOpen] = useState(false);
+  // The run-panel deck starts folded — the sky owns the stage until the
+  // status rail's PANEL seat unfolds it.
   const [deckOpen, setDeckOpen] = useState(false);
-
-  function togglePlanet(id: OpenPlanetMenu["planet"]) {
-    // Same planet folds the modal; a different planet is a new pick — the
-    // showcase moves to it either way, and stays there when the modal closes.
-    const switching = !(openMenu && openMenu.planet === id);
-    setOpenMenu(switching ? { planet: id, path: [] } : null);
-    if (switching) setShowcase({ planet: id, path: [] });
-  }
-
-  // A mini in the modal — menu or sub-menu: the panel walks to that
-  // level (its own presentation, its own repository console) and the
-  // rail showcase follows the same trail.
-  function changeMenuPath(path: string[]) {
-    if (!openMenu) return;
-    setOpenMenu({ ...openMenu, path });
-    setShowcase({ planet: openMenu.planet, path });
-  }
-
-  // Play from any modal level: the trail hands off to the showcase (the
-  // rail mirrors it), the panel closes, and the show starts — the
-  // transport's own play, so a broadcast room moves together. Already
-  // playing? The selection just moves; the clock never double-fires.
-  function playMenuLevel(planet: OpenPlanetMenu["planet"], path: string[]) {
-    setShowcase({ planet, path });
-    setOpenMenu(null);
-    if (!playing) actions.togglePlay();
-  }
 
   // Full playback map. Ignored while typing in form fields and never with
   // modifier keys (no hijacking browser shortcuts).
@@ -239,60 +125,25 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
           e.preventDefault();
           actions.restart();
           break;
-        case "Escape":
-          if (zoomed) {
-            e.preventDefault();
-            setZoomed(false);
-          }
-          break;
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions, clock, timeline, zoomed]);
+  }, [actions, clock, timeline]);
 
   return (
     <div className="simulator-root">
       <div className="sim-main">
-        <CommandRail
-          railOpen={railOpen}
-          deckOpen={deckOpen}
-          zoomed={zoomed}
-          onToggleRail={() => setRailOpen((v) => !v)}
-          onToggleDeck={() => setDeckOpen((v) => !v)}
-          onToggleZoom={() => setZoomed((z) => !z)}
-        />
+        <CommandRail active="sim" />
         <main className="sim-stage">
-          {/* Exactly 16:9, centered in the stage band. The scene heading and
-              stage note live in the story-rail drawer — never floating over
-              the constellation. */}
+          {/* Exactly 16:9, centered in the stage band. Nothing floats over
+              the constellation — the sky is the whole show. */}
           <div className="sim-canvas-area" ref={stageRef}>
-            {/* One canvas instance, two possible homes: the stage band, or —
-                while zoomed — the fixed full-display overlay below. The swap
-                is a re-parent, not a duplicate: gradients and ids stay
-                unique, and only one subscriber renders per frame. */}
-            {!zoomed && (
-              <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
-                <CommandCanvas
-                  timeline={timeline}
-                  liveEvents={liveEvents}
-                  menu={openMenu}
-                  onPlanetToggle={togglePlanet}
-                />
-              </div>
-            )}
+            <div className="sim-canvas-frame" style={{ width: box.w, height: box.h }}>
+              <CommandCanvas timeline={timeline} liveEvents={liveEvents} />
+            </div>
           </div>
         </main>
-        {/* The story rail — the shared drawer with the scene heading, the
-            stage note and the menu showcase as its content. */}
-        <SimDrawer
-          open={railOpen}
-          label="Story rail"
-          width="min(22rem, 92vw)"
-          onClose={() => setRailOpen(false)}
-        >
-          <SceneOverlay timeline={timeline} showcase={showcase} />
-        </SimDrawer>
         <PanelDeck
           timeline={timeline}
           liveEvents={liveEvents}
@@ -300,54 +151,9 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
           open={deckOpen}
           onClose={() => setDeckOpen(false)}
         />
-        <StatusRail broadcast={broadcast} onModeChange={actions.publishMode} />
+        <StatusRail deckOpen={deckOpen} onToggleDeck={() => setDeckOpen((v) => !v)} />
       </div>
-      <TransportBar
-        timeline={timeline}
-        actions={actions}
-        zoomed={zoomed}
-        onToggleZoom={() => setZoomed((z) => !z)}
-      />
-      {zoomed && (
-        <div className="sim-zoom-overlay" ref={zoomRef}>
-          <div className="sim-canvas-frame" style={{ width: zoomArea.w, height: zoomArea.h }}>
-            <CommandCanvas
-              timeline={timeline}
-              liveEvents={liveEvents}
-              aspect={zoomArea.h > 0 ? zoomArea.w / zoomArea.h : undefined}
-              menu={openMenu}
-              onPlanetToggle={togglePlanet}
-            />
-          </div>
-          <button
-            type="button"
-            className="sim-btn sim-zoom-exit"
-            onClick={() => setZoomed(false)}
-            aria-label="Exit full-display zoom"
-            title="Exit zoom (Esc)"
-          >
-            <Minimize2 size={18} aria-hidden />
-          </button>
-        </div>
-      )}
-      {/* The planet menu modal — a click on any body opens its menu and
-          sub-menu planets here instead of fanning rings over the sky; the
-          planet and every menu level carry their own add-repository
-          section. */}
-      <PlanetMenuModal
-        menu={openMenu}
-        repos={repos}
-        files={files}
-        pending={connecting}
-        filePending={pickingFiles}
-        onConnect={(planet, path) => connectRepo(repoKey(planet, path))}
-        onDisconnect={(planet, path) => disconnectRepo(repoKey(planet, path))}
-        onConnectFiles={(planet, path) => connectFiles(repoKey(planet, path))}
-        onDisconnectFiles={(planet, path) => disconnectFiles(repoKey(planet, path))}
-        onPath={changeMenuPath}
-        onPlay={playMenuLevel}
-        onClose={() => setOpenMenu(null)}
-      />
+      <TransportBar timeline={timeline} actions={actions} />
       {/* Narration's audiobook pauses/resumes publish too: the presenter's
           speech rhythm is the room's rhythm, and a follower's own narration
           pause is never overridden by a stale "playing" doc mid-line. */}
@@ -358,19 +164,6 @@ function SimulatorStage({ timeline, liveEvents }: { timeline: Timeline; liveEven
       />
     </div>
   );
-}
-
-/** The map minus a level's entry and everything beneath it — "os" also
- *  drops "os:Payments" and "os:Payments>Cards"; "os:Payments" drops only
- *  its own sub-menus. The colon and chevron suffixes keep near-miss keys
- *  ("os:Payments2") safe. */
-function dropSubtree<T>(map: Partial<Record<string, T>>, key: string): Partial<Record<string, T>> {
-  const next: Partial<Record<string, T>> = {};
-  for (const [k, v] of Object.entries(map)) {
-    if (k === key || k.startsWith(`${key}:`) || k.startsWith(`${key}>`)) continue;
-    if (v) next[k] = v;
-  }
-  return next;
 }
 
 function nearestSpeedIndex(rate: number): number {  let best = 0;
@@ -410,52 +203,6 @@ function useMeetBox(ref: RefObject<HTMLElement | null>): { w: number; h: number 
     return () => observer.disconnect();
   }, [ref]);
   return box;
-}
-
-/** The raw measured size of the ref's element — no 16:9 clamp. Lets the
- *  zoom overlay stretch the canvas across the whole window. Null ref means
- *  "not mounted" (stage mode) and reports 0x0. */
-function useAreaSize(ref: RefObject<HTMLElement | null> | null): { w: number; h: number } {
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  useLayoutEffect(() => {
-    const el = ref?.current;
-    if (!el) return;
-    const measure = () => {
-      const { width, height } = el.getBoundingClientRect();
-      const w = Math.floor(width);
-      const h = Math.floor(height);
-      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-  return size;
-}
-
-/** localStorage key for the sticky rail showcase; the shape mirrors
- *  OpenPlanetMenu so MenuShowcase can walk it unchanged. */
-const SHOWCASE_KEY = "zero-failure.menu-showcase";
-
-function readShowcase(): OpenPlanetMenu | null {
-  try {
-    const raw = localStorage.getItem(userScopedKey(SHOWCASE_KEY));
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      typeof (parsed as { planet?: unknown }).planet === "string" &&
-      Array.isArray((parsed as { path?: unknown }).path)
-    ) {
-      const { planet, path } = parsed as { planet: string; path: unknown[] };
-      return { planet: planet as OpenPlanetMenu["planet"], path: path.filter((s): s is string => typeof s === "string") };
-    }
-  } catch {
-    // broken JSON or blocked storage — fall through to "no showcase yet"
-  }
-  return null;
 }
 
 /** Next/previous scene start; "previous" returns to this scene's start first. */

@@ -72,10 +72,9 @@ test("sign in through the login gate", async ({ page }) => {
   await expect(page.locator(".dash-hero")).toBeVisible({ timeout: 30_000 });
 
   // Tests target the simulator: walk in through its sidebar entry and
-  // unfold the story rail so the scene title is on screen.
+  // wait for the stage to stand up.
   await page.goto("/simulator");
-  await page.locator('[aria-label="Toggle the story rail"]').click();
-  await expect(page.locator(".sim-scene-title").first()).toBeVisible();
+  await expect(page.locator(".sim-stage")).toBeVisible();
 
   await page.context().storageState({ path: STATE_PATH });
 });

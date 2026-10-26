@@ -22,7 +22,7 @@ import { forgedTree, sunTree } from "../create/systemsDoc";
 import { forgedBodyId, planetHues } from "../create/SystemSky";
 import { useForgedSystems } from "../create/useForgedSystems";
 import { DashboardRails } from "../dashboard/DashboardRails";
-import { SUN_HUE } from "../simulator/components/canvas/PlanetMenuLayer";
+import { SUN_HUE } from "../simulator/components/canvas/worlds";
 import {
   directFilesSummary,
   listFolder,
@@ -305,8 +305,8 @@ export function PlaywrightPage() {
   };
   // The star clicked: on an app base it IS the center app — its console
   // walks the first app's own menus like any planet's, in literal solar
-  // amber (the simulator's SUN_HUE, the way its menu modal paints the
-  // sun). On a menu base the sun is the app itself — the ring's planets
+  // amber (SUN_HUE, the simulator's own sun color). On a menu base the
+  // sun is the app itself — the ring's planets
   // are its menus, so its console walks them the very same way. No body
   // either way: the header paints ForgeStar.
   const openSun = () => {

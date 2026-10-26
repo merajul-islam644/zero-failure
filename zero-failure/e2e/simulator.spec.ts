@@ -15,10 +15,8 @@ const PLAY_BUTTON = '.sim-btn[aria-label="Play"], .sim-btn[aria-label="Pause"]';
 test.beforeEach(async ({ page }) => {
   // The dashboard is "/" now — the simulator lives at /simulator.
   await page.goto("/simulator");
-  // The command rail starts with both flanking panels folded — unfold the
-  // run-panel deck the way a viewer would before any panel-bound assertion.
-  // (The story rail is a drawer now; the tests that need its heading fold
-  // the deck first and unfold it themselves.)
+  // The status rail's PANEL seat starts with the run-panel deck folded —
+  // unfold it the way a viewer would before any panel-bound assertion.
   await page.locator('[aria-label="Toggle the run panels"]').click();
   await expect(page.locator(".sim-tabs")).toBeVisible();
 });
@@ -177,17 +175,14 @@ test.describe("playback", () => {
     await page.keyboard.press("ArrowRight");
     await expect(page.locator(TIMER)).toHaveText("0:10");
 
-    // PageDown jumps to the next scene's start — the scene heading lives
-    // in the story-rail drawer now, so fold the deck and unfold the rail.
+    // PageDown jumps to the next scene's start — two jumps land deep in
+    // the story, well past this 10s mark. Escape folds the run-panel
+    // drawer first so nothing is holding the pointer.
     await page.keyboard.press("Escape");
-    await page.locator('[aria-label="Toggle the story rail"]').click();
-    await expect(page.locator(".sim-scene-title").first()).toBeVisible();
-    const before = await page.locator(".sim-scene-title").first().textContent();
+    const before = await page.locator(TIMER).textContent();
     await page.keyboard.press("PageDown");
     await page.keyboard.press("PageDown");
-    await expect(page.locator(".sim-scene-title").first()).not.toHaveText(
-      before ?? "",
-    );
+    await expect(page.locator(TIMER)).not.toHaveText(before ?? "");
 
     // R restarts to zero, paused.
     await page.keyboard.press("KeyR");

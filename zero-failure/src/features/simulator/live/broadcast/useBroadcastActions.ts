@@ -1,13 +1,12 @@
 // Transport wrappers that publish each local action to the shared head.
 // When Broadcast is off (or the tenant isn't ready) `publish` no-ops inside
 // useBroadcast, so these wrappers are plain clock calls — zero behavior
-// change, one code path. Consumers: TransportBar, the keyboard handler,
-// ConfigPanel (scenario + rerun) and LiveModeControl (mode flips).
+// change, one code path. Consumers: TransportBar, the keyboard handler and
+// ConfigPanel (scenario + rerun).
 
 import { useMemo } from "react";
 import { usePlayer } from "../../state/PlayerContext";
 import { useRun } from "../../run/RunContext";
-import type { ExecutionMode } from "../../engine/types";
 import type { BroadcastApi } from "./useBroadcast";
 export interface BroadcastActions {
   togglePlay: () => void;
@@ -18,8 +17,6 @@ export interface BroadcastActions {
   playUntil: (fromMs: number, untilMs: number) => Promise<unknown>;
   selectScenario: (id: string) => void;
   rerun: () => void;
-  /** Publishes a mode change to the room; the LOCAL flip stays with the settings store. */
-  publishMode: (mode: ExecutionMode) => void;
   /**
    * Narration's audiobook pauses/resumes — published so the room shares the
    * story's real rhythm and a follower's own narration pause is never
@@ -70,9 +67,6 @@ export function useBroadcastActions(broadcast: BroadcastApi): BroadcastActions {
         rerun();
         clock.restart();
         publish({ headMs: 0, playing: true, force: true });
-      },
-      publishMode: (mode) => {
-        publish({ mode, force: true });
       },
       narrationPause: () => {
         // Rhythm is the presenter's to share. A follower's own narration

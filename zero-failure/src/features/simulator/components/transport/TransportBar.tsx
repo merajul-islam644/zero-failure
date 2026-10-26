@@ -27,8 +27,10 @@ export function TransportBar({
 }: {
   timeline: Timeline;
   actions: BroadcastActions;
-  zoomed: boolean;
-  onToggleZoom: () => void;
+  /** Full-display zoom, where the host page has one (the deck show). The
+   *  simulator stage has no zoom — absent props, no zoom button renders. */
+  zoomed?: boolean;
+  onToggleZoom?: () => void;
 }) {
   const { clock, playing } = usePlayer();
   const { narration, setNarration } = useSettings();
@@ -129,16 +131,18 @@ export function TransportBar({
             {narration ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
           </button>
           <SceneNav timeline={timeline} seek={actions.seek} />
-          <button
-            type="button"
-            className="sim-btn"
-            onClick={onToggleZoom}
-            aria-pressed={zoomed}
-            aria-label={zoomed ? "Exit full-display zoom" : "Zoom — show the solar system across the display"}
-            title={zoomed ? "Exit zoom (Esc)" : "Zoom to full display"}
-          >
-            {zoomed ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
-          </button>
+          {onToggleZoom && (
+            <button
+              type="button"
+              className="sim-btn"
+              onClick={onToggleZoom}
+              aria-pressed={zoomed}
+              aria-label={zoomed ? "Exit full-display zoom" : "Zoom — show the solar system across the display"}
+              title={zoomed ? "Exit zoom (Esc)" : "Zoom to full display"}
+            >
+              {zoomed ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
+            </button>
+          )}
         </div>
         <label className="sim-speed">
           <span>Speed</span>

@@ -46,8 +46,8 @@ export function RunProvider({ children }: { children: ReactNode }) {
 
   const scenario = useMemo(() => scenarioById(scenarioId), [scenarioId]);
 
-  // The persisted settings store is the single writer of the execution mode
-  // (LiveModeControl toggles it there); the run context follows so every
+  // The persisted settings store is the single writer of the execution mode;
+  // the run context follows so every
   // consumer sees one ExecutionMode, and the effect below re-executes on
   // change. Simulation is deterministic and synchronous-resolving; live mode
   // records real executions into the same shape.

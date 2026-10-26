@@ -1,5 +1,5 @@
 // Per-account storage. Every drawer of app data — connected repos,
-// run paths, forged systems, the menu showcase, settings — used to
+// run paths, forged systems, settings — used to
 // ride one browser-wide localStorage key, so any account signing in
 // on this browser saw the last account's data. A key that goes
 // through userScopedKey carries the signed-in account's id, so each

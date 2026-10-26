@@ -285,7 +285,6 @@ function PresentationShow({
       playUntil: (fromMs, untilMs) => clock.playUntil(fromMs, untilMs),
       selectScenario: () => {},
       rerun: () => {},
-      publishMode: () => {},
       narrationPause: () => {},
       narrationResume: () => {}
     }),

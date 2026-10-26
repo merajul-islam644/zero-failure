@@ -1,8 +1,10 @@
 // Side-panel deck: Inspector (connectors + live message log), Results
 // (progressive dashboard + verdict), Evidence (grouped history), Config
 // (scenario + settings) — plus the full-report takeover. The deck starts
-// folded and the command rail's gear toggles it, so open/onClose are owned
-// one level up and the rail and the deck's own ✕ share one state. The
+// folded and the right rail's PANEL seat toggles it (the simulator's
+// StatusRail for the stage deck; RunPanelsControl provisions its own
+// stack on every other page), so open/onClose are owned one level up and
+// the rail and the deck's own ✕ share one state. The
 // sheet itself is the shared drawer (SimDrawer) — same overlay, slide-in
 // and close as every other drawer in the app; only the content differs.
 
@@ -37,7 +39,7 @@ export function PanelDeck({
   timeline: Timeline;
   liveEvents: LiveActivityEvent[];
   actions: BroadcastActions;
-  /** Folded at start; the command rail's gear (or the ✕) moves it. */
+  /** The right rail's PANEL seat (or the ✕) moves it. */
   open: boolean;
   onClose: () => void;
 }) {

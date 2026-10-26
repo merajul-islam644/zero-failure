@@ -16,6 +16,10 @@ export interface LightSpec {
   r: number;
 }
 
+/** The sun's HSL hue trio — the literal solar amber the OS body tints
+ *  every surface with (shared via --node-hue). */
+export const SUN_HUE = "25 100% 55%";
+
 /** Tiny seeded PRNG — same discipline as GalaxyLayer's field. */
 function seeded(id: string): () => number {
   let h = 0;

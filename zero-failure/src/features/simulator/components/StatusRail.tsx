@@ -1,43 +1,32 @@
 // The status rail: the command rail's sci-fi sibling on the right edge.
-// Everything that used to crowd the top bar lives in its three flyouts —
-// execution mode, broadcast, account. Each flyout reuses its top-bar
-// control untouched; the rail only adds the HUD chrome, the open/close
-// state and the usual courtesies (outside click, Escape with
-// stopPropagation so a window-level Escape can't exit zoom by accident).
+// Two seats: PANEL — the stage deck's toggle, its state owned one level up
+// so the rail and the deck's ✕ share one truth — and the signed-in
+// account's flyout. The rail adds the HUD chrome and the flyout's usual
+// courtesies (outside click and Escape close it, with stopPropagation so
+// the window-level key handlers never see the flyout's own Escape).
 
 import { useEffect, useRef, useState } from "react";
-import { CircleUser, FlaskConical, RadioTower } from "lucide-react";
-import type { ExecutionMode } from "../engine/types";
-import type { BroadcastApi } from "../live/broadcast/useBroadcast";
-import { useRun } from "../run/RunContext";
+import { CircleUser } from "lucide-react";
 import { AccountBar } from "./AccountBar";
-import { BroadcastControl } from "./BroadcastControl";
-import { LiveModeToggle } from "./LiveModeControl";
+import { RunPanelsButton } from "./panels/RunPanelsControl";
 
-type Panel = "mode" | "broadcast" | "account";
-
-interface StatusRailProps {
-  broadcast: BroadcastApi;
-  onModeChange?: (mode: ExecutionMode) => void;
-}
-
-export function StatusRail({ broadcast, onModeChange }: StatusRailProps) {
-  const { mode } = useRun();
-  const [openPanel, setOpenPanel] = useState<Panel | null>(null);
+export function StatusRail({ deckOpen, onToggleDeck }: { deckOpen: boolean; onToggleDeck: () => void }) {
+  const [openPanel, setOpenPanel] = useState(false);
   const rootRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!openPanel) return;
     const onPointerDown = (event: PointerEvent) => {
       if (rootRef.current && event.target instanceof Node && !rootRef.current.contains(event.target)) {
-        setOpenPanel(null);
+        setOpenPanel(false);
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        // document fires before window: stopping here keeps zoom mode alive
+        // document fires before window: stop the flyout's close here so no
+        // window-level handler reacts to it too
         event.stopPropagation();
-        setOpenPanel(null);
+        setOpenPanel(false);
       }
     };
     document.addEventListener("pointerdown", onPointerDown);
@@ -48,85 +37,32 @@ export function StatusRail({ broadcast, onModeChange }: StatusRailProps) {
     };
   }, [openPanel]);
 
-  const toggle = (panel: Panel) => setOpenPanel((cur) => (cur === panel ? null : panel));
-  const live = mode === "live";
-
   return (
     <nav ref={rootRef} className="sim-rail sim-rail-right" aria-label="Session controls">
       <div className="sim-rail-btns">
         <div className="sim-rail-slot">
           <button
             type="button"
-            className={`sim-rail-btn${live || openPanel === "mode" ? " sim-rail-btn-on" : ""}`}
-            aria-expanded={openPanel === "mode"}
-            aria-label="Execution mode"
-            title="Simulation or live connectors"
-            onClick={() => toggle("mode")}
-          >
-            <span className="sim-rail-btn-face">
-              {live ? (
-                <RadioTower size={17} strokeWidth={1.8} aria-hidden />
-              ) : (
-                <FlaskConical size={17} strokeWidth={1.8} aria-hidden />
-              )}
-              <span className="sim-rail-btn-tag">MODE</span>
-            </span>
-          </button>
-          {openPanel === "mode" && (
-            <div className="sim-rail-flyout" role="group" aria-label="Execution mode">
-              <p className="sim-rail-flyout-title">Execution mode</p>
-              <LiveModeToggle onModeChange={onModeChange} />
-              <p className="sim-rail-flyout-note">
-                {live
-                  ? "Reading real SELISE Blocks services — every probe is read-only."
-                  : "Deterministic simulated connectors — nothing real is contacted."}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="sim-rail-slot">
-          <button
-            type="button"
-            className={`sim-rail-btn${broadcast.enabled || openPanel === "broadcast" ? " sim-rail-btn-on" : ""}`}
-            aria-expanded={openPanel === "broadcast"}
-            aria-label="Broadcast"
-            title="Shared playback — follow or present"
-            onClick={() => toggle("broadcast")}
-          >
-            <span className="sim-rail-btn-face">
-              <RadioTower size={17} strokeWidth={1.8} aria-hidden />
-              <span className="sim-rail-btn-tag">FEED</span>
-            </span>
-          </button>
-          {openPanel === "broadcast" && (
-            <div className="sim-rail-flyout" role="group" aria-label="Broadcast">
-              <p className="sim-rail-flyout-title">Broadcast</p>
-              <BroadcastControl broadcast={broadcast} />
-            </div>
-          )}
-        </div>
-
-        <div className="sim-rail-slot">
-          <button
-            type="button"
-            className={`sim-rail-btn${openPanel === "account" ? " sim-rail-btn-on" : ""}`}
-            aria-expanded={openPanel === "account"}
+            className={`sim-rail-btn${openPanel ? " sim-rail-btn-on" : ""}`}
+            aria-expanded={openPanel}
             aria-label="Account"
             title="Signed-in account"
-            onClick={() => toggle("account")}
+            onClick={() => setOpenPanel((cur) => !cur)}
           >
             <span className="sim-rail-btn-face">
               <CircleUser size={17} strokeWidth={1.8} aria-hidden />
               <span className="sim-rail-btn-tag">ACCT</span>
             </span>
           </button>
-          {openPanel === "account" && (
+          {openPanel && (
             <div className="sim-rail-flyout" role="group" aria-label="Account">
               <p className="sim-rail-flyout-title">Account</p>
               <AccountBar />
             </div>
           )}
+        </div>
+        <div className="sim-rail-slot">
+          <RunPanelsButton on={deckOpen} onToggle={onToggleDeck} />
         </div>
       </div>
     </nav>

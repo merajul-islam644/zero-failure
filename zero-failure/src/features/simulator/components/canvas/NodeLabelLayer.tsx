@@ -7,7 +7,6 @@
 
 import { CAST } from "../../script/cast";
 import type { CharacterState, PlatformId } from "../../engine/types";
-import { PLATFORM_MENUS } from "../../script/platformMenus";
 import { useOrbitTime } from "../../state/PlayerContext";
 import { useMotionReduced } from "../../state/SettingsContext";
 import { orbitPosition } from "./orbits";
@@ -38,8 +37,6 @@ export function NodeLabelLayer({ states, visibleCast }: NodeLabelLayerProps) {
         // Catalog designation: cast order, zero-padded — the same numbers
         // the deck's registry prints, so chart and console agree.
         const plate = `PLT-${String((castIndex.get(character.id) ?? 0) + 1).padStart(2, "0")}`;
-        // census: how many menu planets this body carries
-        const menuCount = PLATFORM_MENUS[character.id]?.length ?? 0;
         return (
           <g
             key={character.id}
@@ -58,12 +55,6 @@ export function NodeLabelLayer({ states, visibleCast }: NodeLabelLayerProps) {
             <text className="sim-node-role" y={isSun ? 124 : 94} dx={1} textAnchor="middle">
               {plate} · {character.role}
             </text>
-            {/* census line — a body with no authored menus stays quiet */}
-            {menuCount > 0 && (
-              <text className="sim-node-count" y={isSun ? 138 : 108} dx={1} textAnchor="middle">
-                {menuCount} {menuCount === 1 ? "menu" : "menus"}
-              </text>
-            )}
           </g>
         );
       })}

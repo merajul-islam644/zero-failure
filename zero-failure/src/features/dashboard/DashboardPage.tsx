@@ -11,10 +11,11 @@
 // and the boot lines report the real counts.
 
 import { useEffect, useRef, useState } from "react";
-import { MonitorPlay, Presentation, Rocket, Theater } from "lucide-react";
+import { MonitorPlay, Presentation, Rocket } from "lucide-react";
+// Parked with the playwright sector card below — comes back with it:
+// import { Theater } from "lucide-react";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 import { useRouterNavigate } from "../../app/router/RouterContext";
-import seliseLogo from "../../assets/selise-blocks-logo.png";
 // The rails reuse the simulator's chamfered HUD classes — pull the sheet
 // that styles them (Vite dedupes it against the simulator's own import).
 import "../simulator/styles/simulator.css";
@@ -196,7 +197,9 @@ export function DashboardPage() {
   const sectors = [
     { href: "/create", icon: Rocket, name: t("dashboard.sector.create"), hint: t("dashboard.sector.create.hint") },
     { href: "/presentation", icon: Presentation, name: t("dashboard.sector.pres"), hint: t("dashboard.sector.pres.hint") },
-    { href: "/playwright", icon: Theater, name: t("dashboard.sector.pw"), hint: t("dashboard.sector.pw.hint") },
+    // PARKED (playwright): the sector's menu card, kept authored —
+    // un-comment to put the fourth door back.
+    // { href: "/playwright", icon: Theater, name: t("dashboard.sector.pw"), hint: t("dashboard.sector.pw.hint") },
     { href: "/simulator", icon: MonitorPlay, name: t("dashboard.sector.sim"), hint: t("dashboard.sector.sim.hint") }
   ];
 
@@ -220,11 +223,6 @@ export function DashboardPage() {
         </button>
       )}
       <DashboardRails>
-        {/* the official logo pinned to the deck's top-right corner, above
-            the sticky ops strip — as provided, on a light chip */}
-        <div className="dash-brand">
-          <img src={seliseLogo} alt="SELISE Blocks" />
-        </div>
         {/* The live header strip: ops tag + the two real clocks. */}
         <div className="dash-topbar">
           <span className="dash-topbar-tag">
@@ -345,9 +343,11 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* The run desk's readiness on this browser: which levels carry
-              a linked repository, the loose-file sets, the launch pads. */}
-          <section className="dash-card dash-card-wide">
+          {/* PARKED (playwright): the run desk's readiness card — which
+              levels carry a linked repository, the loose-file sets, the
+              launch pads. The code stays authored below; un-comment the
+              section to put the card back. */}
+          {/* <section className="dash-card dash-card-wide">
             <h3>
               <span className="dash-h3-no">02</span>
               {t("dashboard.rundesk.title")}
@@ -379,7 +379,7 @@ export function DashboardPage() {
                 {t("dashboard.rundesk.homes")} <b>{sidecar.homes.length}</b>
               </span>
             </div>
-          </section>
+          </section> */}
         </div>
       </DashboardRails>
     </div>

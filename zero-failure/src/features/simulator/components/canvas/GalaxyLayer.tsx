@@ -15,7 +15,7 @@ import { SKY_BOUNDS } from "./orbits";
 const SUN = { x: 800, y: 450 };
 
 // Counts cover the padded sky (SKY_BOUNDS): the Milky Way's own stars fill
-// the frame a wide zoom window grows into.
+// the frame and the letterbox bands around it.
 const STAR_COUNT = 260;
 
 export type GalaxyKind = "spiral" | "elliptical" | "irregular";
