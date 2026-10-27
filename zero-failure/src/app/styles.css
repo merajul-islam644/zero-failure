@@ -34,11 +34,27 @@
 body { margin: 0; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font: inherit; }
-:root { background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-h1, h2, h3 { letter-spacing: -0.01em; }
-:focus-visible { border-radius: 4px; outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+/* Dark is the product's only native register — form controls, scrollbars
+   and the ink overflow all render in the stage's register, not the OS's.
+   (The manual light theme re-declares this in simulator.css.) */
+:root { background: hsl(var(--background)); color: hsl(var(--foreground)); color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+/* Native checkboxes, radios and sliders light in the signal color.
+   (Var fallback covers the auth pages, which never load simulator.css.) */
+:root { accent-color: hsl(var(--sim-accent, 199 95% 58%)); }
+/* Display lines wrap balanced; prose avoids lone last words. Both are
+   progressive enhancements — browsers without them wrap as before. */
+h1, h2, h3 { letter-spacing: -0.01em; text-wrap: balance; }
+p { text-wrap: pretty; }
+::selection { background: hsl(var(--sim-accent, 199 95% 58%) / 0.32); }
+:focus-visible { border-radius: 4px; outline: 2px solid hsl(var(--sim-accent, 199 95% 58%)); outline-offset: 2px; }
 
-/* Thin scrollbars for the sidebar nav and main content */
+/* The document's own scrollbars wear the console's hairline chrome, not
+   the OS's — every sector scrolls in the same voice. */
+html { scrollbar-color: hsl(var(--sim-border, 222 20% 22%)) transparent; scrollbar-width: thin; }
+html::-webkit-scrollbar { width: 10px; height: 10px; }
+html::-webkit-scrollbar-thumb { background: hsl(var(--sim-border, 222 20% 22%)); border-radius: 999px; }
+html::-webkit-scrollbar-track { background: transparent; }
+/* Inner scroll surfaces (the shell's sidebar nav and main pane) too. */
 nav, main { scrollbar-color: hsl(var(--border)) transparent; scrollbar-width: thin; }
 nav::-webkit-scrollbar, main::-webkit-scrollbar { width: 8px; }
 nav::-webkit-scrollbar-thumb, main::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 999px; }
@@ -247,7 +263,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 }
 .dash-kicker { align-items: center; color: hsl(var(--sim-accent)); display: flex; font-size: 12px; gap: 12px; letter-spacing: 0.22em; margin: 0 0 10px; text-shadow: 0 0 12px hsl(var(--sim-accent) / 0.5); text-transform: uppercase; }
 .dash-kicker::before, .dash-kicker::after { background: hsl(var(--sim-accent) / 0.55); box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.4); content: ""; height: 1px; width: 26px; }
-.dash-hero h2 { align-items: center; display: flex; font-size: clamp(30px, 4.2vw, 44px); gap: 14px; letter-spacing: -0.01em; margin: 0 0 12px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35), 0 0 90px hsl(var(--sim-accent) / 0.16); }
+.dash-hero h1 { align-items: center; display: flex; font-size: clamp(30px, 4.2vw, 44px); gap: 14px; letter-spacing: -0.01em; margin: 0 0 12px; text-shadow: 0 0 28px hsl(var(--sim-accent) / 0.35), 0 0 90px hsl(var(--sim-accent) / 0.16); }
 .dash-hero-mark svg { display: block; }
 .dash-hero-body { color: hsl(var(--sim-text-dim)); margin: 0; max-width: 62ch; }
 /* The reserved sectors (presentation, playwright): one quiet chamfered
@@ -356,6 +372,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 }
 .dash-forge-choice:hover { color: hsl(var(--sim-accent)); }
 .dash-forge-choice:hover::before { filter: drop-shadow(0 0 8px hsl(var(--sim-accent) / 0.45)); }
+.dash-forge-choice:active { transform: translateY(1px); }
 @media (max-width: 640px) {
   .dash-forge-choices { grid-template-columns: 1fr; }
 }
@@ -1673,6 +1690,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 .dash-open:focus-visible { outline: 2px solid hsl(var(--sim-accent) / 0.7); outline-offset: 3px; }
 .dash-open:hover { background-color: hsl(var(--sim-accent) / 0.85); color: hsl(var(--sim-stage)); }
 .dash-open:hover::before { filter: drop-shadow(0 0 10px hsl(var(--sim-accent) / 0.6)); }
+.dash-open:active { transform: translateY(1px); }
 
 /* The assertion matrix: one chamfered tick per scripted assertion, a
    shimmer passing down the line in play order. */
@@ -1798,6 +1816,8 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   box-shadow: inset 0 0 0 1px hsl(var(--sim-accent) / 0.6), 0 10px 26px hsl(var(--sim-accent) / 0.14);
   transform: translateY(-3px);
 }
+/* the press settles the hover's lift — the door yields under the hand */
+.dash-sector:active { transform: translateY(-1px); transition-duration: 80ms; }
 .dash-sector:focus-visible { outline: 2px solid hsl(var(--sim-accent) / 0.7); outline-offset: 3px; }
 
 /* Reserved panels: an empty deck or run desk reads as awaiting work,
@@ -1837,6 +1857,12 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dash-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* Below phone width the two-sector row cramps the mono names — the
+   doors stack and each keeps its full line. */
+@media (max-width: 470px) {
+  .dash-sectors { grid-template-columns: 1fr; }
+  .dash-stat strong { font-size: 28px; }
+}
 
 /* --- The deck, second pass: real instrumentation ------------------------
    Typefaces land from index.html (Chakra Petch display, Share Tech Mono
@@ -1851,7 +1877,7 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   grid-template-columns: minmax(0, 1fr) 236px;
 }
 .dash-hero-main { min-width: 0; }
-.dash-hero h2 { font-family: "Chakra Petch", sans-serif; text-transform: uppercase; }
+.dash-hero h1 { font-family: "Chakra Petch", sans-serif; text-transform: uppercase; }
 .dash-kicker,
 .dash-stat strong,
 .dash-stat span,
@@ -2758,6 +2784,7 @@ pre { background: hsl(var(--foreground)); border-radius: var(--radius); color: h
   box-shadow: 0 0 30px hsl(199 95% 58% / 0.38), inset 0 0 18px hsl(199 95% 58% / 0.12);
 }
 .auth-submit:disabled { cursor: not-allowed; opacity: 0.55; }
+.auth-submit:active:not(:disabled) { transform: translateY(1px); }
 
 /* the app's alert tones, re-inked for the dark console */
 .auth-card .alert { border: 1px solid transparent; font-family: "Share Tech Mono", ui-monospace, monospace; }
@@ -2840,6 +2867,44 @@ pre { background: hsl(var(--foreground)); border-radius: var(--radius); color: h
   .auth-scan, .auth-stars { animation: none; }
 }
 
+/* The fault consoles: the 404 and the error screen wear the same
+   observatory as the login gate — one console under the drifting sky,
+   a readout-sized fault code where the mission brief would stand.
+   The sky spans come from the auth-screen markup; this only re-rigs
+   the layout for a single card and stages the fault readout. */
+.nf-screen { flex-direction: column; }
+.nf-card { max-width: 440px; text-align: center; width: min(100%, 440px); }
+.nf-card .auth-panel { padding: 38px 34px 28px; }
+/* two-class beats the .auth-card h2 / .auth-panel > p dresses */
+.nf-card .nf-code {
+  color: hsl(199 95% 74%);
+  font-size: clamp(58px, 11vw, 92px);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin: 0;
+  text-shadow:
+    0 0 30px hsl(199 95% 58% / 0.5),
+    0 0 110px hsl(199 95% 58% / 0.22);
+}
+/* one entrance for the console, then it holds still */
+.nf-card { animation: nf-in 460ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+@keyframes nf-in {
+  from { opacity: 0; transform: translateY(14px); }
+}
+.nf-card .nf-message {
+  color: hsl(218 14% 66%);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 0;
+}
+/* a fault that speaks in words, not digits, reads a step down in size */
+.nf-card .nf-code-word { font-size: clamp(30px, 7vw, 46px); letter-spacing: 0.04em; }
+.nf-card .auth-submit { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) {
+  .nf-card { animation: none; }
+}
+
 /* Alerts */
 .alert { border-radius: 8px; font-size: 13px; line-height: 1.5; padding: 12px 14px; }
 .alert code { background: hsl(var(--secondary)); border-radius: 4px; padding: 1px 5px; }
@@ -2894,7 +2959,9 @@ tbody tr:last-child td { border-bottom: 0; }
 .loading-screen { align-items: center; display: flex; height: 100vh; justify-content: center; }
 .spinner { animation: blocks-spin 0.7s linear infinite; border: 3px solid hsl(var(--border)); border-radius: 999px; border-top-color: hsl(var(--primary)); display: inline-block; height: 28px; width: 28px; }
 @keyframes blocks-spin { to { transform: rotate(360deg); } }
-.skeleton { animation: blocks-shimmer 1.4s ease infinite; background: linear-gradient(90deg, hsl(var(--secondary)) 25%, hsl(var(--border)) 37%, hsl(var(--secondary)) 63%); background-size: 400% 100%; border-radius: 4px; display: inline-block; }
+/* Skeletons scan in the signal color — the console is thinking, not
+   greying out. */
+.skeleton { animation: blocks-shimmer 1.4s ease infinite; background: linear-gradient(90deg, hsl(var(--sim-accent, 199 95% 58%) / 0.05) 25%, hsl(var(--sim-accent, 199 95% 58%) / 0.18) 37%, hsl(var(--sim-accent, 199 95% 58%) / 0.05) 63%); background-size: 400% 100%; border-radius: 4px; display: inline-block; }
 @keyframes blocks-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 .skeleton-avatar-lg { border-radius: 999px; flex-shrink: 0; height: 56px; width: 56px; }
 .skeleton-line { display: block; height: 14px; width: 140px; }

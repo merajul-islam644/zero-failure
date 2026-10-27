@@ -53,6 +53,7 @@ export function AccessConsolePage() {
 
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Access control</h1>
       <DashboardRails active="access">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

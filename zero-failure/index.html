@@ -3,17 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CHOKRO</title>
+    <title>CHOKRO — Mission console</title>
+    <!-- The browser chrome wears the stage sky on mobile. -->
+    <meta name="theme-color" content="#06090e" />
+    <meta name="color-scheme" content="dark" />
+    <!-- The one page a crawler ever sees, so the machine describes itself
+        here in its own words — what it does, nothing it doesn't. The
+        router retitles the tab per sector once the app is live. -->
+    <meta
+      name="description"
+      content="CHOKRO turns every product into its own solar system — forge the world, screen its storyline narrated and asserted, and ship nothing with a failure inside."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CHOKRO" />
+    <meta property="og:title" content="CHOKRO — Mission console" />
+    <meta
+      property="og:description"
+      content="CHOKRO turns every product into its own solar system — forge the world, screen its storyline narrated and asserted, and ship nothing with a failure inside."
+    />
+    <meta name="twitter:card" content="summary" />
     <!-- the CHOKRO mark — the neon ringed planet — in the browser tab
         (every modern browser takes the SVG; no raster fallback needed) -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- The HUD's own typefaces: Chakra Petch for display lines, Share Tech
-        Mono for instrument readouts (loaded once, used by the dashboard). -->
+        Mono for instrument readouts, Inter for prose (actually loaded, so
+        body text reads the same on every OS instead of falling back). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Share+Tech+Mono&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600&family=Share+Tech+Mono&display=swap"
     />
   </head>
   <body>

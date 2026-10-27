@@ -125,6 +125,7 @@ export function ProfilePage() {
 
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Account</h1>
       <DashboardRails active="account">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

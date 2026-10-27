@@ -51,6 +51,7 @@ export function RolesConsolePage() {
 
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Role control</h1>
       <DashboardRails active="roles">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

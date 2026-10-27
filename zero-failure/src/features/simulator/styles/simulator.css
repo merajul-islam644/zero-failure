@@ -37,6 +37,7 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --sim-bg: 220 30% 96%;
   --sim-bg-raised: 0 0% 100%;
   --sim-panel: 0 0% 100%;

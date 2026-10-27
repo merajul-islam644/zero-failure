@@ -241,12 +241,12 @@ export function DashboardPage() {
           <span className="dash-hero-edge" aria-hidden />
           <div className="dash-hero-main">
             <p className="dash-kicker">{t("dashboard.hero.title")}</p>
-            <h2>
+            <h1>
               <span className="dash-hero-mark">
                 <ChokroMark size={34} />
               </span>
               {t("dashboard.title")}
-            </h2>
+            </h1>
             <p className="dash-hero-body">{t("dashboard.hero.body")}</p>
             <div className="dash-sectors">
               {sectors.map((sector, i) => (

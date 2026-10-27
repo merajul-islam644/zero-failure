@@ -376,6 +376,7 @@ export function PresentationPage() {
   }
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Presentation</h1>
       <DashboardRails active="presentation">
         <div className="dash-topbar">
           <div className="dash-topbar-side">
@@ -775,6 +776,7 @@ function PresentationShow({
   }
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Presentation</h1>
       <DashboardRails active="presentation">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

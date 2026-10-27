@@ -231,6 +231,7 @@ export function CreateSolarSystemPage() {
 
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Create solar system</h1>
       <DashboardRails active="create">
         <div className="dash-topbar">
           <span className="dash-topbar-tag">

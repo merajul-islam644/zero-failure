@@ -39,6 +39,7 @@ export function CallbackPage({ onNavigate }: { onNavigate: (path: string) => voi
   if (error) {
     return (
       <div className="auth-screen">
+        <h1 className="sr-only">Signing in</h1>
         <div className="auth-card">
           <h2>{t("auth.failed")}</h2>
           <Alert tone="error">{error}</Alert>

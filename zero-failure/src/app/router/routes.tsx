@@ -34,6 +34,23 @@ const JUMP_LABELS: Record<string, string> = {
   "/login": "AUTH GATE"
 };
 
+// The tab wears the sector's name too — every history entry stays
+// readable and a glance at the browser says where the machine is.
+// Unknown paths land on the lost-sector console.
+const ROUTE_TITLES: Record<string, string> = {
+  "/": "Mission console — CHOKRO",
+  "/simulator": "Simulator — CHOKRO",
+  "/presentation": "Presentation — CHOKRO",
+  "/playwright": "Playwright — CHOKRO",
+  "/create": "Create solar system — CHOKRO",
+  "/account": "Account — CHOKRO",
+  "/access": "Access control — CHOKRO",
+  "/roles": "Role control — CHOKRO",
+  "/error": "Diagnostics — CHOKRO",
+  "/login": "Sign in — CHOKRO",
+  "/login/callback": "Signing in — CHOKRO"
+};
+
 export function AppRouter() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [search, setSearch] = useState(() => window.location.search);
@@ -64,6 +81,10 @@ export function AppRouter() {
     const id = window.setTimeout(() => setJump(null), 1150);
     return () => window.clearTimeout(id);
   }, [jump]);
+
+  useEffect(() => {
+    document.title = ROUTE_TITLES[path] ?? "Not found — CHOKRO";
+  }, [path]);
 
   function navigate(nextPath: string) {
     const [nextPathname = "/", queryString = ""] = nextPath.split("?");

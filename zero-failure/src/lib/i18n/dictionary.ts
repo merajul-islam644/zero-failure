@@ -4,8 +4,8 @@ export const defaultDictionary = {
   "nav.logout": "Log out",
   "nav.signIn": "Sign in",
   "dashboard.title": "CHOKRO",
-  "dashboard.hero.title": "CHOKRO // MISSION CONSOLE",
-  "dashboard.hero.body": "CHOKRO turns every product into its own solar system — forge the world, screen the whole storyline asserted and narrated, and inspect every run's evidence, before a real integration ever ships. Nothing leaves orbit with a failure inside.",
+  "dashboard.hero.title": "MISSION CONSOLE",
+  "dashboard.hero.body": "CHOKRO turns every product into its own solar system. Forge the world, then screen the whole storyline — narrated scene by scene, every beat asserted — before the real integration ships. Nothing leaves orbit with a failure inside.",
   "dashboard.sector.create": "Create",
   "dashboard.sector.create.hint": "Forge a solar system per product",
   "dashboard.sector.pres": "Presentation",
@@ -32,7 +32,7 @@ export const defaultDictionary = {
   "dashboard.rundesk.homes": "Run homes on this machine",
   "dashboard.rundesk.filesets": "Loose-file sets",
   "dashboard.stat.scenes": "Scenes",
-  "auth.welcome": "Welcome back",
+  "auth.welcome": "Identify yourself",
   "auth.kicker": "ACCESS TERMINAL // SECURE UPLINK",
   "auth.briefKicker": "MISSION BRIEFING",
   "auth.subtitle": "Sign in with your Blocks account to continue.",
@@ -47,12 +47,12 @@ export const defaultDictionary = {
   "common.delete": "Delete",
   "common.refresh": "Refresh",
   "common.loading": "Loading",
-  "common.error": "Something went wrong",
+  "common.error": "Fault detected",
   "profile.title": "Profile",
-  "profile.subtitle": "Signed-in user details from Blocks IAM.",
+  "profile.subtitle": "The signed-in operative's file, read straight from Blocks IAM.",
   "notFound.title": "404",
-  "notFound.message": "This page does not exist.",
-  "notFound.home": "Back home"
+  "notFound.message": "No such sector on the map — this address leads nowhere.",
+  "notFound.home": "Back to the deck"
 } as const;
 
 export type TranslationKey = keyof typeof defaultDictionary;

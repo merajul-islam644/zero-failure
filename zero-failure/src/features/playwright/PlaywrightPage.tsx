@@ -573,6 +573,7 @@ export function PlaywrightPage() {
 
   return (
     <div className="dash-space">
+      <h1 className="sr-only">Playwright</h1>
       <DashboardRails active="playwright">
         <div className="dash-topbar">
           <div className="dash-topbar-side">
