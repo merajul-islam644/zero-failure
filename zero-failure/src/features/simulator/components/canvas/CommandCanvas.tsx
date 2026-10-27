@@ -6,7 +6,7 @@
 
 import { useMemo } from "react";
 import { CAST } from "../../script/cast";
-import { useSimSnapshot } from "../../state/PlayerContext";
+import { usePlayer, useSimSnapshot } from "../../state/PlayerContext";
 import type { Timeline } from "../../engine/timeline";
 import type { LiveActivityEvent } from "../../live/activity";
 import { ORBIT_CENTER, ORBIT_RINGS } from "./orbits";
@@ -27,6 +27,10 @@ export function CommandCanvas({
   liveEvents
 }: CommandCanvasProps) {
   const snapshot = useSimSnapshot(timeline.events);
+  // The star's hold: when the story parks, the sun's turning surface and
+  // breathing stop with it — the presentation's own discipline, one
+  // play/pause button for the whole fireball.
+  const { playing } = usePlayer();
 
   const viewBox = `${ORBIT_CENTER.x - 800} ${ORBIT_CENTER.y - 450} 1600 900`;
 
@@ -38,6 +42,7 @@ export function CommandCanvas({
   return (
     <svg
       className="sim-canvas"
+      data-hold={playing ? undefined : ""}
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       role="img"

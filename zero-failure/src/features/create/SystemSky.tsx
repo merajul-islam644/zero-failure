@@ -8,7 +8,7 @@
 // dash-scoped classes and forge-prefixed defs, so the create sector owns
 // its copy and can never move the simulator's paint.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { planetTextures, sunTexture } from "../simulator/components/canvas/planetTexture";
 import { lightsFor, worldFor } from "../simulator/components/canvas/worlds";
 import type { BodyLogo } from "./iconCatalog";
@@ -29,10 +29,36 @@ export function planetHues(count: number, sun: string): number[] {
   return Array.from({ length: count }, (_, i) => (offset + Math.round((i * 360) / count)) % 360);
 }
 
-/** prefers-reduced-motion, read once per mount — the SMIL moon arm
- *  freezes along with the CSS-driven motion. */
+/** prefers-reduced-motion the way the app itself plays it: the Motion
+ *  setting outranks the OS exactly as the CSS does — `full` turns every
+ *  sky even on a reduce machine, `reduce` calms every sky, and `system`
+ *  follows the OS. This is useMotionReduced's twin for skies that may
+ *  sit outside a SettingsProvider: it reads the same html[data-motion]
+ *  the stylesheets read, and follows it live. */
 export function useReducedMotion(): boolean {
-  return useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  const evaluate = () => {
+    const setting = document.documentElement.dataset.motion;
+    if (setting === "full") return false;
+    if (setting === "reduce") return true;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  };
+  const [reduce, setReduce] = useState(evaluate);
+  useEffect(() => {
+    const sync = () => setReduce(evaluate());
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    media.addEventListener("change", sync);
+    // the Motion select writes data-motion on <html> — follow it live
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-motion"]
+    });
+    return () => {
+      media.removeEventListener("change", sync);
+      observer.disconnect();
+    };
+  }, []);
+  return reduce;
 }
 
 /** The bearing from the star (the origin) out to a body at x/y — the

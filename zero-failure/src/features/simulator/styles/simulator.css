@@ -771,9 +771,13 @@
 /* The show's hold reaches the star: a paused show freezes the whole
    fireball mid-sweep and mid-breath — the turning surface AND the
    glow/bloom pulse stop and go with the very same play/pause button the
-   planets obey. */
-[data-hold] .sim-sun-granule,
-[data-hold] .sim-sun-spot,
+   planets obey. The cells ride .sim-sun-surface in the selector so the
+   hold outranks the motion shorthand rules (html[data-motion="full"]
+   animation: ... resets play-state — the shorthand must never win). */
+[data-hold] .sim-sun-surface .sim-sun-granule,
+[data-hold] .sim-sun-surface .sim-sun-spot,
+[data-hold].sim-canvas .sim-sun-glow,
+[data-hold].sim-canvas .sim-sun-bloom,
 [data-hold] .dash-star-glow,
 [data-hold] .dash-star-bloom {
   animation-play-state: paused;
