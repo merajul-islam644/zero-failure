@@ -8,6 +8,8 @@
 // When `run` is null (engine bring-up) exchanges fall back to placeholder
 // envelopes so the skeleton still plays end to end.
 
+import type { ReactNode } from "react";
+
 import { budgetScene, clampProcessingMs, type BudgetedItem } from "./budget";
 import { resolveScenes } from "./dialogue";
 import { buildSceneTable, type SceneWindow } from "./select";
@@ -35,6 +37,20 @@ export interface TimelineScene {
   environment: string;
   startMs: number;
   endMs: number;
+  /** HSL triple tinting the strip block in this scene's own color —
+   *  the presentation's bodies ride their planet hues here. Absent, the
+   *  block wears the plain chrome. */
+  hue?: string;
+  /** The body's own mark — rides before its name on the strip block. */
+  icon?: ReactNode;
+  /** Stable strip identity: originals are "b<i>", copies "c<id>". The
+   *  presentation's part sequencer tags and reads it; the engine never
+   *  sets it. */
+  partKey?: string;
+  /** The voice seat whose words this part speaks — the presentation's
+   *  narration-console seat (an app base's center maps to planet 0).
+   *  Undefined when the scene is not a voice part. */
+  seat?: number;
 }
 
 export interface Timeline {

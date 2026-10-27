@@ -54,29 +54,20 @@ describe("cast sound profile", () => {
   });
 });
 
-describe("narrationRateFor (voice/subtitle sync)", () => {
-  it("lets a short line in a wide window speak at natural speed", () => {
-    // 10 words ≈ 3.85 s natural; window 6 s — no speedup needed.
-    expect(narrationRateFor("one two three four five six seven eight nine ten", 1, 1, 6000)).toBe(1);
+describe("narrationRateFor (natural pace)", () => {
+  it("speaks at playback 1 × character 1 — however long the line", () => {
+    expect(narrationRateFor(1, 1)).toBe(1);
+    expect(narrationRateFor(1, 0.95)).toBeCloseTo(0.95, 5);
   });
 
-  it("speeds up when the line would overrun its display window", () => {
-    // 26 words ≈ 10 s natural; 5 s window → ~2× — clamped at 2.
-    const text = Array.from({ length: 26 }, (_, i) => `w${i}`).join(" ");
-    expect(narrationRateFor(text, 1, 1, 5000)).toBe(2);
+  it("multiplies playback rate by character speed, clamped to 0.6–2", () => {
+    expect(narrationRateFor(1.5, 1.2)).toBeCloseTo(1.8, 5);
+    expect(narrationRateFor(2, 1)).toBe(2);
+    expect(narrationRateFor(0.5, 0.5)).toBe(0.6); // 0.8 × 0.5 → the floor
   });
 
-  it("scales the fit factor on top of playback rate and character speed", () => {
-    // 13 words ≈ 5 s natural; 5 s window → fit 1; base 1 × char 0.95.
-    const text = Array.from({ length: 13 }, (_, i) => `w${i}`).join(" ");
-    expect(narrationRateFor(text, 1, 0.95, 5000)).toBeCloseTo(0.95, 5);
-    // same line at 2× playback with 2.5 s window → base 2 × fit 1 → clamp 2
-    expect(narrationRateFor(text, 2, 1, 2500)).toBe(2);
-  });
-
-  it("keeps the 0.5× playback floor at 0.8 and empty text neutral", () => {
-    expect(narrationRateFor("hi", 0.5, 1, undefined)).toBe(0.8);
-    expect(narrationRateFor("", 1.5, 1.2, undefined)).toBeCloseTo(1.5 * 1.2, 5);
+  it("keeps the 0.5× playback floor at 0.8", () => {
+    expect(narrationRateFor(0.5, 1)).toBe(0.8);
   });
 });
 

@@ -1,4 +1,4 @@
-// Shared types for the Mission Deck simulator.
+// Shared types for the CHOKRO simulator.
 // Everything downstream (clock, compiler, canvas, dashboard, report)
 // compiles against this file — change names here first, nowhere else.
 

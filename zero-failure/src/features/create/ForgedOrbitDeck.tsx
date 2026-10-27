@@ -148,6 +148,11 @@ interface ForgedOrbitDeckProps {
    *  positions the sweep). Absent, the deck runs its shared page clock.
    *  Reduced motion still pins the designed base layout. */
   t?: number;
+  /** Whether the show is running. False (with a `t`) holds the sun's
+   *  turning surface mid-sweep — the fireball stops and goes with the
+   *  very same play/pause button the planets obey. Absent, the surface
+   *  turns on its own, as the create sector's skies always have. */
+  playing?: boolean;
   /** The world speaking right now — its ring index, the words the sky
    *  holds above it, and the speaker's name and cartoon face the bubble
    *  wears. Null (or absent) and the sky keeps quiet. */
@@ -162,6 +167,7 @@ export function ForgedOrbitDeck({
   onZoom,
   onExitZoom,
   t,
+  playing,
   planetTitleSuffix,
   speaker,
 }: ForgedOrbitDeckProps) {
@@ -303,6 +309,7 @@ export function ForgedOrbitDeck({
         </g>
         <g
           className={onSunClick ? "dash-deck-sun" : undefined}
+          data-hold={playing === false ? "" : undefined}
           role={onSunClick ? "button" : undefined}
           tabIndex={onSunClick ? 0 : undefined}
           transform={`translate(${ORBIT_CENTER.x} ${ORBIT_CENTER.y})`}
@@ -387,10 +394,14 @@ export function ForgedOrbitDeck({
             if (!spot) return null;
             const face = speaker.avatar ? CAST.find((c) => c.id === speaker.avatar) : undefined;
             const sunSeat = speaker.index === -1 || (appCenter && speaker.index === 0);
+            // the center body is the big one (hit circle r 84) — its whole
+            // bubble rides a little higher, so the sun's fire stays fully
+            // in view while it speaks
+            const lift = sunSeat ? 40 : 0;
             return (
               <g
                 className="dash-speech"
-                transform={`translate(${spot.x.toFixed(1)} ${spot.y.toFixed(1)})`}
+                transform={`translate(${spot.x.toFixed(1)} ${(spot.y - lift).toFixed(1)})`}
                 style={
                   {
                     "--node-hue": `${sunSeat ? SUN_ACCENT_HUE : hues[speaker.index]} 58% 60%`
@@ -398,7 +409,10 @@ export function ForgedOrbitDeck({
                 }
               >
                 <path className="dash-speech-tail" d="M -9 -56 L 0 -44 L 9 -56 Z" />
-                <foreignObject x={-150} y={-186} width={300} height={132}>
+                {/* the bubble's box runs most of the sky upward from the
+                    tail — the card grows with its words, however long the
+                    speech, and the wrap keeps its foot on the tail */}
+                <foreignObject x={-210} y={-836} width={420} height={780}>
                   <div className="dash-speech-wrap">
                     <div className="dash-speech-card">
                       {face && (

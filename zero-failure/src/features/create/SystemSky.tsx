@@ -307,7 +307,7 @@ function SunStack({ uid }: { uid: string }) {
       <circle className="dash-star-bloom" r={205} fill={`url(#${uid}-sunbloom)`} />
       <circle className="dash-star-glow" r={140} fill={`url(#${uid}-sunglow)`} />
       <circle className="dash-star-ball" r={74} fill={`url(#${uid}-sunfill)`} />
-      {/* the baked photosphere IS the surface; the fill under it is only
+      {/* the baked photosphere IS the surface — the fill under it is only
           edge insurance at the limb */}
       <image
         className="dash-star-photosphere"
@@ -320,8 +320,8 @@ function SunStack({ uid }: { uid: string }) {
         preserveAspectRatio="xMidYMid slice"
       />
       <circle className="dash-star-rim" r={74} />
-      {/* the turning photosphere — granules and sunspots ride the sphere's
-          rotation, clipped to the disk so they vanish around the limb */}
+      {/* the drifting cells — clipped to the disk so they vanish around
+          the limb */}
       <g className="sim-sun-surface" clipPath={`url(#${uid}-surface)`}>
         {SUN_CELLS.map((cell) =>
           cell.kind === "spot" ? (

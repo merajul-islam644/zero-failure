@@ -1,4 +1,4 @@
-/* Mission Deck — simulator look and feel.
+/* CHOKRO — simulator look and feel.
    Tokens on :root — dark is the default; light only via the manual
    data-theme="light" override. Node states key off [data-state]; reduced
    motion strips travel/pulse. */
@@ -768,6 +768,17 @@
   animation: sim-sun-drift var(--drift, 8s) linear var(--delay, 0s) infinite;
 }
 
+/* The show's hold reaches the star: a paused show freezes the whole
+   fireball mid-sweep and mid-breath — the turning surface AND the
+   glow/bloom pulse stop and go with the very same play/pause button the
+   planets obey. */
+[data-hold] .sim-sun-granule,
+[data-hold] .sim-sun-spot,
+[data-hold] .dash-star-glow,
+[data-hold] .dash-star-bloom {
+  animation-play-state: paused;
+}
+
 .sim-sun-spot-penumbra {
   fill: #a34712;
   opacity: 0.5;
@@ -897,13 +908,45 @@
 
 .sim-strip-track {
   display: flex;
-  gap: 2px;
-  height: 1.4rem;
+  gap: 6px;
+  height: 2.8rem;
+  /* many bodies at the 1-inch floor can pass the bar's width — the
+     track scrolls rather than squeezing the blocks back down */
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--sim-border)) transparent;
+}
+/* the row sits centered while the parts fit; once they overflow, the auto
+   margins collapse to nothing and the row scrolls from its left edge */
+.sim-strip-track > :first-child {
+  margin-left: auto;
+}
+.sim-strip-track > :last-child {
+  margin-right: auto;
+}
+.sim-strip-track::-webkit-scrollbar {
+  height: 6px;
+}
+.sim-strip-track::-webkit-scrollbar-thumb {
+  background: hsl(var(--sim-border));
+  border-radius: 3px;
+}
+.sim-strip-track::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .sim-strip-block {
   position: relative;
-  min-width: 1.2rem;
+  /* every part is the same 1-inch block — the speaking order reads left
+     to right, and no body's length stretches its part over the others */
+  width: 1in;
+  min-width: 1in;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 5px 3px;
   font-family: "Share Tech Mono", ui-monospace, monospace;
   font-size: 0.68rem;
   font-weight: 600;
@@ -912,13 +955,66 @@
   background: hsl(var(--sim-panel) / 0.7);
   border: 1px solid hsl(var(--sim-border));
   border-radius: 2px;
-  cursor: pointer;
+  cursor: grab;
   overflow: hidden;
   transition:
     color 120ms ease,
+    opacity 120ms ease,
     border-color 120ms ease,
     background-color 120ms ease,
     box-shadow 160ms ease;
+}
+
+/* the block stacks: mark + name on top, the part's live scene number in
+   small print underneath — it renumbers as a drag rearranges the row */
+.sim-strip-main {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.sim-strip-no {
+  /* starts where the name starts — past the mark, not under it */
+  margin-left: 14px;
+  max-width: calc(100% - 14px);
+  font-size: 0.52rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sim-strip-glyph {
+  display: inline-flex;
+  flex: none;
+}
+/* the copy count in the corner — 1/5 means first of that body's five
+   parts in the current show order; always shown, tiny, top right */
+.sim-strip-copy {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  z-index: 1;
+  padding: 0 3px;
+  font-size: 0.55rem;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  color: hsl(var(--scene-hue, var(--sim-text)));
+  background: hsl(var(--sim-panel) / 0.9);
+  border: 1px solid hsl(var(--scene-hue, var(--sim-border)) / 0.5);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.sim-strip-name {
+  display: block;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sim-strip-block:hover {
@@ -928,15 +1024,145 @@
   box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.18);
 }
 
-.sim-strip-playhead {
+/* A tinted block wears its body's own hue — the presentation's planets
+   read their speaking order in color right on the track. */
+.sim-strip-block[data-tinted] {
+  background: hsl(var(--scene-hue) / 0.12);
+  border-color: hsl(var(--scene-hue) / 0.5);
+  color: hsl(var(--scene-hue));
+}
+.sim-strip-block[data-tinted]:hover {
+  background: hsl(var(--scene-hue) / 0.22);
+  border-color: hsl(var(--scene-hue) / 0.85);
+  color: hsl(var(--scene-hue));
+  box-shadow: 0 0 10px hsl(var(--scene-hue) / 0.3);
+}
+
+/* the part whose window holds the head — the one speaking right now —
+   lights up so the eye finds it without reading a word */
+.sim-strip-block[data-active] {
+  color: hsl(var(--sim-text));
+  border-color: hsl(var(--sim-accent) / 0.9);
+  background: hsl(var(--sim-accent) / 0.1);
+  box-shadow: 0 0 12px hsl(var(--sim-accent) / 0.4);
+}
+
+/* the run line: the part under the head fills along its own bottom edge —
+   its own progress, not a needle floating over the whole track */
+.sim-strip-run {
   position: absolute;
+  left: 0;
   bottom: 0;
-  width: 2px;
-  height: 1.7rem;
+  height: 2px;
   background: hsl(var(--sim-accent));
-  border-radius: 1px;
-  box-shadow: 0 0 9px hsl(var(--sim-accent) / 0.9);
+  box-shadow: 0 0 8px hsl(var(--sim-accent) / 0.9);
   pointer-events: none;
+}
+
+/* The command pill floating over a hovered part — play / copy / delete /
+   more, the node-editor toolbar. Anchored to the strip (not the scrolled
+   track) so the track's own clipping can never cut it; translate(-50%,-100%)
+   hangs it just above its part. Its width is set inline to the part's own —
+   it never runs wider than the block it belongs to. */
+.sim-part-pill {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: hsl(222 30% 8% / 0.97);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 8px;
+  box-shadow: 0 10px 24px hsl(222 60% 2% / 0.6);
+  z-index: 55;
+}
+.sim-part-pill button {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.sim-part-pill button:hover:not(:disabled) {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-text) / 0.08);
+}
+/* an original part's trash — present, but it will never fire */
+.sim-part-pill button:disabled {
+  color: hsl(var(--sim-text-dim) / 0.35);
+  cursor: not-allowed;
+}
+
+/* The ⋮ menu: the pill's second row of commands, standing under it in
+   the strip's own coordinates (left/top set inline). One column of named
+   actions, wearing the pill's dark chrome. */
+.sim-part-menu {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 168px;
+  padding: 4px;
+  background: hsl(222 30% 8% / 0.97);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 8px;
+  box-shadow: 0 10px 24px hsl(222 60% 2% / 0.6);
+  z-index: 56;
+}
+.sim-part-menu button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  color: hsl(var(--sim-text-dim));
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.sim-part-menu button:hover:not(:disabled) {
+  color: hsl(var(--sim-text));
+  background: hsl(var(--sim-text) / 0.08);
+}
+.sim-part-menu button:disabled {
+  color: hsl(var(--sim-text-dim) / 0.35);
+  cursor: not-allowed;
+}
+
+/* A muted part keeps its seat but holds its peace — dimmed, its name
+   struck through. A locked part refuses the grab: the hand never shows. */
+.sim-strip-block[data-muted] {
+  opacity: 0.45;
+}
+.sim-strip-block[data-muted] .sim-strip-name {
+  text-decoration: line-through;
+}
+.sim-strip-block[data-locked] {
+  cursor: default;
+}
+
+/* Drag arranging: the lifted part dims and wears a thin accent outline
+   while the others glide around it (the glide itself is inline FLIP). */
+.sim-strip-block[data-dragging] {
+  opacity: 0.35;
+  cursor: grabbing;
+  box-shadow: 0 0 0 1px hsl(var(--sim-accent) / 0.55);
 }
 
 /* ---- scene nav ---- */
@@ -1000,8 +1226,8 @@
 
 /* A floating bottom console, mission-control style: the sky owns the screen
    and the bar slides in only when the pointer comes down to the window's
-   bottom band (or focus enters it — see TransportBar). A thin accent rule
-   crowns the console with a light pulse forever sweeping along it. Sits
+   bottom band (or focus enters it — see TransportBar). The strip's parts
+   carry the light themselves; the console wears no crown. Sits
    under the drawers (90) so a sheet always reads above it. */
 .sim-transport {
   position: fixed;
@@ -1013,7 +1239,6 @@
   padding: 0.75rem 1.25rem 0.85rem;
   background: linear-gradient(180deg, hsl(222 30% 7% / 0.86), hsl(224 34% 4% / 0.96));
   backdrop-filter: blur(10px);
-  border-top: 1px solid hsl(var(--sim-accent) / 0.28);
   box-shadow: 0 -18px 44px hsl(222 60% 2% / 0.7);
   transform: translateY(110%);
   opacity: 0;
@@ -1023,34 +1248,8 @@
     opacity 240ms ease;
 }
 
-/* the crown: accent rule fading at both ends */
-.sim-transport::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.65) 10%, hsl(var(--sim-accent) / 0.65) 90%, transparent);
-  pointer-events: none;
-}
-
-/* a probe of light sweeping the crown forever */
-.sim-transport::after {
-  animation: sim-transport-scan 7s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
-  content: "";
-  height: 1px;
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  top: -1px;
-  width: 180px;
-}
-@keyframes sim-transport-scan {
-  from { transform: translateX(-200px); }
-  to { transform: translateX(calc(100vw + 40px)); }
-}
+/* the crown: accent rule fading at both ends — removed; the strip's own
+   parts carry the light now */
 
 .sim-transport[data-revealed] {
   transform: none;
@@ -2617,8 +2816,7 @@
   .sim-comet,
   .sim-comet-swing,
   .sim-live-pulse,
-  .sim-node-clouds,
-  .sim-transport::after {
+  .sim-node-clouds {
     animation: none;
   }
 
@@ -2645,8 +2843,7 @@ html[data-motion="reduce"] .sim-star[data-twinkle],
 html[data-motion="reduce"] .sim-comet,
 html[data-motion="reduce"] .sim-comet-swing,
 html[data-motion="reduce"] .sim-live-pulse,
-html[data-motion="reduce"] .sim-node-clouds,
-html[data-motion="reduce"] .sim-transport::after {
+html[data-motion="reduce"] .sim-node-clouds {
   animation: none;
 }
 
@@ -2674,10 +2871,6 @@ html[data-motion="full"] .sim-sun-spot {
 html[data-motion="full"] .sim-sun-glow,
 html[data-motion="full"] .sim-sun-bloom {
   animation: sim-sun-breathe 5.5s ease-in-out infinite;
-}
-
-html[data-motion="full"] .sim-transport::after {
-  animation: sim-transport-scan 7s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 html[data-motion="full"] .sim-galaxy-spin {

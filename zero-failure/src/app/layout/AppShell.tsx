@@ -1,10 +1,11 @@
-import { Activity, PanelLeft } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { navItems } from "./navItems";
 import { NotificationsMenu } from "./NotificationsMenu";
 import { UserMenu } from "./UserMenu";
+import { ChokroMark } from "../../shared/ui/ChokroMark";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 
 const COLLAPSED_KEY = "blocks-app:sidebar-collapsed";
@@ -63,9 +64,9 @@ export function AppShell({
               }}
             >
               <span className="brand-mark">
-                <Activity size={16} />
+                <ChokroMark size={24} />
               </span>
-              <span>Blocks App</span>
+              <span>CHOKRO</span>
             </a>
           )}
           {/* Hidden on mobile by CSS (nothing to toggle -- the rail is always

@@ -52,7 +52,7 @@ export function AccessConsolePage() {
   const rows = users.data?.users ?? [];
 
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="access">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

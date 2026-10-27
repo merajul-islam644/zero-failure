@@ -78,12 +78,6 @@ export interface SpeakOptions {
   /** Per-character speed multiplier (e.g. brisk assistant, calm watchtower). */
   rate?: number;
   /**
-   * The line's on-screen display window (ms). When the engine would need
-   * longer than that to say the line at the requested rate, the rate is
-   * scaled up so narration finishes roughly with the subtitle.
-   */
-  fitMs?: number;
-  /**
    * Called once the utterance leaves the engine — completed=true when it
    * finished speaking, false when cancelled/interrupted. The audiobook
    * flow resumes the paused story from here.
@@ -91,64 +85,72 @@ export interface SpeakOptions {
   onDone?: (completed: boolean) => void;
 }
 
-/** Engines speak ≈155 wpm at rate 1; lines are authored at ~3.6 wps. */
-const WORDS_PER_SECOND_AT_RATE_1 = 2.6;
-/** Safety margin: engines drift slower than requested — finish ~15% early. */
-const FIT_MARGIN = 1.15;
-
 /**
  * Effective utterance rate: the playback rate times the character's own
- * speed profile, sped up just enough to fit the line's display window
- * (with margin, so the voice ends before the subtitle changes).
+ * speed profile. Lines are never rushed to fit a window — however long
+ * the words, the voice speaks at its natural pace and the stage waits.
  */
-export function narrationRateFor(
-  text: string,
-  playbackRate: number,
-  charRate: number,
-  fitMs: number | undefined
-): number {
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const naturalMs = (words / WORDS_PER_SECOND_AT_RATE_1) * 1000;
-  const fit =
-    fitMs && fitMs > 0 && naturalMs > fitMs ? (naturalMs / fitMs) * FIT_MARGIN : 1;
+export function narrationRateFor(playbackRate: number, charRate: number): number {
   const base = playbackRate === 0.5 ? 0.8 : playbackRate;
-  return Math.min(2, Math.max(0.6, base * charRate * fit));
+  return Math.min(2, Math.max(0.6, base * charRate));
 }
 
-export function speak(text: string, { playbackRate, voice, pitch, rate, fitMs, onDone }: SpeakOptions): boolean {
+// One deferred start may exist at a time. Cancel followed by a speak in
+// the same tick is silently dropped by Chrome/Edge — the enqueue waits a
+// beat, and stopSpeech retracts it so a pause never leaves a voice behind.
+let pendingStart: number | null = null;
+
+export function speak(text: string, { playbackRate, voice, pitch, rate, onDone }: SpeakOptions): boolean {
   if (playbackRate > NARRATION_MAX_RATE) return false;
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
-  try {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = voice?.lang ?? "en-US";
-    if (voice) utterance.voice = voice;
-    utterance.pitch = Math.min(2, Math.max(0, pitch ?? 1));
-    utterance.rate = narrationRateFor(text, playbackRate, rate ?? 1, fitMs);
-    if (onDone) {
-      // Some engines never start an utterance (voice list still empty right
-      // after load, suspended engine) and never fire onend — the audiobook
-      // pause would freeze the story mid-line. If onstart hasn't arrived
-      // within the window, release the story as interrupted.
-      const START_TIMEOUT_MS = 3500;
-      let started = false;
-      let finished = false;
-      const finish = (completed: boolean) => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(guard);
-        onDone(completed);
-      };
-      const guard = window.setTimeout(() => {
-        if (!started) finish(false);
-      }, START_TIMEOUT_MS);
-      utterance.onstart = () => {
-        started = true;
-      };
-      utterance.onend = () => finish(true);
-      utterance.onerror = () => finish(false);
+  const synth = window.speechSynthesis;
+  const start = () => {
+    try {
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = voice?.lang ?? "en-US";
+      if (voice) utterance.voice = voice;
+      utterance.pitch = Math.min(2, Math.max(0, pitch ?? 1));
+      utterance.rate = narrationRateFor(playbackRate, rate ?? 1);
+      if (onDone) {
+        // Some engines never start an utterance (voice list still empty right
+        // after load, suspended engine) and never fire onend — the audiobook
+        // pause would freeze the story mid-line. If onstart hasn't arrived
+        // within the window, release the story as interrupted.
+        const START_TIMEOUT_MS = 3500;
+        let started = false;
+        let finished = false;
+        const finish = (completed: boolean) => {
+          if (finished) return;
+          finished = true;
+          window.clearTimeout(guard);
+          onDone(completed);
+        };
+        const guard = window.setTimeout(() => {
+          if (!started) finish(false);
+        }, START_TIMEOUT_MS);
+        utterance.onstart = () => {
+          started = true;
+        };
+        utterance.onend = () => finish(true);
+        utterance.onerror = () => finish(false);
+      }
+      synth.speak(utterance);
+    } catch {
+      // the engine refused this line — the caller's own failsafe carries on
     }
-    window.speechSynthesis.speak(utterance);
+  };
+  try {
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      if (pendingStart !== null) window.clearTimeout(pendingStart);
+      pendingStart = window.setTimeout(() => {
+        pendingStart = null;
+        start();
+      }, 80);
+    } else {
+      start();
+    }
     return true;
   } catch {
     return false;
@@ -156,6 +158,10 @@ export function speak(text: string, { playbackRate, voice, pitch, rate, fitMs, o
 }
 
 export function stopSpeech(): void {
+  if (pendingStart !== null) {
+    window.clearTimeout(pendingStart);
+    pendingStart = null;
+  }
   try {
     window.speechSynthesis?.cancel();
   } catch {

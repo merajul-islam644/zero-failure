@@ -16,6 +16,7 @@ import { MonitorPlay, Presentation, Rocket } from "lucide-react";
 // import { Theater } from "lucide-react";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 import { useRouterNavigate } from "../../app/router/RouterContext";
+import { ChokroMark } from "../../shared/ui/ChokroMark";
 // The rails reuse the simulator's chamfered HUD classes — pull the sheet
 // that styles them (Vite dedupes it against the simulator's own import).
 import "../simulator/styles/simulator.css";
@@ -184,13 +185,15 @@ export function DashboardPage() {
   ];
 
   const deckBodies = systems.reduce((sum, system) => sum + system.planets.length, 0);
-  const deckLevels = systems.reduce((sum, system) => sum + forgedLevelCount(system), 0);
 
+  // Every tile counts what the app still holds today — the forged deck,
+  // its bodies, the scripted storyline, the speaking cast. (The old
+  // walk-level/repo/run-home tiles went out with those sectors.)
   const stats = [
     { label: t("dashboard.stat.systems"), value: systems.length },
-    { label: t("dashboard.stat.levels"), value: deckLevels },
-    { label: t("dashboard.stat.repos"), value: sidecar.repos.length },
-    { label: t("dashboard.stat.homes"), value: sidecar.homes.length }
+    { label: t("dashboard.stat.bodies"), value: deckBodies },
+    { label: t("dashboard.stat.scenes"), value: SCENES.length },
+    { label: t("dashboard.stat.cast"), value: CAST.length }
   ];
 
   // The hero's way into every sector — the operation's four doors.
@@ -209,7 +212,7 @@ export function DashboardPage() {
       {!booted && (
         <button type="button" className="dash-boot" onClick={skipBoot} aria-label="System check — select to skip">
           <span className="dash-boot-box" aria-hidden>
-            <span className="dash-boot-title">MISSION DECK // OPS CONSOLE</span>
+            <span className="dash-boot-title">CHOKRO // OPS CONSOLE</span>
             {bootLines.map((line, i) => (
               <span key={line.text} className="dash-boot-line" style={{ animationDelay: `${140 + i * 260}ms` }}>
                 {line.text}
@@ -227,7 +230,7 @@ export function DashboardPage() {
         <div className="dash-topbar">
           <span className="dash-topbar-tag">
             <i className="dash-live-dot" aria-hidden />
-            OPS // MISSION DECK
+            OPS // CHOKRO
           </span>
           <MissionClocks />
         </div>
@@ -238,7 +241,12 @@ export function DashboardPage() {
           <span className="dash-hero-edge" aria-hidden />
           <div className="dash-hero-main">
             <p className="dash-kicker">{t("dashboard.hero.title")}</p>
-            <h2>{t("dashboard.title")}</h2>
+            <h2>
+              <span className="dash-hero-mark">
+                <ChokroMark size={34} />
+              </span>
+              {t("dashboard.title")}
+            </h2>
             <p className="dash-hero-body">{t("dashboard.hero.body")}</p>
             <div className="dash-sectors">
               {sectors.map((sector, i) => (

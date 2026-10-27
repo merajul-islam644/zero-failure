@@ -13,7 +13,7 @@ import { NARRATION_MAX_RATE } from "../../state/audio";
 import { formatTime } from "../../engine/format";
 import { SceneNav } from "./SceneNav";
 import { TimelineStrip } from "./TimelineStrip";
-import type { Timeline } from "../../engine/timeline";
+import type { Timeline, TimelineScene } from "../../engine/timeline";
 import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
 
 export const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
@@ -23,7 +23,19 @@ export function TransportBar({
   timeline,
   actions,
   zoomed,
-  onToggleZoom
+  onToggleZoom,
+  onCopyPart,
+  onDeletePart,
+  canDeletePart,
+  onReorderPart,
+  onPlayPart,
+  soloKey,
+  onEditPart,
+  mutedKeys,
+  onToggleMutePart,
+  lockedKeys,
+  onToggleLockPart,
+  onResetOrder
 }: {
   timeline: Timeline;
   actions: BroadcastActions;
@@ -31,6 +43,25 @@ export function TransportBar({
    *  simulator stage has no zoom — absent props, no zoom button renders. */
   zoomed?: boolean;
   onToggleZoom?: () => void;
+  /** Strip part sequencer — copy/delete/drag flow straight to the strip. */
+  onCopyPart?: (scene: TimelineScene) => void;
+  onDeletePart?: (scene: TimelineScene) => void;
+  canDeletePart?: (scene: TimelineScene) => boolean;
+  onReorderPart?: (nextOrder: string[]) => void;
+  /** Play ONLY this part — its words, its bubble, then the show holds. */
+  onPlayPart?: (scene: TimelineScene) => void;
+  /** Part key of the live solo run — the strip's pill turns its button
+   *  into pause/resume while its own part is that run. */
+  soloKey?: string | null;
+  /** The ⋮ menu's extra commands, all optional — absent, the item sits
+   *  disabled: edit the part's speech, mute/unmute it, lock it against
+   *  drags, reset the whole arrangement. */
+  onEditPart?: (scene: TimelineScene) => void;
+  mutedKeys?: string[];
+  onToggleMutePart?: (scene: TimelineScene) => void;
+  lockedKeys?: string[];
+  onToggleLockPart?: (scene: TimelineScene) => void;
+  onResetOrder?: () => void;
 }) {
   const { clock, playing } = usePlayer();
   const { narration, setNarration } = useSettings();
@@ -80,7 +111,22 @@ export function TransportBar({
         }
       }}
     >
-      <TimelineStrip timeline={timeline} seek={actions.seek} />
+      <TimelineStrip
+        timeline={timeline}
+        actions={actions}
+        onCopyPart={onCopyPart}
+        onDeletePart={onDeletePart}
+        canDeletePart={canDeletePart}
+        onReorderPart={onReorderPart}
+        onPlayPart={onPlayPart}
+        soloKey={soloKey}
+        onEditPart={onEditPart}
+        mutedKeys={mutedKeys}
+        onToggleMutePart={onToggleMutePart}
+        lockedKeys={lockedKeys}
+        onToggleLockPart={onToggleLockPart}
+        onResetOrder={onResetOrder}
+      />
       <Scrubber duration={duration} actions={actions} />
       <div className="sim-transport-row">
         <div className="sim-transport-buttons">

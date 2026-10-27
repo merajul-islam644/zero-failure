@@ -22,7 +22,7 @@ const protectedRoutes = {
 // The warp transition names the sector you're jumping to. Console chrome,
 // not user data — plain English like the rest of the HUD labels.
 const JUMP_LABELS: Record<string, string> = {
-  "/": "MISSION DECK",
+  "/": "CHOKRO",
   "/simulator": "SIMULATOR",
   "/presentation": "PRESENTATION",
   "/playwright": "PLAYWRIGHT",

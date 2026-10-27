@@ -169,10 +169,10 @@ export interface ForgedSystem {
   note: string;
   /** The first ring: apps (app base) or menus (menu base). */
   planets: ForgedPlanet[];
-  /** The menu base's sun speaks about itself too — the identity's own
-   *  words, face, voice and pitch, the very five fields every level
-   *  carries. Absent (and on an app base, where the center app holds
-   *  the seat), the sun stays quiet. */
+  /** The center's own words — the menu base's sun, or the app base's
+   *  leading app at the center (the team's lead voice) — spoken first on
+   *  either base. Absent, the center stays quiet and the planets carry
+   *  the show. */
   speech?: string;
   muted?: boolean;
   avatar?: string;

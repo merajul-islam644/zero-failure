@@ -50,7 +50,7 @@ export function RolesConsolePage() {
   const rows = roles.data?.roles ?? [];
 
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="roles">
         <div className="dash-topbar">
           <div className="dash-topbar-side">

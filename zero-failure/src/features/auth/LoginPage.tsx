@@ -1,10 +1,10 @@
-import { Activity, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { isLoginConfigured } from "../../lib/blocks/config";
 import { useT } from "../../lib/i18n/LocalizationProvider";
 import { Alert } from "../../shared/ui/Alert";
-import seliseLogo from "../../assets/selise-blocks-logo.png";
+import { ChokroMark } from "../../shared/ui/ChokroMark";
 
 export function LoginPage({ returnTo }: { returnTo?: string }) {
   const { login } = useAuth();
@@ -32,13 +32,13 @@ export function LoginPage({ returnTo }: { returnTo?: string }) {
       <span className="auth-nebula" aria-hidden />
       {/* the mission brief stands beside the terminal, not inside it */}
       <section className="auth-brief">
-        {/* the official logo crowns the briefing, above the kicker —
-            shown as provided, on a light chip so it reads on the night sky */}
-        {/* <div className="auth-brief-brand">
-          <img src={seliseLogo} alt="SELISE Blocks" />
-        </div> */}
         <span className="auth-brief-kicker">{t("auth.briefKicker")}</span>
-        <h1 className="auth-brief-title">{t("dashboard.title")}</h1>
+        <h1 className="auth-brief-title">
+          <span className="auth-brief-title-mark">
+            <ChokroMark size={40} />
+          </span>
+          {t("dashboard.title")}
+        </h1>
         <p className="auth-brief-sub">{t("dashboard.hero.title")}</p>
         <p className="auth-brief-body">{t("dashboard.hero.body")}</p>
       </section>
@@ -52,7 +52,7 @@ export function LoginPage({ returnTo }: { returnTo?: string }) {
         <div className="auth-panel">
           <span className="auth-scan" aria-hidden />
           <div className="auth-brand">
-            <span className="brand-mark"><Activity size={18} /></span>
+            <span className="brand-mark"><ChokroMark size={22} /></span>
             <span>{t("dashboard.title")}</span>
           </div>
           <span className="auth-kicker">{t("auth.kicker")}</span>

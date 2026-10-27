@@ -86,7 +86,7 @@ export function toMarkdown(report: RunReport): string {
   const lines: string[] = [];
   const push = (text = "") => lines.push(text);
 
-  push(`# Mission Deck — Integration Test Report`);
+  push(`# CHOKRO — Integration Test Report`);
   push();
   push(`> ${report.disclaimer}`);
   push();

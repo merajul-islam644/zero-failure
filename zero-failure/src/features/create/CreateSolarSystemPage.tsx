@@ -209,7 +209,7 @@ export function CreateSolarSystemPage() {
   }, [systems]);
 
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="create">
         <div className="dash-topbar">
           <span className="dash-topbar-tag">

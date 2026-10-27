@@ -32,6 +32,12 @@ export interface ShowRecordingHandle {
 export interface ShowRecordingOptions {
   /** One full lap — the outermost ring's period. */
   showMs: number;
+  /** The drag-arranged voice order the show speaks in — captions follow
+   *  the very same sequence the voices do. */
+  sequence?: number[];
+  /** Sequence positions whose caption stays out of the video — the muted
+   *  parts the live show runs silent through. */
+  skipParts?: number[];
   musicSrc?: string;
   musicVolume: number;
   onProgress: (fraction: number) => void;
@@ -170,9 +176,10 @@ export function startShowRecording(
         ctx.fillText(body.label, point.x, point.y + 54);
       }
     }
-    // the speaking level's words — the video's narration
-    const speaker = speechSpeaker(system, t);
-    if (speaker) {
+    // the speaking level's words — the video's narration, minus the
+    // parts the show runs silent through
+    const speaker = speechSpeaker(system, t, opts.sequence);
+    if (speaker && !opts.skipParts?.includes(speaker.part)) {
       const seat = seatOf(speaker.index, t);
       if (seat) {
         const hue =

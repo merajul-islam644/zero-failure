@@ -74,7 +74,7 @@ describe("toMarkdown", () => {
     const run = await runScenario("default-storyline");
     const md = toMarkdown(buildReport(run, DEFAULT_PRESENTATION_MS, FIXED_NOW));
 
-    expect(md).toContain("# Mission Deck — Integration Test Report");
+    expect(md).toContain("# CHOKRO — Integration Test Report");
     expect(md).toContain("PASSED WITH WARNINGS");
     expect(md).toContain(REPORT_DISCLAIMER);
     for (const assertion of ASSERTIONS) {

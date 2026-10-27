@@ -30,13 +30,13 @@ export function CommandRail({ active }: { active?: RailSector }) {
         <a
           className={`sim-rail-btn${active === "deck" ? " sim-rail-btn-on" : ""}`}
           href="/"
-          aria-label="Dashboard"
-          title="Dashboard — the mission-control deck"
+          aria-label="Home"
+          title="Home — the mission-control deck"
           onClick={followLink("/")}
         >
           <span className="sim-rail-btn-face">
             <LayoutDashboard size={17} strokeWidth={1.8} aria-hidden />
-            <span className="sim-rail-btn-tag">DECK</span>
+            <span className="sim-rail-btn-tag">HOME</span>
           </span>
         </a>
         <a

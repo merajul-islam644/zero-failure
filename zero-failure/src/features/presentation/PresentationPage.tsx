@@ -15,7 +15,7 @@ import { ArrowLeft, Check, Presentation as PresentationIcon, Video } from "lucid
 import { blocksClient } from "../../lib/blocks/client";
 import { ORBIT_RINGS } from "../simulator/components/canvas/orbits";
 import { TransportBar } from "../simulator/components/transport/TransportBar";
-import type { Timeline } from "../simulator/engine/timeline";
+import type { Timeline, TimelineScene } from "../simulator/engine/timeline";
 import type { BroadcastActions } from "../simulator/live/broadcast/useBroadcastActions";
 import { PlayerProvider, usePlayer, usePlaybackTime } from "../simulator/state/PlayerContext";
 import { SettingsProvider, useSettings } from "../simulator/state/SettingsContext";
@@ -43,7 +43,7 @@ import {
 import { useForgedSystems } from "../create/useForgedSystems";
 import { DashboardRails } from "../dashboard/DashboardRails";
 import { PresentationSpeechModal } from "./PresentationSpeechModal";
-import { speechSpeaker } from "./speech";
+import { BREATH_MS, speechCycleMs, speechSpeaker, speechTurns } from "./speech";
 import { canRecordShow, startShowRecording, type ShowRecordingHandle } from "./showRecorder";
 
 /** The show's span: one full lap of the outermost ring — Σ reads the
@@ -106,6 +106,138 @@ function downloadBlob(blob: Blob, name: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+/** The strip + speech sequencer: everything the drag order drives — the
+ *  transport strip's parts, the voice seats' play order and the show's
+ *  stretched span. Built once in the parent so the player's duration
+ *  already covers the arranged sequence when the show mounts. */
+interface Sequencer {
+  timeline: Timeline;
+  /** The play order as part keys — "b<i>" originals, "c<id>" copies. */
+  ordered: string[];
+  /** The voice seats in play order, one entry per part — the speech
+   *  engine reads this, repeats and all. */
+  sequence: number[];
+  showMs: number;
+}
+
+/** Arrange the system's voices by the user's drag order: base parts (one
+ *  per voice, natural order) with copies layered in, every part windowed
+ *  by its own turns in the arranged sequence. Keys the order no longer
+ *  knows trail in natural order at the end — new bodies land there, and
+ *  removed ones simply drop out. */
+function buildSequencer(
+  system: ForgedSystem | null,
+  order: string[],
+  copies: { id: number; source: number }[],
+): Sequencer {
+  // no show open — an empty track at the natural span keeps the clock sane
+  if (!system) {
+    return {
+      timeline: { ...DECK_TIMELINE, totalMs: SHOW_MS, scenes: [] },
+      ordered: [],
+      sequence: [],
+      showMs: SHOW_MS,
+    };
+  }
+  const bodyHues = planetHues(system.planets.length, system.sun);
+  // an app base's center is planets[0] itself — its lead voice (seat -1)
+  // and its own planet voice (seat 0) are two speeches of one body
+  const seatKey = (seat: number) => (system.base === "app" && seat === -1 ? 0 : seat);
+  // hues are degrees; the S/L pair is the deck's own convention
+  const seatHue = (seat: number): string =>
+    `${seat === -1 || (system.base === "app" && seat === 0) ? SUN_ACCENT_HUE : bodyHues[seat] ?? 215} 58% 60%`;
+  // each body's own mark rides before its name on the strip
+  const bodyIcon = (seat: number) => {
+    const logo = system.planets[seatKey(seat)]?.logo;
+    if (!logo) return undefined;
+    return logo.kind === "icon" ? (
+      <logo.icon size={11} strokeWidth={2} />
+    ) : (
+      <img src={logo.src} alt="" width={11} height={11} />
+    );
+  };
+  // base parts in natural speech order — one per voice, chunks merged;
+  // `seats` keeps each part's raw voice seat for the speech engine
+  const base: TimelineScene[] = [];
+  const seats: number[] = [];
+  for (const turn of speechTurns(system)) {
+    if (seats[seats.length - 1] === turn.index) {
+      base[base.length - 1]!.endMs = turn.end; // more chunks — stretch it
+      continue;
+    }
+    seats.push(turn.index);
+    base.push({
+      index: base.length + 1,
+      title: turn.name,
+      environment: `#${seatKey(turn.index)}`,
+      startMs: turn.start,
+      endMs: turn.end,
+      hue: seatHue(turn.index),
+      icon: bodyIcon(turn.index),
+      partKey: `b${base.length}`,
+      seat: seatKey(turn.index),
+    });
+  }
+  // a part key resolves to the voice seat it speaks — a copy speaks its
+  // source's seat
+  const voiceOf = (key: string): number | null => {
+    if (key.startsWith("b")) {
+      const i = Number(key.slice(1));
+      return seats[i] !== undefined ? seats[i]! : null;
+    }
+    const copy = copies.find((entry) => `c${entry.id}` === key);
+    return copy && seats[copy.source] !== undefined ? seats[copy.source]! : null;
+  };
+  const known = new Set(base.map((scene) => scene.partKey!));
+  for (const copy of copies) {
+    if (seats[copy.source] !== undefined) known.add(`c${copy.id}`);
+  }
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const key of [...order, ...base.map((scene) => scene.partKey!)]) {
+    if (!known.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    ordered.push(key);
+  }
+  const sequence = ordered
+    .map(voiceOf)
+    .filter((seat): seat is number => seat !== null);
+  // one strip part per sequence position, windowed by its own turns
+  const scenes: TimelineScene[] = [];
+  for (const turn of speechTurns(system, sequence)) {
+    const key = ordered[turn.part]!;
+    const last = scenes[scenes.length - 1];
+    if (last && last.partKey === key) {
+      last.endMs = turn.end; // more chunks of this part — stretch it
+      continue;
+    }
+    const i = key.startsWith("b")
+      ? Number(key.slice(1))
+      : copies.find((entry) => `c${entry.id}` === key)?.source;
+    const source = i === undefined ? undefined : base[i];
+    if (!source) continue;
+    scenes.push({
+      index: scenes.length + 1,
+      title: source.title,
+      environment: source.environment,
+      startMs: turn.start,
+      endMs: turn.end,
+      hue: source.hue,
+      icon: source.icon,
+      partKey: key,
+      seat: source.seat,
+    });
+  }
+  const turns = speechTurns(system, sequence);
+  const cycle = turns.length > 0 ? turns[turns.length - 1]!.end + BREATH_MS : 0;
+  return {
+    timeline: { ...DECK_TIMELINE, totalMs: Math.max(SHOW_MS, cycle), scenes },
+    ordered,
+    sequence,
+    showMs: Math.max(SHOW_MS, cycle),
+  };
+}
+
 export function PresentationPage() {
   const hookSystems = useForgedSystems();
   // The sector's own working copy of the deck list: narration saves
@@ -122,17 +254,124 @@ export function PresentationPage() {
     setSystems((prev) => prev.map((entry) => (entry === selected ? next : entry)));
     setSelected(next);
   };
+  // The strip's own sequencer: the drag-arranged play order and the copies
+  // made from parts. Held here so the player's duration can stretch to the
+  // arranged sequence before the show ever mounts.
+  const [order, setOrder] = useState<string[]>([]);
+  const [copies, setCopies] = useState<{ id: number; source: number }[]>([]);
+  const copyIdRef = useRef(0);
+  const sequencer = useMemo(
+    () => buildSequencer(selected, order, copies),
+    [selected, order, copies],
+  );
+  // Copy a part: the duplicate lands right after the part it came from —
+  // copying a copy re-wears the same source, so the chain grows freely.
+  const copyPart = (scene: TimelineScene) => {
+    const partKey = scene.partKey;
+    if (!partKey) return;
+    const source = partKey.startsWith("b")
+      ? Number(partKey.slice(1))
+      : copies.find((copy) => `c${copy.id}` === partKey)?.source;
+    if (source === undefined) return;
+    const id = ++copyIdRef.current;
+    setCopies((prev) => [...prev, { id, source }]);
+    const next = [...sequencer.ordered];
+    next.splice(next.indexOf(partKey) + 1, 0, `c${id}`);
+    setOrder(next);
+  };
+  // Delete a copy — originals never reach here (the pill's trash is
+  // disabled for them).
+  const deletePart = (scene: TimelineScene) => {
+    if (!scene.partKey?.startsWith("c")) return;
+    setCopies((prev) => prev.filter((copy) => `c${copy.id}` !== scene.partKey));
+    setOrder((prev) => prev.filter((key) => key !== scene.partKey));
+  };
+  // Drag arranging: the strip previews the new arrangement live while the
+  // pointer moves; the drop commits exactly what the strip is showing.
+  const movePart = (nextOrder: string[]) => setOrder(nextOrder);
+  // Per-part switches the ⋮ menu flips: muted parts stay on the strip but
+  // hold their peace (the window still elapses, voiceless), locked parts
+  // refuse a drag so a stray grab cannot rearrange the show.
+  const [muted, setMuted] = useState<string[]>([]);
+  const [locked, setLocked] = useState<string[]>([]);
+  const toggleMutePart = (scene: TimelineScene) => {
+    if (!scene.partKey) return;
+    setMuted((prev) =>
+      prev.includes(scene.partKey!) ? prev.filter((key) => key !== scene.partKey) : [...prev, scene.partKey!],
+    );
+  };
+  const toggleLockPart = (scene: TimelineScene) => {
+    if (!scene.partKey) return;
+    setLocked((prev) =>
+      prev.includes(scene.partKey!) ? prev.filter((key) => key !== scene.partKey) : [...prev, scene.partKey!],
+    );
+  };
+  // The ⋮ menu's reset: originals return to the natural speech order and
+  // the copies — kept, never lost by a reset — follow them in their own
+  // order at the end.
+  const resetArrangement = () => {
+    const byNumber = (a: string, b: string) => Number(a.slice(1)) - Number(b.slice(1));
+    const bases = sequencer.ordered.filter((key) => key.startsWith("b")).sort(byNumber);
+    const copiesInOrder = sequencer.ordered.filter((key) => !key.startsWith("b"));
+    setOrder([...bases, ...copiesInOrder]);
+  };
+  // The arrangement survives a refresh: order and copies ride localStorage
+  // under the system's own key, reloaded when its show opens — the mute
+  // and lock switches ride the same record.
+  const sequenceKey = selected ? selected.itemId ?? selected.sun : null;
+  useEffect(() => {
+    if (!sequenceKey) return;
+    let saved: { order?: unknown; copies?: unknown; muted?: unknown; locked?: unknown } = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(`chokro.show.sequence.${sequenceKey}`) ?? "{}");
+    } catch {
+      saved = {}; // junk storage — start clean
+    }
+    const strList = (value: unknown) => (Array.isArray(value) ? (value as string[]) : []);
+    setOrder(strList(saved.order));
+    setCopies(Array.isArray(saved.copies) ? (saved.copies as { id: number; source: number }[]) : []);
+    setMuted(strList(saved.muted));
+    setLocked(strList(saved.locked));
+    const savedCopies = Array.isArray(saved.copies) ? (saved.copies as { id: number; source: number }[]) : [];
+    copyIdRef.current = savedCopies.reduce((max, copy) => Math.max(max, copy.id), 0) + 1;
+  }, [sequenceKey]);
+  useEffect(() => {
+    if (!sequenceKey) return;
+    try {
+      localStorage.setItem(
+        `chokro.show.sequence.${sequenceKey}`,
+        JSON.stringify({ order, copies, muted, locked }),
+      );
+    } catch {
+      // storage blocked or full — the arrangement stays session-only
+    }
+  }, [sequenceKey, order, copies, muted, locked]);
   if (selected) {
     return (
       <SettingsProvider>
-        <PlayerProvider duration={SHOW_MS}>
-          <PresentationShow system={selected} onUpdate={updateSystem} onBack={() => setSelected(null)} />
+        {/* the show stretches past one outer lap when the voices need
+            longer — the speech always ends before the show does */}
+        <PlayerProvider duration={sequencer.showMs}>
+          <PresentationShow
+            system={selected}
+            onUpdate={updateSystem}
+            onBack={() => setSelected(null)}
+            sequencer={sequencer}
+            onCopyPart={copyPart}
+            onDeletePart={deletePart}
+            onReorderPart={movePart}
+            muted={muted}
+            locked={locked}
+            onToggleMute={toggleMutePart}
+            onToggleLock={toggleLockPart}
+            onResetOrder={resetArrangement}
+          />
         </PlayerProvider>
       </SettingsProvider>
     );
   }
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="presentation">
         <div className="dash-topbar">
           <div className="dash-topbar-side">
@@ -170,15 +409,44 @@ function PresentationShow({
   system,
   onUpdate,
   onBack,
+  sequencer,
+  onCopyPart,
+  onDeletePart,
+  onReorderPart,
+  muted,
+  locked,
+  onToggleMute,
+  onToggleLock,
+  onResetOrder,
 }: {
   system: ForgedSystem;
   onUpdate: (next: ForgedSystem) => void;
   onBack: () => void;
+  /** The drag-arranged play order — the strip, the voices and the span
+   *  all ride it. */
+  sequencer: Sequencer;
+  onCopyPart: (scene: TimelineScene) => void;
+  onDeletePart: (scene: TimelineScene) => void;
+  /** The strip previews the arrangement live; the drop commits the order. */
+  onReorderPart: (nextOrder: string[]) => void;
+  /** Part keys holding their peace — on the strip, out of the story. */
+  muted: string[];
+  /** Part keys refusing a drag. */
+  locked: string[];
+  onToggleMute: (scene: TimelineScene) => void;
+  onToggleLock: (scene: TimelineScene) => void;
+  /** The ⋮ menu's reset: originals to natural order, copies trailing. */
+  onResetOrder: () => void;
 }) {
   const { clock, restart, playing } = usePlayer();
   // The transport's own speaker button — narration off means the show
   // stays a silent picture, on means the levels speak aloud.
   const { narration, voice: globalVoice } = useSettings();
+  // Everything the arrangement drives: the strip's parts, the voice
+  // seats' play order and the show's stretched span.
+  const { timeline, sequence, showMs } = sequencer;
+  // The transport strip is the sequencer's face: its scenes are the
+  // arranged parts, each seeking and speaking in the dragged order.
   // Full-display zoom: the deck re-homes into the overlay, and the page
   // beneath stops rendering its own copy — one sky in the document, one
   // frame loop, the same re-parenting discipline the canvas zoom keeps.
@@ -196,36 +464,109 @@ function PresentationShow({
   // Each world's own hue — the modal portrait paints with the very
   // palette the sky gave the body.
   const hues = useMemo(() => planetHues(system.planets.length, system.sun), [system]);
-  // StrictMode-safe autoplay: the double-mounted effect must not toggle
-  // twice — the guard makes the second run a no-op.
-  const startedRef = useRef(false);
-  useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-    clock.play();
-  }, [clock]);
+  // The show opens paused — the play/pause button is the user's alone;
+  // nothing here starts the clock by itself.
   // The show's per-frame head — the deck's sweep time and the voices'
   // turnstile both.
   const t = usePlaybackTime();
-  // The world speaking at this head moment, its own words in hand.
-  const speaker = useMemo(() => speechSpeaker(system, t), [system, t]);
+  // The world speaking at this head moment, its own words in hand —
+  // riding the drag-arranged order like every voice on the stage. While a
+  // solo part runs, no other part may take the stage, bubble or voice.
+  const [solo, setSolo] = useState<{ part: number; endMs: number } | null>(null);
+  const speaker = useMemo(() => {
+    const hit = speechSpeaker(system, t, sequence);
+    // a muted part keeps its window but holds its peace — no voice, no
+    // bubble; the head simply runs through the silence
+    if (hit && muted.includes(sequencer.ordered[hit.part] ?? "")) return null;
+    if (solo && hit?.part !== solo.part) return null;
+    // a show that was never played wears no bubble — the words ride the
+    // head only while the show actually runs
+    return playing ? hit : null;
+  }, [system, t, sequence, solo, muted, sequencer.ordered, playing]);
+  // Solo play: seek to the part, speak it alone, and when the head reaches
+  // its end the show stops dead — nothing after it runs.
+  const playOnePart = (scene: TimelineScene) => {
+    const part = scene.partKey ? sequencer.ordered.indexOf(scene.partKey) : -1;
+    if (part < 0) return;
+    setSolo({ part, endMs: scene.endMs });
+    actions.seek(scene.startMs + 1);
+    if (!playing) actions.togglePlay();
+  };
+  useEffect(() => {
+    if (!solo) return;
+    return clock.subscribe(() => {
+      if (clock.time >= solo.endMs) {
+        clock.pause();
+        setSolo(null);
+      }
+    });
+  }, [clock, solo]);
+  // The solo run's own part key — the strip reads it to turn the pill's
+  // play button into that part's pause/resume.
+  const soloKey = solo ? sequencer.ordered[solo.part] ?? null : null;
+  // The ⋮ menu's Edit speech: the part's own body console — the very one
+  // a click on that world opens.
+  const editPart = (scene: TimelineScene) => {
+    if (scene.seat === undefined) return;
+    openConsole(scene.seat);
+  };
+  // Muted part positions — the recording skips their caption bubbles, the
+  // video staying as silent in those windows as the live show is.
+  const mutedParts = sequence.filter((_, i) => muted.includes(sequencer.ordered[i] ?? ""));
   // Narration speaks every turn as the head hands it the stage — the
-  // level's own voice and pitch, fitted inside its bubble window. The
-  // key is the turn's identity, not the object: the memo re-fires per
-  // frame, and only a new turn (or a fresh play) may start an utterance.
-  // Pause, narration off and unmount stop the voice at once.
+  // level's own voice and pitch, always at natural pace. The chain is
+  // voice-driven: when the voice finishes a chunk it pulls the head to
+  // the turn's end, so the next chunk loads on the voice's word — the
+  // clock's window is only a failsafe for a voice that never speaks.
+  // The key is the turn's identity: only a new turn (or a fresh play)
+  // starts an utterance. Pause, narration off and unmount stop it at once.
   const turnRef = useRef(speaker);
   turnRef.current = speaker;
-  const turnKey = speaker ? `${speaker.index}:${speaker.text}` : "";
+  // the done-handler reads these live — a pause landing mid-utterance
+  // must not advance the show nor bring the voice back
+  const liveRef = useRef({ playing, narration });
+  liveRef.current = { playing, narration };
+  const sysRef = useRef(system);
+  sysRef.current = system;
+  // the done-handler re-reads the arrangement live — a drag mid-speech
+  // must not pull the head into a turn list that no longer exists
+  const seqRef = useRef(sequence);
+  seqRef.current = sequence;
+  const genRef = useRef(0);
+  const turnKey = speaker ? `${speaker.index}:${speaker.part}:${speaker.text}` : "";
   useEffect(() => {
     const current = turnRef.current;
     if (!current || !narration || !playing) return;
-    speak(current.text, {
-      playbackRate: clock.playbackRate,
-      voice: resolveVoice(current.voice ?? "") ?? resolveVoice(globalVoice),
-      pitch: current.pitch ?? 1,
-      fitMs: current.dur,
-    });
+    const gen = ++genRef.current;
+    const say = (retried: boolean) =>
+      speak(current.text, {
+        playbackRate: clock.playbackRate,
+        voice: resolveVoice(current.voice ?? "") ?? resolveVoice(globalVoice),
+        pitch: current.pitch ?? 1,
+        onDone: (completed) => {
+          // a newer turn taking over voids this voice's vote entirely
+          if (genRef.current !== gen) return;
+          const live = liveRef.current;
+          if (completed) {
+            if (!live.playing || !live.narration || turnRef.current !== current) return;
+            // find this turn in the show's cycle and jump the head to its
+            // end boundary — the breath after it plays out, then the next
+            // chunk's window arrives and speaks on its own
+            const turns = speechTurns(sysRef.current, seqRef.current);
+            if (turns.length === 0) return;
+            const cycleLen = turns[turns.length - 1]!.end + BREATH_MS;
+            const local = clock.time % cycleLen;
+            const now = turns.find((turn) => local < turn.end);
+            if (!now || now.index !== current.index || now.text !== current.text) return;
+            clock.seek(clock.time - local + now.end);
+            return;
+          }
+          // engines sometimes drop a line outright right after a cancel —
+          // one quiet retry while this very turn still owns the stage
+          if (!retried && live.playing && live.narration) say(true);
+        },
+      });
+    say(false);
   }, [turnKey, narration, playing, clock, globalVoice]);
   useEffect(() => {
     if (!narration || !playing) stopSpeech();
@@ -358,7 +699,9 @@ function PresentationShow({
     if (recordingRef.current) return;
     setRecording({ progress: 0, saved: false });
     const handle = startShowRecording(system, {
-      showMs: SHOW_MS,
+      showMs,
+      sequence,
+      skipParts: mutedParts,
       musicSrc,
       musicVolume,
       onProgress: (fraction) =>
@@ -402,7 +745,7 @@ function PresentationShow({
           }
         : system.planets[editing];
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="presentation">
         <div className="dash-topbar">
           <div className="dash-topbar-side">
@@ -470,6 +813,7 @@ function PresentationShow({
           <ForgedOrbitDeck
             system={system}
             t={t}
+            playing={playing}
             onZoom={() => setZoomed(true)}
             skyHint="Click the sun or a planet to write what it says about itself"
             planetTitleSuffix="write its own words"
@@ -493,6 +837,7 @@ function PresentationShow({
           <ForgedOrbitDeck
             system={system}
             t={t}
+            playing={playing}
             planetTitleSuffix="write its own words"
             onPlanetClick={(_, index) => openConsole(index)}
             onSunClick={() => openConsole(system.base === "app" ? 0 : -1)}
@@ -549,10 +894,22 @@ function PresentationShow({
       {/* The simulator's own transport bar — play/pause, steps, scrub,
           speed and the zoom toggle, all riding this show's clock. */}
       <TransportBar
-        timeline={DECK_TIMELINE}
+        timeline={timeline}
         actions={actions}
         zoomed={zoomed}
         onToggleZoom={() => setZoomed((z) => !z)}
+        onCopyPart={onCopyPart}
+        onDeletePart={onDeletePart}
+        canDeletePart={(scene) => scene.partKey?.startsWith("c") === true}
+        onReorderPart={onReorderPart}
+        onPlayPart={playOnePart}
+        soloKey={soloKey}
+        onEditPart={editPart}
+        mutedKeys={muted}
+        onToggleMutePart={onToggleMute}
+        lockedKeys={locked}
+        onToggleLockPart={onToggleLock}
+        onResetOrder={onResetOrder}
       />
     </div>
   );

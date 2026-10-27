@@ -65,10 +65,6 @@ interface PresentationSpeechModalProps {
   onClose: () => void;
 }
 
-/** One narration, as many words as hold the stage — the cap keeps the
- *  bubble a bubble, not a speech scrolled out of the sky. */
-const MAX_CHARS = 180;
-
 /** The cast faces the picker offers — ids are guarded here too, so a
  *  stranger record's junk avatar id falls back to no face at all. */
 const AVATAR_IDS = new Set<string>(CAST.map((character) => character.id));
@@ -345,15 +341,11 @@ export function PresentationSpeechModal({
             ref={inputRef}
             className="dash-speech-input"
             value={draft}
-            maxLength={MAX_CHARS}
             rows={4}
             placeholder={`${subjectTitle} introduces itself…`}
             onChange={(event) => setDraft(event.target.value)}
           />
           <footer className="dash-speech-foot">
-            <span className="dash-speech-count">
-              {trimmed.length}/{MAX_CHARS}
-            </span>
             {currentSpeech && (
               <button
                 type="button"

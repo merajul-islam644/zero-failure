@@ -569,7 +569,7 @@ export function PlaywrightPage() {
     : false;
 
   return (
-    <div className="dash-space dash-scan-off">
+    <div className="dash-space">
       <DashboardRails active="playwright">
         <div className="dash-topbar">
           <div className="dash-topbar-side">
