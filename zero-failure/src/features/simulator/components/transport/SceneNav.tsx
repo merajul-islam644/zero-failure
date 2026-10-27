@@ -12,8 +12,8 @@ export function SceneNav({ timeline, seek }: { timeline: Timeline; seek: (headMs
   const count = timeline.scenes.length;
 
   const jump = (sceneIndex: number) => {
-    const window = sceneWindowByIndex(timeline.sceneTable, sceneIndex);
-    if (window) seek(window.startMs + 1);
+    const target = sceneWindowByIndex(timeline.sceneTable, sceneIndex);
+    if (target) seek(target.startMs + 1);
   };
 
   return (

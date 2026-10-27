@@ -167,6 +167,18 @@ export function useBroadcast(): BroadcastApi {
     timer: null
   });
 
+  // A trailing throttle write must not fire after the page (or the deck that
+  // owns this hook) is gone — cancel it, or it publishes for an unmounted
+  // viewer and races the next mount's item id.
+  useEffect(() => {
+    return () => {
+      if (publishThrottleRef.current.timer !== null) {
+        clearTimeout(publishThrottleRef.current.timer);
+        publishThrottleRef.current.timer = null;
+      }
+    };
+  }, []);
+
   const publish = useCallback(
     (action: BroadcastPublishAction) => {
       if (!enabled || !ready || status !== "authenticated") return;

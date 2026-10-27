@@ -29,7 +29,7 @@ export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
   return (
     <div className="sim-config">
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Scenario</h3>
+        <h2 className="sim-inspector-heading">Scenario</h2>
         <select
           className="sim-select"
           value={scenarioId}
@@ -60,7 +60,7 @@ export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Appearance</h3>
+        <h2 className="sim-inspector-heading">Appearance</h2>
         <label className="sim-field">
           <span>Theme</span>
           <select
@@ -88,7 +88,7 @@ export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Audio (on by default)</h3>
+        <h2 className="sim-inspector-heading">Audio (on by default)</h2>
         <p className="sim-scenario-hint">
           The speaker button on the transport bar toggles narration too.
         </p>
@@ -130,7 +130,7 @@ export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Cast voices (per character)</h3>
+        <h2 className="sim-inspector-heading">Cast voices (per character)</h2>
         <p className="sim-scenario-hint">
           Voices are auto-assigned across your installed engines, with a
           distinct pitch and speed per character — override any of them here.
@@ -152,7 +152,7 @@ export function ConfigPanel({ actions }: { actions: BroadcastActions }) {
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Playback keys</h3>
+        <h2 className="sim-inspector-heading">Playback keys</h2>
         <ul className="sim-keymap">
           <li><kbd>Space</kbd> play / pause</li>
           <li><kbd>←</kbd> / <kbd>→</kbd> skip 10 s</li>

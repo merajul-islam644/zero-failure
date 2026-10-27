@@ -5,11 +5,13 @@
 
 import { LogIn, LogOut } from "lucide-react";
 import { useAuth } from "../../../app/providers/AuthProvider";
+import { useRouterNavigate } from "../../../app/router/RouterContext";
 import { useCurrentUser, userDisplayName, userInitials } from "../../profile/useCurrentUser";
 import { useT } from "../../../lib/i18n/LocalizationProvider";
 
 export function AccountBar() {
   const { status, logout } = useAuth();
+  const navigate = useRouterNavigate();
   const { t } = useT();
   const me = useCurrentUser();
   const profile = me.data?.data;
@@ -21,7 +23,16 @@ export function AccountBar() {
 
   if (status !== "authenticated") {
     return (
-      <a className="sim-account" href="/login?returnTo=/simulator">
+      <a
+        className="sim-account"
+        href="/login?returnTo=/simulator"
+        onClick={(event) => {
+          // SPA handoff like the rest of the rail — a plain href reloads
+          // the whole console.
+          event.preventDefault();
+          navigate("/login?returnTo=/simulator");
+        }}
+      >
         <LogIn size={14} aria-hidden />
         <span>{t("nav.signIn")}</span>
       </a>

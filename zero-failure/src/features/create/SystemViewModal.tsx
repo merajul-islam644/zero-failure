@@ -4,16 +4,15 @@
 // sweeping their Kepler rings — framed in the modal scaffolding. The
 // scrim or the ✕ puts it away.
 
-import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { useDialogFocus } from "../../shared/ui/useDialogFocus";
 import { ForgedOrbitDeck } from "./ForgedOrbitDeck";
 import type { ForgedSystem } from "./systemsDoc";
 
 export function SystemViewModal({ system, onClose }: { system: ForgedSystem; onClose: () => void }) {
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    panelRef.current?.focus();
-  }, []);
+  // The shared dialog focus wiring: the panel takes focus on open, Tab
+  // cycles inside it, and the card that opened the view gets focus back.
+  const panelRef = useDialogFocus<HTMLDivElement>();
   return (
     <div className="dash-view">
       <button

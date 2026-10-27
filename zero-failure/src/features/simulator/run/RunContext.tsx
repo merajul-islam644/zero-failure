@@ -62,11 +62,19 @@ export function RunProvider({ children }: { children: ReactNode }) {
     setRunning(true);
     // Simulated mode ignores the client; live mode executes against the real
     // (read-only) Blocks services through it.
-    executeScenario(scenario, mode, blocksClient).then((result) => {
-      if (cancelled) return;
-      setRun(result);
-      setRunning(false);
-    });
+    executeScenario(scenario, mode, blocksClient)
+      .then((result) => {
+        if (cancelled) return;
+        setRun(result);
+        setRunning(false);
+      })
+      .catch(() => {
+        // A rejected execution must never wedge the transport in
+        // "Executing…" — drop back to no-run and let the operator retry.
+        if (cancelled) return;
+        setRun(null);
+        setRunning(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -91,7 +99,7 @@ export function RunProvider({ children }: { children: ReactNode }) {
       simulatedRegistry,
       liveRegistry
     }),
-    [scenario, scenarioId, runNonce, run, running, simulatedRegistry, liveRegistry]
+    [scenario, scenarioId, runNonce, run, running, mode, simulatedRegistry, liveRegistry]
   );
 
   return <RunContext.Provider value={value}>{children}</RunContext.Provider>;

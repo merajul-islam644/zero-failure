@@ -9,10 +9,10 @@ import { runAllProbes, type ProbeResults } from "./probes";
 
 export const LIVE_PROBES_KEY = ["live", "probes"] as const;
 
-export function useLiveProbes() {
+export function useLiveProbes(enabled = true) {
   const { status } = useAuth();
   return useQuery<ProbeResults>({
-    enabled: status === "authenticated",
+    enabled: enabled && status === "authenticated",
     queryFn: () => runAllProbes(blocksClient),
     queryKey: LIVE_PROBES_KEY,
     refetchInterval: 60_000,

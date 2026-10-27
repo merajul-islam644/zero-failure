@@ -126,7 +126,9 @@ export function CreateSolarSystemPage() {
         createForgedSystem(blocksClient, stamped)
           .then((created) => {
             if (!created) return;
-            setSystems((prev) => prev.map((s) => (s === stamped ? { ...s, itemId: created } : s)));
+            setSystems((prev) =>
+              prev.map((s) => (s.seq !== undefined && s.seq === stamped.seq ? { ...s, itemId: created } : s)),
+            );
           })
           .catch(() => undefined);
       }
@@ -138,7 +140,9 @@ export function CreateSolarSystemPage() {
     createForgedSystem(blocksClient, stamped)
       .then((created) => {
         if (!created) return;
-        setSystems((prev) => prev.map((s) => (s === stamped ? { ...s, itemId: created } : s)));
+        setSystems((prev) =>
+          prev.map((s) => (s.seq !== undefined && s.seq === stamped.seq ? { ...s, itemId: created } : s)),
+        );
       })
       .catch(() => undefined);
   };
@@ -182,7 +186,20 @@ export function CreateSolarSystemPage() {
       .then((remote) => {
         if (!alive) return;
         if (remote.length > 0) {
-          setSystems(remote);
+          // Merge, don't replace: a forge made while this read was in
+          // flight is already on the deck, and its gateway record may not
+          // have landed yet. Remote wins for records it carries (matched
+          // by seq, the one key that rides both ways); local entries the
+          // remote hasn't caught up with stay.
+          setSystems((prev) => {
+            const adopted = new Set(
+              remote.flatMap((r) => (r.seq !== undefined ? [r.seq] : [])),
+            );
+            const pending = prev.filter(
+              (s) => !s.itemId && (s.seq === undefined || !adopted.has(s.seq)),
+            );
+            return [...remote, ...pending].sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+          });
           return;
         }
         const cached = loadCachedSystems();
@@ -191,7 +208,11 @@ export function CreateSolarSystemPage() {
           createForgedSystem(blocksClient, system)
             .then((itemId) => {
               if (!itemId) return;
-              setSystems((prev) => prev.map((s) => (s === system ? { ...s, itemId } : s)));
+              setSystems((prev) =>
+                prev.map((s) =>
+                  s.seq !== undefined && s.seq === system.seq ? { ...s, itemId } : s,
+                ),
+              );
             })
             .catch(() => undefined);
         }
@@ -957,6 +978,9 @@ function IconPicker({
       if (typeof reader.result === "string") {
         onPickLogo({ kind: "image", name: file.name, src: reader.result });
       }
+    };
+    reader.onerror = () => {
+      setUploadError("That file refused to read — try another image.");
     };
     reader.readAsDataURL(file);
   };

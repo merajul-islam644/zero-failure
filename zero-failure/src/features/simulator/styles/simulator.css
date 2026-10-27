@@ -1997,6 +1997,7 @@
 
 .sim-report-title {
   font-size: 0.95rem;
+  margin: 0; /* a real heading now — keep the toolbar's fit */
 }
 
 .sim-report-actions {

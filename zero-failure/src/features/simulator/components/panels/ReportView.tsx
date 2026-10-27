@@ -15,14 +15,7 @@ import {
   toJSON,
   toMarkdown
 } from "../../report/report";
-
-const STATUS_LABEL: Record<string, string> = {
-  passed: "passed",
-  failed: "failed",
-  warning: "warning",
-  "not-tested": "not tested",
-  "not-configured": "not configured"
-};
+import { ASSERTION_STATUS_LABEL } from "./statusLabels";
 
 export function ReportView({
   timeline,
@@ -73,9 +66,9 @@ export function ReportView({
   return (
     <div className="sim-report-overlay" role="dialog" aria-label="Full test report">
       <div className="sim-report-toolbar">
-        <strong className="sim-report-title">
+        <h2 className="sim-report-title">
           Report {report.runId} · {report.scenarioId}
-        </strong>
+        </h2>
         <div className="sim-report-actions">
           <button type="button" className="sim-btn sim-btn-small sim-report-export" onClick={exportJson}>
             Export JSON
@@ -98,7 +91,7 @@ export function ReportView({
         <p className="sim-report-disclaimer">{report.disclaimer}</p>
 
         <section className="sim-report-section">
-          <div className={`sim-verdict sim-verdict-large`} data-verdict={report.overall.status}>
+          <div className="sim-verdict sim-verdict-large" data-verdict={report.overall.status}>
             <span className="sim-verdict-label">
               {report.overall.status.toUpperCase().replace(/-/g, " ")}
             </span>
@@ -113,7 +106,7 @@ export function ReportView({
         <section className="sim-report-section">
           <h3 className="sim-inspector-heading">Counts</h3>
           <div className="sim-report-counts">
-            {(Object.entries(STATUS_LABEL) as [string, string][]).map(([status, label]) => (
+            {(Object.entries(ASSERTION_STATUS_LABEL) as [string, string][]).map(([status, label]) => (
               <span key={status} className="sim-report-count" data-status={status}>
                 {report.counts[status as keyof typeof report.counts]} {label}
               </span>
@@ -136,7 +129,7 @@ export function ReportView({
                         {assertionId} · {def?.checkpointId}
                       </span>
                       <span className="sim-result-title">{def?.title}</span>
-                      <span className="sim-status-chip">{STATUS_LABEL[result.status]}</span>
+                      <span className="sim-status-chip">{ASSERTION_STATUS_LABEL[result.status]}</span>
                     </div>
                     <div className="sim-result-actual">
                       Expected: {result.expected} — Actual: {result.actual}

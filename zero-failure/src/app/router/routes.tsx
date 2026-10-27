@@ -78,7 +78,11 @@ export function AppRouter() {
   }
 
   if (path === "/login") {
-    const returnTo = new URLSearchParams(search).get("returnTo") || undefined;
+    const requested = new URLSearchParams(search).get("returnTo") || undefined;
+    // Only same-origin paths are navigable targets: a crafted returnTo
+    // ("https://…" or protocol-relative "//…") must not reach pushState.
+    const returnTo =
+      requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : undefined;
     return (
       <RedirectIfAuthenticated onNavigate={navigate}>
         <LoginPage returnTo={returnTo} />
@@ -169,6 +173,13 @@ export function AppRouter() {
   const Page = protectedRoutes[path as keyof typeof protectedRoutes];
   if (!Page) {
     return <NotFoundPage onNavigate={navigate} />;
+  }
+
+  // /error's "return home" needs the router callback — render it directly
+  // like the other full-viewport sectors instead of inside the shell, which
+  // would mount it prop-less.
+  if (path === "/error") {
+    return <ErrorPage onNavigate={navigate} />;
   }
 
   return (

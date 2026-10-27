@@ -249,7 +249,13 @@ describe("run-driven timeline compilation", () => {
     const timeline = buildTimeline(SCENES, run);
     expect(timeline.messages.length).toBeGreaterThan(0);
     for (const message of timeline.messages) {
-      expect(run.messages).toContain(message);
+      // The timeline stamps its own story-head time on envelopes, so the
+      // placement is by correlation+attempt — the run's record, not a
+      // placeholder — rather than object identity.
+      const placed = run.messages.some(
+        (m) => m.correlationId === message.correlationId && m.attempt === message.attempt
+      );
+      expect(placed).toBe(true);
       expect(message.runId).toBe(RUN_ID);
     }
   });

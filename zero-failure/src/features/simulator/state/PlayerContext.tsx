@@ -93,11 +93,10 @@ export function usePlayer(): PlayerContextValue {
  *  SolarNodeLayer, PacketLayer and LivePulseLayer. */
 export function usePlaybackTime(): number {
   const { clock } = usePlayer();
-  return useSyncExternalStore(
-    (onChange) => clock.subscribe(() => onChange()),
-    () => clock.time,
-    () => 0
-  );
+  // Stable subscribe identity, same rule as useOrbitTime below — a fresh
+  // arrow resubscribes the store around every commit.
+  const subscribe = useCallback((onChange: () => void) => clock.subscribe(() => onChange()), [clock]);
+  return useSyncExternalStore(subscribe, () => clock.time, () => 0);
 }
 
 // ---- orbit time ----
@@ -200,11 +199,8 @@ export function useOrbitTime(): number {
  * (Speed select, keyboard ↑/↓). */
 export function usePlaybackRate(): number {
   const { clock } = usePlayer();
-  return useSyncExternalStore(
-    (onChange) => clock.subscribe(() => onChange()),
-    () => clock.playbackRate,
-    () => 1
-  );
+  const subscribe = useCallback((onChange: () => void) => clock.subscribe(() => onChange()), [clock]);
+  return useSyncExternalStore(subscribe, () => clock.playbackRate, () => 1);
 }
 
 /**

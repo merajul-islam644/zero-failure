@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { blocksClient } from "../blocks/client";
@@ -46,6 +46,13 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(LANGUAGE_KEY, next);
     setLanguageOverride(next);
   }
+
+  // Keep the document's language tag in step so screen readers switch
+  // pronunciation with the UI instead of announcing the new language as
+  // English.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   // One cached query per module for the active language -- TanStack Query
   // dedupes/caches by queryKey, so switching languages (or remounting) never

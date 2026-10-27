@@ -53,7 +53,7 @@ function ShelfSection({
         <div className="dash-systems">
           {systems.map((system, index) => (
             <SystemCard
-              key={`${system.sun}:${index}`}
+              key={system.itemId ?? `${system.sun}:${system.seq ?? index}`}
               system={system}
               onOpen={() => onOpen(system)}
               onEdit={onEdit ? () => onEdit(system) : undefined}

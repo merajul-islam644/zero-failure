@@ -1,10 +1,11 @@
 ﻿// The create-role dialog: a name, an optional slug and description,
-// staged locally and reviewed before the one create call â€” the same
+// staged locally and reviewed before the one create call — the same
 // confirm-before-mutate discipline as every console in this family.
 // A refusal leaves the form untouched; nothing auto-saves.
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useDialogFocus } from "../../shared/ui/useDialogFocus";
 import { useCreateRole } from "./useAccess";
 
 export function RoleCreateModal({
@@ -14,6 +15,7 @@ export function RoleCreateModal({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>();
   const create = useCreateRole();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -30,7 +32,7 @@ export function RoleCreateModal({
   const onPrimary = () => {
     if (!canStage) return;
     // the two-click commit: first press opens the review, the second
-    // â€” on exactly this staged definition â€” fires the one create
+    // — on exactly this staged definition — fires the one create
     if (!reviewOpen) {
       setReviewOpen(true);
       return;
@@ -43,7 +45,7 @@ export function RoleCreateModal({
       },
       {
         onSuccess: () => {
-          onSaved(`Role on file â€” ${trimmedName} created`);
+          onSaved(`Role on file — ${trimmedName} created`);
           onClose();
         },
         onError: (error) => {
@@ -51,7 +53,7 @@ export function RoleCreateModal({
           setAlert(
             error instanceof Error && error.message
               ? error.message
-              : "The gateway refused the create â€” your clearance may not cover it."
+              : "The gateway refused the create — your clearance may not cover it."
           );
         },
       }
@@ -81,7 +83,7 @@ export function RoleCreateModal({
   return (
     <div className="dash-modal acc-modal" role="dialog" aria-modal="true" aria-label="Define a new role">
       <button type="button" className="dash-modal-backdrop" aria-label="Close" tabIndex={-1} onClick={requestClose} />
-      <div className="dash-modal-panel acc-panel acc-panel-create">
+      <div ref={dialogRef} tabIndex={-1} className="dash-modal-panel acc-panel acc-panel-create">
         <button type="button" className="dash-modal-close" aria-label="Close" onClick={requestClose} disabled={saving}>
           <X size={14} aria-hidden />
         </button>
@@ -100,7 +102,7 @@ export function RoleCreateModal({
             className="acc-field-input"
             type="text"
             value={name}
-            placeholder="what this clearance is calledâ€¦"
+            placeholder="what this clearance is called…"
             spellCheck={false}
             autoComplete="off"
             disabled={saving}
@@ -108,7 +110,7 @@ export function RoleCreateModal({
           />
         </div>
         <div className="acc-field">
-          <label htmlFor="acc-create-slug">Slug â€” optional</label>
+          <label htmlFor="acc-create-slug">Slug — optional</label>
           <input
             id="acc-create-slug"
             className="acc-field-input"
@@ -122,13 +124,13 @@ export function RoleCreateModal({
           />
         </div>
         <div className="acc-field">
-          <label htmlFor="acc-create-description">Description â€” optional</label>
+          <label htmlFor="acc-create-description">Description — optional</label>
           <input
             id="acc-create-description"
             className="acc-field-input"
             type="text"
             value={description}
-            placeholder="what holders of this role may doâ€¦"
+            placeholder="what holders of this role may do…"
             spellCheck={false}
             autoComplete="off"
             disabled={saving}
@@ -148,7 +150,7 @@ export function RoleCreateModal({
               )}
             </div>
           ) : (
-            <span className="acc-delta-none">NOTHING SENT YET â€” review before the create</span>
+            <span className="acc-delta-none">NOTHING SENT YET — review before the create</span>
           )}
         </div>
 
@@ -157,7 +159,7 @@ export function RoleCreateModal({
             Discard
           </button>
           <button type="button" className="dash-open" onClick={onPrimary} disabled={!canStage}>
-            {saving ? "TRANSMITTINGâ€¦" : reviewOpen ? "CONFIRM CREATE" : "REVIEW CREATE"}
+            {saving ? "TRANSMITTING…" : reviewOpen ? "CONFIRM CREATE" : "REVIEW CREATE"}
           </button>
         </div>
       </div>

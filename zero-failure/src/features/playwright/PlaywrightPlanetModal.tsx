@@ -812,7 +812,7 @@ export function PlaywrightPlanetModal({
               </div>
             )}
             {runHere.logs && runHere.logs.length > 0 && (
-              <pre className="pw-run-log" ref={logRef}>
+              <pre className="pw-run-log" ref={logRef} role="log" aria-label="Playwright run output">
                 {runHere.logs.map((log, index) => (
                   <span
                     key={index}

@@ -15,15 +15,25 @@ export function CallbackPage({ onNavigate }: { onNavigate: (path: string) => voi
     if (ran.current) return;
     ran.current = true;
 
-    completeLogin(window.location.href).then((result) => {
-      if (result.ok) {
-        refresh();
-        onNavigate(result.returnTo);
-        return;
-      }
+    completeLogin(window.location.href)
+      .then(async (result) => {
+        if (result.ok) {
+          // Land the session before navigating: RequireAuth reads status,
+          // and navigating while it still says "unauthenticated" (this page
+          // load's own probe ran before the cookie existed) bounces the deep
+          // link straight back to /login.
+          await refresh();
+          onNavigate(result.returnTo);
+          return;
+        }
 
-      setError(result.message);
-    });
+        setError(result.message);
+      })
+      .catch((err: unknown) => {
+        // A rejected exchange (network down, bad code) must surface, not
+        // spin the loading screen forever.
+        setError(err instanceof Error ? err.message : "Sign-in failed");
+      });
   }, [onNavigate, refresh]);
 
   if (error) {

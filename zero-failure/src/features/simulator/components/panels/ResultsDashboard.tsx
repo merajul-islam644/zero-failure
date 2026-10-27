@@ -6,11 +6,11 @@
 
 import { useMemo, useState } from "react";
 import type { Timeline } from "../../engine/timeline";
-import type { AssertionStatus } from "../../engine/types";
 import { useRun } from "../../run/RunContext";
 import { assertionById } from "../../run/assertions";
 import { countStatuses, computeOverall } from "../../run/verdict";
 import { useReveal } from "./reveal";
+import { ASSERTION_STATUS_LABEL } from "./statusLabels";
 
 type Filter = "all" | "passed" | "failed" | "warning" | "pending";
 
@@ -20,14 +20,6 @@ const FILTER_LABEL: Record<Filter, string> = {
   failed: "Failed",
   warning: "Warnings",
   pending: "Pending"
-};
-
-const STATUS_LABEL: Record<AssertionStatus, string> = {
-  passed: "passed",
-  failed: "failed",
-  warning: "warning",
-  "not-tested": "not tested",
-  "not-configured": "not configured"
 };
 
 export function ResultsDashboard({
@@ -98,6 +90,7 @@ export function ResultsDashboard({
             key={key}
             type="button"
             className={`sim-filter-chip${filter === key ? " sim-filter-active" : ""}`}
+            aria-pressed={filter === key}
             onClick={() => setFilter(key)}
           >
             {FILTER_LABEL[key]}
@@ -115,7 +108,7 @@ export function ResultsDashboard({
               <div className="sim-result-head">
                 <span className="sim-id">{result.assertionId}</span>
                 <span className="sim-result-title">{def?.title}</span>
-                <span className="sim-status-chip">{STATUS_LABEL[status]}</span>
+                <span className="sim-status-chip">{ASSERTION_STATUS_LABEL[status]}</span>
               </div>
               {isRevealed && <div className="sim-result-actual">{result.actual}</div>}
             </li>

@@ -13,7 +13,8 @@ import {
   Rocket, Satellite, Scan, Send, Server, Share2, ShieldCheck, Sparkles, Star, Sun,
   Table, Telescope, Terminal, Users, Wallet, Waypoints, Wifi, Workflow, Zap,
   // the expansion: a hundred more shelves below
-  Atom, Dna, Infinity, Shapes, Triangle, Diamond, Circle, Sparkle,
+  // (lucide's Infinity shadows the global number — aliased)
+  Atom, Dna, Infinity as InfinityIcon, Shapes, Triangle, Diamond, Circle, Sparkle,
   CloudRain, CloudSun, CloudLightning, Snowflake, Rainbow, Wind, Thermometer, Sunrise, Sunset, Mountain, TreePine, Sprout,
   PawPrint, Heart,
   Code, CodeXml, Binary, Router, Cable, Power, QrCode, Barcode, ScanFace,
@@ -119,7 +120,7 @@ export const FORGE_ICONS: ForgeIconEntry[] = [
   //   still lands on a glyph —
   { name: "Atom", icon: Atom },
   { name: "Dna", icon: Dna },
-  { name: "Infinity", icon: Infinity },
+  { name: "Infinity", icon: InfinityIcon },
   { name: "Shapes", icon: Shapes },
   { name: "Triangle", icon: Triangle },
   { name: "Diamond", icon: Diamond },

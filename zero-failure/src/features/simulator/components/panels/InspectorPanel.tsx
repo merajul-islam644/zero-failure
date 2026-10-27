@@ -49,7 +49,7 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
   return (
     <>
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">Scenario</h3>
+        <h2 className="sim-inspector-heading">Scenario</h2>
         <p className="sim-scenario-title">{scenario.title}</p>
         <p className="sim-scenario-hint">
           {run
@@ -61,9 +61,9 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
       </section>
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">
+        <h2 className="sim-inspector-heading">
           Simulated connectors <span className="sim-count">({Object.keys(simulatedRegistry).length})</span>
-        </h3>
+        </h2>
         <ul className="sim-conn-list">
           {Object.values(simulatedRegistry).map((connector) => (
             <li key={connector.platform} className="sim-conn-row" data-configured={connector.configStatus}>
@@ -76,9 +76,9 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
 
       <section className="sim-inspector-section">
         <div className="sim-live-head">
-          <h3 className="sim-inspector-heading">
+          <h2 className="sim-inspector-heading">
             Live connectors <span className="sim-count">({Object.keys(liveRegistry).length})</span>
-          </h3>
+          </h2>
           <button
             type="button"
             className="sim-conn-refresh"
@@ -124,7 +124,7 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
 
       {mode === "live" && (
         <section className="sim-inspector-section">
-          <h3 className="sim-inspector-heading">Live activity</h3>
+          <h2 className="sim-inspector-heading">Live activity</h2>
           {liveEvents.length === 0 ? (
             <p className="sim-scenario-hint">
               Watching the tenant every 20s — schema, language, storage and inbox changes appear here.
@@ -143,9 +143,9 @@ export function InspectorPanel({ timeline, liveEvents }: { timeline: Timeline; l
       )}
 
       <section className="sim-inspector-section">
-        <h3 className="sim-inspector-heading">
+        <h2 className="sim-inspector-heading">
           Message history <span className="sim-count">({revealed.length}/{windows.length})</span>
-        </h3>
+        </h2>
         {revealed.length === 0 ? (
           <p className="sim-scenario-hint">No messages dispatched yet.</p>
         ) : (

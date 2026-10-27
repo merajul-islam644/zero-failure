@@ -477,16 +477,37 @@ export async function clearUserAccessOverrides(
   client: BlocksClient,
   request: { userId: string; roles: string[]; permissions: string[] }
 ): Promise<void> {
+  // The revoke lifts everything, so record what's on file first — if the
+  // re-grant leg fails, this snapshot is what best-effort restoration puts
+  // back, instead of leaving the operative stripped while the console
+  // shows an error.
+  const onFile = await fetchUser(client, request.userId).catch(() => null);
   await client.iam.users.revokeAccess({
     userId: request.userId,
     notifyUser: false,
   });
-  await client.iam.users.updateAccess({
-    userId: request.userId,
-    roles: [...request.roles],
-    permissions: [...request.permissions],
-    notifyUser: false,
-  });
+  try {
+    await client.iam.users.updateAccess({
+      userId: request.userId,
+      roles: [...request.roles],
+      permissions: [...request.permissions],
+      notifyUser: false,
+    });
+  } catch (err) {
+    if (onFile) {
+      // Best effort only, and silent: the original failure is the one the
+      // operator must see, and a failed restore must not mask it.
+      await client.iam.users
+        .updateAccess({
+          userId: request.userId,
+          roles: [...onFile.roles],
+          permissions: [...onFile.permissions],
+          notifyUser: false,
+        })
+        .catch(() => undefined);
+    }
+    throw err;
+  }
 }
 
 /** Define a new role — the name is the only required field; the slug

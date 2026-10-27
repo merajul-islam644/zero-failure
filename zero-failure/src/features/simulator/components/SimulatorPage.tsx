@@ -20,12 +20,10 @@ import { SettingsProvider } from "../state/SettingsContext";
 import { CommandCanvas } from "./canvas/CommandCanvas";
 import { CommandRail } from "./CommandRail";
 import { StatusRail } from "./StatusRail";
-import { TransportBar, SPEEDS } from "./transport/TransportBar";
+import { TransportBar, SKIP_MS, SPEEDS } from "./transport/TransportBar";
 import { AudioLayer } from "./AudioLayer";
 import { PanelDeck } from "./panels/PanelDeck";
 import "../styles/simulator.css";
-
-const SKIP_MS = 10000;
 
 export function SimulatorPage() {
   return (
@@ -49,6 +47,9 @@ function SimulatorScreen() {
 
   return (
     <PlayerProvider duration={timeline.totalMs}>
+      {/* The stage has no visible title — the rails are the chrome. This
+          anchors the heading tree the panels' h2s hang from. */}
+      <h1 className="sr-only">Simulator</h1>
       <SimulatorStage timeline={timeline} liveEvents={activity.events} />
     </PlayerProvider>
   );

@@ -92,7 +92,11 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
     const found = run?.messages.find(
       (m) => m.correlationId === correlationId && m.attempt === attempt
     );
-    if (found) return found;
+    // A copy, stamped with the story head: the run owns its messages, and a
+    // beat's screen time is timeline business — mutating the shared record
+    // would leave replay's dispatch-order sort reading whatever the last
+    // compile happened to write.
+    if (found) return { ...found, timestamp };
     // Placeholder envelope — only used while run is null (engine bring-up).
     // With a run present, a missing message means the exchange was BLOCKED
     // and the beat is skipped entirely — never shown as a fake success.
@@ -210,7 +214,6 @@ export function buildTimeline(scenes: SceneDefinition[], run: RunResult | null):
           const resolveHold = Math.min(600, remaining);
           const processingMs = Math.max(300, remaining - resolveHold);
           const envelope = envelopeFor(beat.correlationId, beat.attempt ?? 1, beat, t0, processingMs);
-          envelope.timestamp = t0;
 
           push({ kind: "message-dispatch", time: t0, id: `${id}-dispatch`, message: envelope, travelMs });
           push({ kind: "message-arrive", time: t0 + travelMs, id: `${id}-arrive`, messageId: envelope.requestId });

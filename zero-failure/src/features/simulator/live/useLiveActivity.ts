@@ -17,7 +17,10 @@ const MAX_EVENTS = 20;
 
 export function useLiveActivity(enabled: boolean): { events: LiveActivityEvent[] } {
   const { status } = useAuth();
-  const probes = useLiveProbes();
+  // The flag rides through: simulated mode must not probe the live tenant
+  // from a page that never looks at it (the inspector opens its own probe
+  // query when it mounts).
+  const probes = useLiveProbes(enabled);
   const queryClient = useQueryClient();
   const [events, setEvents] = useState<LiveActivityEvent[]>([]);
   // Previous observation for the differ; also which dataUpdatedAt was last

@@ -17,7 +17,8 @@ import type { Timeline, TimelineScene } from "../../engine/timeline";
 import type { BroadcastActions } from "../../live/broadcast/useBroadcastActions";
 
 export const SPEEDS = [0.5, 1, 2, 4, 8, 16] as const;
-const SKIP_MS = 10000;
+/** Skip buttons and the keyboard's ←/→ hop, shared with SimulatorPage. */
+export const SKIP_MS = 10000;
 
 export function TransportBar({
   timeline,
@@ -240,6 +241,12 @@ function Scrubber({ duration, actions }: { duration: number; actions: BroadcastA
           pointerDownRef.current = true;
         }}
         onPointerUp={() => {
+          pointerDownRef.current = false;
+          setDragTime(null);
+        }}
+        onPointerCancel={() => {
+          // Touch interrupted by a gesture takeover — without this the
+          // thumb freezes at the abandoned position.
           pointerDownRef.current = false;
           setDragTime(null);
         }}

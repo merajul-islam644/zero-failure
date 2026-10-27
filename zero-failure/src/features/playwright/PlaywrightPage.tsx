@@ -345,7 +345,10 @@ export function PlaywrightPage() {
     }
     const folder = open.path.length > 0 ? nearestTree(open.key, open.path) : null;
     const rel = open.path.length > 0 ? (folder?.rel ?? []) : [];
-    const pathKey = open.path.join(">");
+    // Key the run by body AND walked path: two systems' consoles share the
+    // path strings, and a path-only key let one body's verdict appear in
+    // another's console.
+    const pathKey = [open.key, ...open.path].join(">");
     const label =
       [system.sun, ...open.path, open.subject.name]
         .join(" ")
@@ -538,7 +541,7 @@ export function PlaywrightPage() {
     } catch {
       // the desk is deaf — the panel asks the human instead
     }
-    setRunPathAsk(open.path.join(">"));
+    setRunPathAsk([open.key, ...open.path].join(">"));
   };
 
   // The repo-home prompt's save: keep the path, then run at once.
@@ -651,7 +654,7 @@ export function PlaywrightPage() {
           run={consoleRun}
           canPlay={consoleCanPlay}
           onStop={stopRun}
-          runPathAsk={runPathAsk === consoleOpen.path.join(">")}
+          runPathAsk={runPathAsk === [consoleOpen.key, ...consoleOpen.path].join(">")}
           runMatches={runMatches}
           runRoot={runPaths[consoleOpen.key] ?? null}
           onRunRoot={saveRunRoot}

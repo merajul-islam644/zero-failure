@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useDialogFocus } from "../../shared/ui/useDialogFocus";
 import { useAssignableRoles, useCreateUser, useEmailAvailable } from "./useAccess";
 
 const EMAIL_SHAPE = /^\S+@\S+\.\S+$/;
@@ -19,6 +20,7 @@ export function InviteUserModal({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>();
   const create = useCreateUser();
   const roles = useAssignableRoles();
 
@@ -116,7 +118,7 @@ export function InviteUserModal({
   return (
     <div className="dash-modal acc-modal" role="dialog" aria-modal="true" aria-label="Invite an operative">
       <button type="button" className="dash-modal-backdrop" aria-label="Close" tabIndex={-1} onClick={requestClose} />
-      <div className="dash-modal-panel acc-panel acc-panel-create">
+      <div ref={dialogRef} tabIndex={-1} className="dash-modal-panel acc-panel acc-panel-create">
         <button type="button" className="dash-modal-close" aria-label="Close" onClick={requestClose} disabled={saving}>
           <X size={14} aria-hidden />
         </button>

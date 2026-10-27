@@ -167,16 +167,19 @@ export async function startLogin(returnTo?: string): Promise<void> {
 
   // A plain sign-in lands on the dashboard; only a gated deep link
   // (RequireAuth's returnTo) sends the viewer back where they started.
-  sessionStorage.setItem(RETURN_KEY, returnTo || "/dashboard");
+  sessionStorage.setItem(RETURN_KEY, returnTo || "/");
   await blocksClient.auth.idp.redirectToProvider();
 }
 
 export async function completeLogin(callbackUrl: string): Promise<CallbackResult> {
-  const returnTo = sessionStorage.getItem(RETURN_KEY) || "/dashboard";
+  const returnTo = sessionStorage.getItem(RETURN_KEY) || "/";
+
+  // Only drop the saved destination once the callback has actually succeeded
+  // — a failed exchange (network down, bad code) must let a retry still
+  // deliver the viewer where they started.
+  const data = await blocksClient.auth.idp.callback(callbackUrl);
 
   sessionStorage.removeItem(RETURN_KEY);
-
-  const data = await blocksClient.auth.idp.callback(callbackUrl);
 
   if (data.error) {
     return { message: data.error_description || data.error, ok: false };

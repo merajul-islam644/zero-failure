@@ -144,13 +144,19 @@ export function TimelineStrip({
       setPill(null);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenu(null);
+      if (event.key !== "Escape") return;
+      // Capture on document: the menu is the innermost layer, so its Escape
+      // must land before the drawer's bubble-phase handler — without the
+      // capture + stop, a sheet behind the strip would close instead of
+      // (or in addition to) the menu standing in it.
+      event.stopPropagation();
+      setMenu(null);
     };
     window.addEventListener("pointerdown", onDown);
-    window.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("pointerdown", onDown);
-      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
     };
   }, [menu]);
 
@@ -289,6 +295,13 @@ export function TimelineStrip({
       const arrangedNow = previewRef.current;
       if (arrangedNow && reorderRef.current) reorderRef.current(arrangedNow);
       clickGuardRef.current = true;
+      // The drop's trailing click (same target) consumes the guard above.
+      // A release off the track sends no click at all, so disarm on the
+      // next task — input events dispatch before timers — or the guard
+      // would eat the user's next real seek.
+      window.setTimeout(() => {
+        clickGuardRef.current = false;
+      }, 0);
       setDragKey(null);
       setArrangement(null);
     };

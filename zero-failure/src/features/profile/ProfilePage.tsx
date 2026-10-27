@@ -388,13 +388,26 @@ export function ProfilePage() {
             </div>
             <div className="acct-cat-row">
               <span className="acct-cat-key">TENANT</span>
-              <span className="acct-cat-val">{blocksConfig.xBlocksKey}</span>
+              {/* Truncated: the full key rides in every request anyway, but
+                  the dossier is screenshot-facing — print enough to confirm
+                  which tenant, not the whole credential. */}
+              <span className="acct-cat-val">
+                {blocksConfig.xBlocksKey ? `${blocksConfig.xBlocksKey.slice(0, 8)}…` : "Not available"}
+              </span>
             </div>
           </div>
         </section>
       </DashboardRails>
 
-      {inviteOpen && <InviteUserModal onClose={() => setInviteOpen(false)} onSaved={() => setInviteOpen(false)} />}
+      {inviteOpen && (
+        <InviteUserModal
+          onClose={() => setInviteOpen(false)}
+          onSaved={(text) => {
+            setInviteOpen(false);
+            setToast({ key: Date.now(), text });
+          }}
+        />
+      )}
 
       {/* the access file editor lives at the page's root, beside the
           invite form — a fixed overlay can't ride inside the registry

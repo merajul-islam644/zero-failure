@@ -130,7 +130,7 @@ function SceneConsole({
           Save narration
         </button>
       </footer>
-      <h4>Its face and voice</h4>
+      <h3>Its face and voice</h3>
       <div className="sim-avatar-strip" role="group" aria-label={`${part.scene.title}'s cartoon face`}>
         <button
           type="button"
@@ -220,7 +220,7 @@ function SoundtrackCard({
   const fileRef = useRef<HTMLInputElement | null>(null);
   return (
     <section className="dash-script-music">
-      <h4>Show soundtrack</h4>
+      <h3>Show soundtrack</h3>
       <p className="sim-repo-drawer-hint">
         One loop of background music under the whole show — the voices speak over it. A link
         saves with the system; a file from this computer plays until the tab closes.
@@ -341,7 +341,11 @@ export function PresentationScriptPage({
   };
   const removeOpen = () => {
     if (!openScene) return;
+    const key = openScene.scene.partKey!;
     onRemove(openScene.scene);
+    // The draft must go with the words: a stale draft over the emptied
+    // scene re-shows the removed narration and one Save would re-add it.
+    setDrafts((prev) => ({ ...prev, [key]: "" }));
   };
   const patchOpen = (patch: VoicePatch) => {
     if (!openScene) return;

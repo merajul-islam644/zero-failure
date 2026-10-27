@@ -53,22 +53,29 @@ export function SystemCard({
   return (
     <article
       className="dash-system-card"
-      role="button"
-      tabIndex={0}
-      aria-label={`Open ${system.sun} — the full solar-system view`}
       title="Open the solar-system view"
       onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
     >
       <header className="dash-system-head">
         <div>
           <p className="dash-kicker">{system.base === "app" ? "App base" : "Menu base"}</p>
-          <h3>{system.sun}</h3>
+          {/* The title button is the card's real activator: a role="button"
+              card would bury the pencil and trash inside an interactive
+              ancestor, which assistive tech refuses to announce. The plain
+              article click stays for the mouse. */}
+          <h3>
+            <button
+              type="button"
+              className="dash-system-open"
+              aria-label={`Open ${system.sun} — the full solar-system view`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpen();
+              }}
+            >
+              {system.sun}
+            </button>
+          </h3>
         </div>
         {system.note && <p className="dash-system-note">{system.note}</p>}
         {/* the pencil reopens the forge on this system — it must not read

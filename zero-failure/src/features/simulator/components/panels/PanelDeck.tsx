@@ -56,7 +56,9 @@ export function PanelDeck({
                 key={t.id}
                 type="button"
                 role="tab"
+                id={`sim-tab-${t.id}`}
                 aria-selected={tab === t.id}
+                aria-controls={`sim-panel-${t.id}`}
                 className={`sim-tab${tab === t.id ? " sim-tab-active" : ""}`}
                 onClick={() => setTab(t.id)}
               >
@@ -74,12 +76,26 @@ export function PanelDeck({
           </button>
         </div>
 
-        {tab === "inspector" && <InspectorPanel timeline={timeline} liveEvents={liveEvents} />}
-        {tab === "results" && (
-          <ResultsDashboard timeline={timeline} onOpenReport={() => setReportOpen(true)} />
+        {tab === "inspector" && (
+          <div role="tabpanel" id="sim-panel-inspector" aria-labelledby="sim-tab-inspector">
+            <InspectorPanel timeline={timeline} liveEvents={liveEvents} />
+          </div>
         )}
-        {tab === "evidence" && <EvidencePanel timeline={timeline} />}
-        {tab === "config" && <ConfigPanel actions={actions} />}
+        {tab === "results" && (
+          <div role="tabpanel" id="sim-panel-results" aria-labelledby="sim-tab-results">
+            <ResultsDashboard timeline={timeline} onOpenReport={() => setReportOpen(true)} />
+          </div>
+        )}
+        {tab === "evidence" && (
+          <div role="tabpanel" id="sim-panel-evidence" aria-labelledby="sim-tab-evidence">
+            <EvidencePanel timeline={timeline} />
+          </div>
+        )}
+        {tab === "config" && (
+          <div role="tabpanel" id="sim-panel-config" aria-labelledby="sim-tab-config">
+            <ConfigPanel actions={actions} />
+          </div>
+        )}
 
         {reportOpen && <ReportView timeline={timeline} onClose={() => setReportOpen(false)} />}
       </div>

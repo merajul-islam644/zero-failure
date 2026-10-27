@@ -40,7 +40,7 @@ import {
 import { useForgedSystems } from "../create/useForgedSystems";
 import { DashboardRails } from "../dashboard/DashboardRails";
 import { PresentationScriptPage, type ScriptPart } from "./PresentationScriptPage";
-import { BREATH_MS, speechCycleMs, speechSpeaker, speechTurns } from "./speech";
+import { BREATH_MS, speechSpeaker, speechTurns } from "./speech";
 import { canRecordShow, startShowRecording, type ShowRecordingHandle } from "./showRecorder";
 
 /** The show's span: one full lap of the outermost ring — Σ reads the
@@ -247,8 +247,15 @@ export function PresentationPage() {
   // is clicked — that system's show on its own player clock.
   const [selected, setSelected] = useState<ForgedSystem | null>(null);
   // A narration save: the shelf's copy and the open show move together.
+  // Matched by seq, not object identity — the shelf list is replaced
+  // wholesale when the mount-time gateway read lands, and an identity
+  // match would silently no-op for a show opened from the cached list.
   const updateSystem = (next: ForgedSystem) => {
-    setSystems((prev) => prev.map((entry) => (entry === selected ? next : entry)));
+    setSystems((prev) =>
+      prev.map((entry) =>
+        entry.seq !== undefined && entry.seq === selected?.seq ? next : entry,
+      ),
+    );
     setSelected(next);
   };
   // The strip's own sequencer: the drag-arranged play order and the copies

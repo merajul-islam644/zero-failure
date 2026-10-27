@@ -36,9 +36,15 @@ export function AppShell({
   onNavigate: (path: string) => void;
 }) {
   const isMobile = useIsMobile();
-  const [collapsedPref, setCollapsedPref] = useState(
-    () => localStorage.getItem(COLLAPSED_KEY) === "true",
-  );
+  // Storage can throw (private mode, hardened browsers) — the preference is
+  // cosmetic, so a failed read just means the default expansion.
+  const [collapsedPref, setCollapsedPref] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const { t } = useT();
   // On narrow screens the sidebar is always the icon-only rail below --
   // no separate hamburger/drawer/scrim needed, and no dead-end state where
@@ -47,7 +53,11 @@ export function AppShell({
   const activeItem = navItems.find((item) => item.href === activePath);
 
   useEffect(() => {
-    localStorage.setItem(COLLAPSED_KEY, String(collapsedPref));
+    try {
+      localStorage.setItem(COLLAPSED_KEY, String(collapsedPref));
+    } catch {
+      // Persistence is best-effort; the session default still works.
+    }
   }, [collapsedPref]);
 
   return (
@@ -87,6 +97,8 @@ export function AppShell({
               href={item.href}
               data-tooltip={t(item.labelKey)}
               className={activePath === item.href ? "active" : ""}
+              aria-label={t(item.labelKey)}
+              aria-current={activePath === item.href ? "page" : undefined}
               onClick={(event) => {
                 event.preventDefault();
                 onNavigate(item.href);

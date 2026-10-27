@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { Skeleton } from "../../shared/ui/Skeleton";
+import { useDialogFocus } from "../../shared/ui/useDialogFocus";
 import {
   accUserDisplayName,
   computeAccessDelta,
@@ -30,6 +31,7 @@ export function AccessEditorModal({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>();
   const detail = useAccessUser(userId);
   const roles = useAssignableRoles();
   const save = useUpdateUserAccess();
@@ -177,7 +179,7 @@ export function AccessEditorModal({
       aria-label={`Access file — ${name || "operative"}`}
     >
       <button type="button" className="dash-modal-backdrop" aria-label="Close" tabIndex={-1} onClick={requestClose} />
-      <div className="dash-modal-panel acc-panel">
+      <div ref={dialogRef} tabIndex={-1} className="dash-modal-panel acc-panel">
         <button type="button" className="dash-modal-close" aria-label="Close" onClick={requestClose} disabled={saving}>
           <X size={14} aria-hidden />
         </button>

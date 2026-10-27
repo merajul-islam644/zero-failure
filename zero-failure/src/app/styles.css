@@ -830,6 +830,22 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   outline: 2px solid hsl(var(--sim-accent) / 0.85);
   outline-offset: 3px;
 }
+/* the card's title button: the accessible activator wearing the heading's
+   own look — button chrome stripped, focus ring kept for the keyboard */
+.dash-system-open {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: 0;
+  text-align: inherit;
+}
+.dash-system-open:focus-visible {
+  outline: 2px solid hsl(var(--sim-accent) / 0.85);
+  outline-offset: 3px;
+}
 .dash-system-card::before {
   animation: dash-breathe 3.4s ease-in-out infinite;
   background: linear-gradient(90deg, transparent, hsl(var(--sim-accent) / 0.9), transparent);
@@ -1807,7 +1823,8 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
 /* A big deck scrolls inside its card — the footer stays in view. */
 .dash-deck-scroll { max-height: 280px; overflow-y: auto; }
 @media (prefers-reduced-motion: reduce) {
-  .dash-hero::before, .dash-stat::before, .dash-hero-edge, .dash-matrix i, .dash-live-dot { animation: none; }
+  .dash-hero::before, .dash-stat::before, .dash-hero-edge, .dash-matrix i,
+  .dash-soon::before, .dash-modal-panel::before, .dash-system-card::before { animation: none; }
 }
 @media (max-width: 1100px) {
   .dash-grid { grid-template-columns: 1fr; }
@@ -2383,6 +2400,11 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   color: hsl(var(--sim-accent));
 }
 .dash-live-dot { animation: dash-ping 1.6s ease-in-out infinite; background: hsl(var(--sim-accent)); border-radius: 50%; box-shadow: 0 0 10px hsl(var(--sim-accent) / 0.8); flex-shrink: 0; height: 6px; width: 6px; }
+/* Restated after the rule above: source order would otherwise let the ping
+   outrun the earlier reduced-motion block. */
+@media (prefers-reduced-motion: reduce) {
+  .dash-live-dot { animation: none; }
+}
 @keyframes dash-ping {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }
@@ -2528,6 +2550,11 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   to { opacity: 1; }
 }
 .sim-jump-hold .sim-jump-bar i { animation: sim-jump-scan 1.3s cubic-bezier(0.45, 0, 0.4, 1) infinite; }
+/* Restated after the hold rule: the hold's scan has higher specificity than
+   the generic reduced-motion kill above the loader. */
+@media (prefers-reduced-motion: reduce) {
+  .sim-jump-hold .sim-jump-bar i { animation: none; }
+}
 @keyframes sim-jump-scan {
   from { transform: translateX(-100%); }
   to { transform: translateX(100%); }
@@ -2834,7 +2861,10 @@ pre { background: hsl(var(--foreground)); border-radius: var(--radius); color: h
 .form-field input:focus, .form-field select:focus { border-color: hsl(var(--primary)); }
 .form-actions { align-items: center; display: flex; gap: 8px; grid-column: 1 / -1; justify-content: flex-end; }
 .table-shell { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); margin-bottom: 12px; overflow-x: auto; }
-table { border-collapse: collapse; min-width: 720px; width: 100%; }
+table { border-collapse: collapse; width: 100%; }
+/* The 720px floor is the CRUD shell's need only — as an element-global it
+   forced every deck table into its scroll wrapper. */
+.table-shell table { min-width: 720px; }
 th, td { border-bottom: 1px solid hsl(var(--border)); padding: 13px 14px; text-align: left; vertical-align: middle; }
 th { color: hsl(var(--muted-foreground)); font-size: 12px; font-weight: 700; text-transform: uppercase; }
 tbody tr { transition: background-color 0.15s ease; }
@@ -3291,8 +3321,10 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .acct-holo-ring,
+  .acct-holo-ring.is-alt,
   .acct-holo-scan::after,
-  .acct-id::before { animation: none; }
+  .acct-id::before,
+  .acc-row-status.is-pending i { animation: none; }
 }
 
 /* ============================================================
@@ -3619,3 +3651,18 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 /* the invite form's roles block: shorter than the editor's sweep list */
 .acc-checks-tight { max-height: 168px; margin-top: 2px; }
+
+/* visually-hidden: real heading/label semantics without pixels — the
+   simulator stage's h1 and similar structural anchors */
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

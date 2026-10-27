@@ -4,7 +4,7 @@
 // by frame with the same sky-time math as SolarNodeLayer; the fade stays
 // CSS via data-show.
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { CAST_BY_ID } from "../../script/cast";
 import type { ActiveDialogue, CharacterState, PlatformId } from "../../engine/types";
 import { useOrbitTime } from "../../state/PlayerContext";
@@ -54,7 +54,11 @@ export function SpeechBubbleLayer({ dialogue, states }: SpeechBubbleLayerProps) 
   // teleporting back to the sun.
   const lastSpeaker = useRef<PlatformId>("os");
   const speaker = dialogue ? (dialogue.speaker === "all-cast" ? "os" : dialogue.speaker) : null;
-  if (speaker) lastSpeaker.current = speaker;
+  // Side effects belong in the effect pass — a render-phase ref write would
+  // run twice under StrictMode's double render for one commit.
+  useEffect(() => {
+    if (speaker) lastSpeaker.current = speaker;
+  }, [speaker]);
   const id = lastSpeaker.current;
 
   const character = CAST_BY_ID[id];
