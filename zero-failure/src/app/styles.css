@@ -1351,6 +1351,242 @@ section { margin: 0 auto; max-width: 1100px; width: 100%; }
   flex: none;
   overflow-y: visible;
 }
+/* The script thread reads like a group chat: every part of the show a
+   message bubble wearing its speaker's face and hue, stamped with the
+   moment it takes the stage. The part that asked is the bubble being
+   edited; every other bubble reads whole but stands disabled. */
+.dash-chat-title-avatar {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  overflow: visible;
+}
+.dash-chat-title-initial {
+  font-size: 22px;
+  font-weight: 700;
+  fill: hsl(var(--sim-text));
+}
+.dash-chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.dash-chat-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  opacity: 0.68;
+  cursor: grab; /* the whole row is its own drag handle */
+}
+.dash-chat-msg textarea {
+  cursor: text; /* the composer stays a composer, not a drag */
+}
+.dash-chat-msg.is-dragging {
+  cursor: grabbing;
+  opacity: 0.35;
+}
+.dash-chat-thread[data-dragging] {
+  user-select: none;
+}
+.dash-chat-msg.is-focus {
+  opacity: 1;
+}
+.dash-chat-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: hsl(var(--node-hue));
+  background: hsl(var(--node-hue) / 0.16);
+  border: 1px solid hsl(var(--node-hue) / 0.45);
+  border-radius: 50%;
+}
+.dash-chat-avatar svg {
+  width: 100%;
+  height: 100%;
+}
+.dash-chat-bubble {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem 0.6rem;
+  background: hsl(var(--node-hue) / 0.09);
+  border: 1px solid hsl(var(--node-hue) / 0.28);
+  border-radius: 0.9rem 0.9rem 0.9rem 0.25rem;
+}
+.dash-chat-msg.is-focus .dash-chat-bubble {
+  background: hsl(var(--node-hue) / 0.14);
+  border-color: hsl(var(--node-hue) / 0.65);
+}
+.dash-chat-msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+.dash-chat-msg-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: hsl(var(--node-hue));
+}
+.dash-chat-msg-time {
+  margin-left: auto;
+  font-size: 0.58rem;
+  color: hsl(var(--sim-text-dim));
+}
+/* The per-scene fold: a chevron that unfolds one bubble's words and
+   folds them away again — the conversation stays a list of scenes until
+   each one is asked to speak. */
+.dash-chat-chevron {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: hsl(var(--sim-text-dim));
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.dash-chat-chevron:hover {
+  color: hsl(var(--node-hue));
+  border-color: hsl(var(--node-hue) / 0.4);
+}
+.dash-chat-chevron.is-open {
+  transform: rotate(180deg);
+}
+/* The fold itself: the scene's words ride a grid row that grows 0fr→1fr,
+   so the bubble breathes open smoothly and folds away just as softly —
+   no measuring, no snap. Collapsed rows are invisible and untouchable. */
+.dash-chat-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    grid-template-rows 260ms ease,
+    opacity 200ms ease,
+    visibility 0s linear 260ms;
+}
+.dash-chat-fold.is-open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  opacity: 1;
+  transition:
+    grid-template-rows 260ms ease,
+    opacity 200ms ease,
+    visibility 0s;
+}
+.dash-chat-fold-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-chat-fold {
+    transition: none;
+  }
+}
+.dash-chat-text {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: hsl(var(--sim-text));
+  white-space: pre-wrap;
+}
+.dash-chat-input {
+  background: hsl(var(--sim-bg) / 0.55);
+}
+.dash-chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+.dash-script-tag {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--sim-text-dim));
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 999px;
+}
+.dash-script-tag.is-live {
+  color: hsl(var(--node-hue));
+  border-color: hsl(var(--node-hue) / 0.5);
+}
+/* The script page: the same conversation lifted out of the modal into a
+   page of its own — a chat-style header card, then the thread reading
+   top to bottom in a panel of its own. */
+.dash-space .dash-script-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: min(56rem, 100%);
+  margin-inline: auto; /* the deck's blanket `section { margin: 0 }` loses to this pair */
+}
+.dash-script-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1.2rem;
+  background: hsl(var(--sim-panel) / 0.5);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.6rem;
+}
+.dash-script-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: hsl(var(--sim-text));
+}
+.dash-script-head p {
+  margin: 0.15rem 0 0;
+  font-size: 0.74rem;
+  color: hsl(var(--sim-text-dim));
+}
+.dash-script-page .dash-chat-thread {
+  margin: 0;
+  padding: 1rem 1.1rem 1.1rem;
+  background: hsl(var(--sim-panel) / 0.35);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.6rem;
+}
+/* The open scene's console, and the soundtrack card at the page's foot:
+   the modal's very sections, living on the script page now. */
+.dash-scene-console h4 {
+  margin: 0.9rem 0 0.45rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--node-hue));
+}
+.dash-script-music {
+  padding: 0.9rem 1.1rem 1.1rem;
+  background: hsl(var(--sim-panel) / 0.35);
+  border: 1px solid hsl(var(--sim-border));
+  border-radius: 0.6rem;
+}
+.dash-script-music h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--sim-text-dim));
+}
 /* The forge's confirmation line: a HUD strip rising over the bottom
    edge, above every panel, gone again in moments. */
 .dash-toast {

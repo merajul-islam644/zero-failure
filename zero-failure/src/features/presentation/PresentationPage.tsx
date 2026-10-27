@@ -5,10 +5,11 @@
 // pause freezes the sky, speed scales it, scrub positions it — with the
 // simulator's own TransportBar for the controls and the header's zoom
 // control (or the transport's) re-homing the deck into a full-display
-// overlay. Every world here speaks for itself: a click on a planet
-// opens its narration console, the words written there ride the sky as
-// a bubble above the speaker, and the voices take turns as the head
-// runs. Nothing forged yet? The panel waits, reserved.
+// overlay. Every world here speaks for itself: the words written for it
+// ride the sky as a bubble above the speaker, and the voices take turns
+// as the head runs — all of it edited from the transport's ⋮ menu, which
+// opens the show's script page. Nothing forged yet? The panel waits,
+// reserved.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Presentation as PresentationIcon, Video } from "lucide-react";
@@ -23,26 +24,22 @@ import { speak, stopSpeech } from "../simulator/state/audio";
 import { resolveVoice } from "../simulator/state/voices";
 import { ForgedOrbitDeck } from "../create/ForgedOrbitDeck";
 import { SystemShelf } from "../create/SystemShelf";
-import { DEFAULT_FORGE_ICON } from "../create/iconCatalog";
-import { forgedBodyId, planetHues, SUN_ACCENT_HUE } from "../create/SystemSky";
+import { planetHues, SUN_ACCENT_HUE } from "../create/SystemSky";
 import {
   createForgedSystem,
-  forgedTree,
   loadCachedSystems,
   patchPlanetVoice,
   patchSystemMusic,
   patchSystemVoice,
   saveCachedSystems,
-  sunTree,
   updateForgedSystem,
-  type ForgedPlanet,
   type ForgedSystem,
   type MusicPatch,
   type VoicePatch,
 } from "../create/systemsDoc";
 import { useForgedSystems } from "../create/useForgedSystems";
 import { DashboardRails } from "../dashboard/DashboardRails";
-import { PresentationSpeechModal } from "./PresentationSpeechModal";
+import { PresentationScriptPage, type ScriptPart } from "./PresentationScriptPage";
 import { BREATH_MS, speechCycleMs, speechSpeaker, speechTurns } from "./speech";
 import { canRecordShow, startShowRecording, type ShowRecordingHandle } from "./showRecorder";
 
@@ -404,7 +401,8 @@ export function PresentationPage() {
 /** One system's show: the live deck plus the simulator's transport, both
  *  riding the same clock. The theater starts playing on entry — the sky
  *  sweeps from its base layout the moment the card opens — and every
- *  planet takes the pointer as its narration console. */
+ *  world's words are edited from the transport's ⋮ menu script page; no
+ *  world takes the pointer anymore. */
 function PresentationShow({
   system,
   onUpdate,
@@ -451,19 +449,10 @@ function PresentationShow({
   // beneath stops rendering its own copy — one sky in the document, one
   // frame loop, the same re-parenting discipline the canvas zoom keeps.
   const [zoomed, setZoomed] = useState(false);
-  // The planet whose narration console is open; null = shut.
-  const [editing, setEditing] = useState<number | null>(null);
-  // The walked trail inside the open console — [] is the body itself.
-  const [path, setPath] = useState<string[]>([]);
-  // A world's console opens at its own body — a trail walked in an
-  // earlier visit never leaks into the next.
-  const openConsole = (index: number) => {
-    setEditing(index);
-    setPath([]);
-  };
-  // Each world's own hue — the modal portrait paints with the very
-  // palette the sky gave the body.
-  const hues = useMemo(() => planetHues(system.planets.length, system.sun), [system]);
+  // The ⋮ menu's Edit speech opens the whole script instead: every part
+  // in play order, the part that asked focused, the rest read-only.
+  // Null = shut.
+  const [sheetKey, setSheetKey] = useState<string | null>(null);
   // The show opens paused — the play/pause button is the user's alone;
   // nothing here starts the clock by itself.
   // The show's per-frame head — the deck's sweep time and the voices'
@@ -504,12 +493,34 @@ function PresentationShow({
   // The solo run's own part key — the strip reads it to turn the pill's
   // play button into that part's pause/resume.
   const soloKey = solo ? sequencer.ordered[solo.part] ?? null : null;
-  // The ⋮ menu's Edit speech: the part's own body console — the very one
-  // a click on that world opens.
+  // The ⋮ menu's Edit speech: the whole show's script opens at this part.
   const editPart = (scene: TimelineScene) => {
-    if (scene.seat === undefined) return;
-    openConsole(scene.seat);
+    if (!scene.partKey) return;
+    setSheetKey(scene.partKey);
   };
+  // The script thread's rows: every part in play order carrying
+  // everything its level owns — the words (seat -1 is the system
+  // identity's own voice), the mute, the cartoon face, the browser
+  // voice and pitch — the whole console the page edits in place.
+  const scriptParts = useMemo<ScriptPart[]>(
+    () =>
+      sequencer.timeline.scenes
+        .filter((scene) => scene.partKey && scene.seat !== undefined)
+        .map((scene) => {
+          const level =
+            scene.seat === -1 ? system : system.planets[scene.seat!];
+          return {
+            scene,
+            text: level?.speech ?? "",
+            muted: level?.muted === true,
+            avatar: level?.avatar,
+            voice: level?.voice,
+            pitch: level?.pitch,
+            copy: scene.partKey!.startsWith("c"),
+          };
+        }),
+    [system, sequencer.timeline.scenes],
+  );
   // Muted part positions — the recording skips their caption bubbles, the
   // video staying as silent in those windows as the live show is.
   const mutedParts = sequence.filter((_, i) => muted.includes(sequencer.ordered[i] ?? ""));
@@ -725,25 +736,36 @@ function PresentationShow({
     recordingRef.current = null;
     setRecording(null);
   };
-  // The console's subject: a clicked world — or, on a menu base, the
-  // sun itself. Index -1 is the sun's seat: the system identity, given
-  // its own words in the model, wearing the same five voice fields
-  // every planet carries; its tree is the ring's menus.
-  const subject: ForgedPlanet | null | undefined =
-    editing === null
-      ? null
-      : editing === -1
-        ? {
-            name: system.sun,
-            label: "Menu base",
-            logo: { kind: "icon", icon: DEFAULT_FORGE_ICON.icon },
-            speech: system.speech,
-            muted: system.muted,
-            avatar: system.avatar,
-            voice: system.voice,
-            pitch: system.pitch,
-          }
-        : system.planets[editing];
+  // The ⋮ menu's Edit speech turns the screen into the show's script
+  // page — the whole conversation, the part that asked being edited.
+  // The show itself rides on underneath, untouched. Save and patches
+  // land on the part's seat; the page stays open for the next touch.
+  if (sheetKey) {
+    return (
+      <PresentationScriptPage
+        system={system}
+        parts={scriptParts}
+        focusKey={sheetKey}
+        onSave={(scene, text) => {
+          if (scene.seat !== undefined) saveVoice(scene.seat, [], { text });
+        }}
+        onRemove={(scene) => {
+          if (scene.seat !== undefined) saveVoice(scene.seat, [], { text: null });
+        }}
+        onPatch={(scene, patch) => {
+          if (scene.seat !== undefined) saveVoice(scene.seat, [], patch);
+        }}
+        music={{
+          url: system.music,
+          fileName: musicFile?.name,
+          volume: system.musicVolume ?? DEFAULT_MUSIC_VOLUME,
+        }}
+        onMusic={saveMusic}
+        onReorder={onReorderPart}
+        onBack={() => setSheetKey(null)}
+      />
+    );
+  }
   return (
     <div className="dash-space">
       <DashboardRails active="presentation">
@@ -815,15 +837,6 @@ function PresentationShow({
             t={t}
             playing={playing}
             onZoom={() => setZoomed(true)}
-            skyHint="Click the sun or a planet to write what it says about itself"
-            planetTitleSuffix="write its own words"
-            onPlanetClick={(_, index) => openConsole(index)}
-            // App base: the sun IS the center app — its seat opens the
-            // center app's narration console (index 0). Menu base: the
-            // sun is the system identity, and the identity now carries
-            // its own words in the model — its seat opens its console
-            // too (index -1).
-            onSunClick={() => openConsole(system.base === "app" ? 0 : -1)}
             speaker={speaker}
           />
         )}
@@ -838,58 +851,10 @@ function PresentationShow({
             system={system}
             t={t}
             playing={playing}
-            planetTitleSuffix="write its own words"
-            onPlanetClick={(_, index) => openConsole(index)}
-            onSunClick={() => openConsole(system.base === "app" ? 0 : -1)}
             speaker={speaker}
             onExitZoom={() => setZoomed(false)}
           />
         </div>
-      )}
-      {/* The clicked world's console — the simulator's own planet menu
-          walk over the forged menus and sub-menus, and every level —
-          body, menu, sub-menu — carries a narration and a mute of its
-          own. Opened from the sun's seat, the console wears the sun
-          itself: the fireball portrait and the fire's own accent hue,
-          so the modal matches the body that was clicked. On a menu base
-          the sun's seat is the system identity (index -1), whose tree
-          is the ring of menus. Play hands the stage back — the show
-          never stopped. */}
-      {editing !== null && subject && (
-        <PresentationSpeechModal
-          key={`${editing}:${path.join(">")}`}
-          planet={subject}
-          bodyId={forgedBodyId(system.sun, subject.name)}
-          hue={
-            editing === -1 || (system.base === "app" && editing === 0)
-              ? SUN_ACCENT_HUE
-              : hues[editing]!
-          }
-          isSun={editing === -1 || (system.base === "app" && editing === 0)}
-          // the identity's own console is no menu's console — a menu
-          // base's sun with zero menus really has none yet
-          bodyIsMenu={system.base === "menu" && editing !== -1}
-          tree={editing === -1 ? sunTree(system) : forgedTree(subject)}
-          path={path}
-          onPath={setPath}
-          onPlay={() => setEditing(null)}
-          onSave={(text) => {
-            saveVoice(editing, path, { text });
-            setEditing(null);
-          }}
-          onRemove={() => {
-            saveVoice(editing, path, { text: null });
-            setEditing(null);
-          }}
-          onPatch={(patch) => saveVoice(editing, path, patch)}
-          music={{
-            url: system.music,
-            fileName: musicFile?.name,
-            volume: system.musicVolume ?? DEFAULT_MUSIC_VOLUME,
-          }}
-          onMusic={saveMusic}
-          onClose={() => setEditing(null)}
-        />
       )}
       {/* The simulator's own transport bar — play/pause, steps, scrub,
           speed and the zoom toggle, all riding this show's clock. */}
