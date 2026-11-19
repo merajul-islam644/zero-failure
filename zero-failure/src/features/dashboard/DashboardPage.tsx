@@ -1,8 +1,9 @@
 // The sign-in landing screen: a live mission-control deck in the same
 // visual language as the simulator's stage — deep space, HUD panels.
 // The mission at a glance is the whole five-sector operation now: the
-// forged deck this tenant's operatives share (straight from the data
-// gateway — inviter and invitee alike), the playwright run desk's
+// forged deck this account owns (straight from the data gateway — the
+// row-level policy screens each operative's own forges only), the
+// playwright run desk's
 // readiness on this browser (linked repos, run homes), and the
 // simulator's own catalog (scenarios, scenes, cast, assertions).
 // Nothing invented — every number reads the app's real registries and

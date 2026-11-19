@@ -1,0 +1,105 @@
+{
+  "security": [
+    {
+      "schemaName": "forged_system",
+      "operation": 0,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "forged_system",
+      "operation": 2,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    },
+    {
+      "schemaName": "forged_system",
+      "operation": 3,
+      "policyType": 0,
+      "accessLevel": 3,
+      "fieldNames": []
+    }
+  ],
+  "policies": [
+    {
+      "schemaName": "forged_system",
+      "policyName": "forged_system-read-owner-only",
+      "policyDescription": "READ: a signed-in user sees only the solar systems they forged themselves (CreatedBy == caller). WRITE (create) stays open to every signed-in user at the schema's User level.",
+      "policyType": 0,
+      "operation": 0,
+      "fieldNames": [],
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftSource": 1,
+            "leftOperand": "CreatedBy",
+            "operator": 0,
+            "rightSource": 2,
+            "rightOperand": "$auth.userId",
+            "rightOperands": [],
+            "staticValue": null,
+            "description": null
+          }
+        ],
+        "nestedGroups": []
+      },
+      "priority": 1,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "forged_system",
+      "policyName": "forged_system-edit-owner-only",
+      "policyDescription": "EDIT: only the record's creator may update their forged system (CreatedBy == caller).",
+      "policyType": 0,
+      "operation": 2,
+      "fieldNames": [],
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftSource": 1,
+            "leftOperand": "CreatedBy",
+            "operator": 0,
+            "rightSource": 2,
+            "rightOperand": "$auth.userId",
+            "rightOperands": [],
+            "staticValue": null,
+            "description": null
+          }
+        ],
+        "nestedGroups": []
+      },
+      "priority": 1,
+      "isAllowPolicy": true
+    },
+    {
+      "schemaName": "forged_system",
+      "policyName": "forged_system-delete-owner-only",
+      "policyDescription": "DELETE: only the record's creator may delete their forged system (CreatedBy == caller).",
+      "policyType": 0,
+      "operation": 3,
+      "fieldNames": [],
+      "ruleGroup": {
+        "logicalOperator": 0,
+        "rules": [
+          {
+            "leftSource": 1,
+            "leftOperand": "CreatedBy",
+            "operator": 0,
+            "rightSource": 2,
+            "rightOperand": "$auth.userId",
+            "rightOperands": [],
+            "staticValue": null,
+            "description": null
+          }
+        ],
+        "nestedGroups": []
+      },
+      "priority": 1,
+      "isAllowPolicy": true
+    }
+  ]
+}

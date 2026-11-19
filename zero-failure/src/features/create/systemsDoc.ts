@@ -650,11 +650,10 @@ function toWire(system: ForgedSystem): Record<string, unknown> {
 }
 
 /** The deck, oldest first — forge order, stable across reloads. The
- *  deck is the sky this tenant's operatives share: whatever the
- *  gateway answers, every signed-in account screens — the inviter's
- *  forges and the invitee's alike. That shared sight is the whole
- *  point of inviting an operative in; no creator filter stands
- *  between them. */
+ *  gateway screens each account to its own forges (row-level policy on
+ *  the forged_system collection: read, edit and delete are
+ *  CreatedBy-only; create stays open to every signed-in account), so
+ *  what an account screens here is exactly what it forged. */
 export async function readForgedSystems(client: BlocksClient): Promise<ForgedSystem[]> {
   const collection = client.data.collection<Record<string, unknown>>(FORGED_COLLECTION);
   const response = await collection.list({ fields: [...WIRE_FIELDS] });

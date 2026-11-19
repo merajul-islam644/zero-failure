@@ -1,7 +1,11 @@
 // The read side of the forge: the deck any sector can screen. Cache-first,
 // so a system paints the instant the page mounts; then the gateway — the
-// source of truth — replaces it when it answers. A silent gateway just
-// leaves the cache up. Nothing here writes; the create sector owns that.
+// source of truth — replaces it when it answers, empty answer included:
+// the gateway screens each account to its own forges (row-level policy on
+// the forged_system collection), so an empty list is a real answer —
+// "nothing forged yet" — and adopting it drops a stale cache of other
+// accounts' decks. A silent gateway just leaves the cache up. Nothing
+// here writes; the create sector owns that.
 
 import { useEffect, useState } from "react";
 import { blocksClient } from "../../lib/blocks/client";
@@ -13,7 +17,7 @@ export function useForgedSystems(): ForgedSystem[] {
     let alive = true;
     readForgedSystems(blocksClient)
       .then((remote) => {
-        if (alive && remote.length > 0) setSystems(remote);
+        if (alive) setSystems(remote);
       })
       .catch(() => undefined);
     return () => {
